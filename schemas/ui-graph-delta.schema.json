@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.apature.ai/ui-graph/delta/1.0.0",
+  "title": "Apature UIGraphDelta",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "deltaId",
+    "baseSnapshotSchemaVersion",
+    "baseSnapshotId",
+    "baseContentHash",
+    "targetSnapshotSchemaVersion",
+    "targetSnapshotId",
+    "targetContentHash",
+    "sequence",
+    "operations",
+    "createdAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "deltaId": {
+      "type": "string",
+      "pattern": "^ugd_1_[a-f0-9]{12,64}$"
+    },
+    "baseSnapshotSchemaVersion": {
+      "const": "1.0.0"
+    },
+    "baseSnapshotId": {
+      "type": "string",
+      "pattern": "^ugs_1_[a-f0-9]{12,64}$"
+    },
+    "baseContentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "targetSnapshotSchemaVersion": {
+      "const": "1.0.0"
+    },
+    "targetSnapshotId": {
+      "type": "string",
+      "pattern": "^ugs_1_[a-f0-9]{12,64}$"
+    },
+    "targetContentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/operation"
+      }
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9.-]+/[A-Za-z0-9._-]+$"
+      },
+      "additionalProperties": true
+    },
+    "operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "build",
+            "source",
+            "coordinateSpaces"
+          ],
+          "properties": {
+            "op": {
+              "const": "replace_header"
+            },
+            "build": {
+              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/buildMetadata"
+            },
+            "source": {
+              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/sourceMetadata"
+            },
+            "coordinateSpaces": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/coordinateSpace"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "node"
+          ],
+          "properties": {
+            "op": {
+              "const": "upsert_node"
+            },
+            "node": {
+              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/node"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "nodeId"
+          ],
+          "properties": {
+            "op": {
+              "const": "remove_node"
+            },
+            "nodeId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "edge"
+          ],
+          "properties": {
+            "op": {
+              "const": "upsert_edge"
+            },
+            "edge": {
+              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/edge"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "edgeId"
+          ],
+          "properties": {
+            "op": {
+              "const": "remove_edge"
+            },
+            "edgeId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "region"
+          ],
+          "properties": {
+            "op": {
+              "const": "upsert_region"
+            },
+            "region": {
+              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/region"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "regionId"
+          ],
+          "properties": {
+            "op": {
+              "const": "remove_region"
+            },
+            "regionId": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "dnaProjection"
+          ],
+          "properties": {
+            "op": {
+              "const": "replace_dna_projection"
+            },
+            "dnaProjection": {
+              "oneOf": [
+                {
+                  "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/dnaProjection"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "metrics"
+          ],
+          "properties": {
+            "op": {
+              "const": "replace_metrics"
+            },
+            "metrics": {
+              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/metrics"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "op",
+            "warnings"
+          ],
+          "properties": {
+            "op": {
+              "const": "replace_warnings"
+            },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/warning"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

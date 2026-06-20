@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "deltaId": "ugd_1_cccccccccccc",
+  "baseSnapshotSchemaVersion": "1.0.0",
+  "baseSnapshotId": "ugs_1_aaaaaaaaaaaa",
+  "baseContentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "targetSnapshotSchemaVersion": "1.0.0",
+  "targetSnapshotId": "ugs_1_aaaaaaaaaaaa",
+  "targetContentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "sequence": 0,
+  "operations": [],
+  "createdAt": "2026-06-18T12:01:00Z"
+}

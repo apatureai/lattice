@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "ugs_1_aaaaaaaaaaaa",
+  "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "build": {
+    "builderVersion": "ui-graph-builder@0.1.0",
+    "relationPolicyVersion": "relations@1",
+    "dnaProjectionVersion": "dna-projection@1",
+    "redactionPolicyVersion": "redaction@1",
+    "deterministicInputHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "source": {
+    "captureId": "capture_example",
+    "captureSchemaVersion": "1.0.0",
+    "captureVersion": "playwright-capture@3",
+    "repository": {
+      "owner": "apatureai",
+      "name": "example"
+    },
+    "route": "/",
+    "headSha": "0123456789abcdef",
+    "viewport": {
+      "widthCssPx": 1440,
+      "heightCssPx": 900,
+      "deviceScaleFactor": 2,
+      "scrollXCssPx": 0,
+      "scrollYCssPx": 0
+    },
+    "derivedProviders": []
+  },
+  "coordinateSpaces": [
+    {
+      "coordinateSpaceId": "viewport",
+      "kind": "viewport_css",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "nodes": [
+    {
+      "nodeId": "n_document",
+      "elementRef": "ug:aaaaaaaa:0",
+      "kind": "document",
+      "regionIds": [],
+      "semantics": {
+        "role": "document",
+        "states": {}
+      },
+      "geometry": {
+        "documentRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "viewportRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 900
+        },
+        "normalizedViewportRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1,
+          "height": 1
+        },
+        "frameId": "main",
+        "clipped": false,
+        "occlusion": "none",
+        "paintOrder": 0
+      },
+      "style": {},
+      "affordances": [],
+      "dnaMatches": [],
+      "locatorHints": [],
+      "evidence": [
+        {
+          "sourceType": "layout",
+          "sourceId": "document_0",
+          "coordinateSpaceId": "viewport",
+          "confidence": 1,
+          "claims": [
+            "geometry",
+            "visibility"
+          ]
+        }
+      ],
+      "sensitivity": [
+        "public"
+      ],
+      "confidence": 1,
+      "flags": []
+    }
+  ],
+  "edges": [],
+  "regions": [],
+  "metrics": {
+    "source": {
+      "domNodes": 1,
+      "accessibilityNodes": 1,
+      "visualCandidates": 0
+    },
+    "graph": {
+      "nodes": 1,
+      "edges": 0,
+      "regions": 0,
+      "maxDegree": 0,
+      "conflictCount": 0
+    },
+    "coverage": {
+      "structuredVisibleAreaRatio": 1,
+      "parserOnlyAreaRatio": 0,
+      "accessibleInteractiveRatio": 1
+    }
+  },
+  "warnings": []
+}
