@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "ugs_1_aaaaaaaaaaaa",
+  "snapshotContentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "viewId": "ugv_1_eeeeeeeeeeee",
+  "specHash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "spec": {
+    "kind": "summary",
+    "maxTextTokens": 1500,
+    "maxNodes": 100,
+    "maxEdges": 100,
+    "maxCrops": 0,
+    "includeSensitive": false,
+    "tokenizerProfile": "cl100k_base@2026-06",
+    "rendererVersion": "ui-graph-renderer@0.1.0"
+  },
+  "text": "snapshot=ugs_1_aaaaaaaaaaaa\nregion ug:aaaaaaaa:0 role=document",
+  "includedNodeIds": [
+    "n_document"
+  ],
+  "includedEdgeIds": [],
+  "evidenceRequests": [],
+  "budget": {
+    "estimatedTextTokens": 20,
+    "estimatedVisualTokens": 0,
+    "serializedBytes": 512,
+    "includedNodes": 1,
+    "includedEdges": 0,
+    "includedCrops": 0
+  },
+  "truncation": {
+    "truncated": false,
+    "reasons": [],
+    "omittedNodeCount": 0,
+    "omittedEdgeCount": 0
+  },
+  "warnings": []
+}

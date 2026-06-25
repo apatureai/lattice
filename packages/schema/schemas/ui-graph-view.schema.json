@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.apature.ai/ui-graph/view/1.0.0",
+  "title": "Apature UIGraphView",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "snapshotId",
+    "snapshotContentHash",
+    "viewId",
+    "specHash",
+    "spec",
+    "text",
+    "includedNodeIds",
+    "includedEdgeIds",
+    "evidenceRequests",
+    "budget",
+    "truncation",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^ugs_1_[a-f0-9]{12,64}$"
+    },
+    "snapshotContentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "viewId": {
+      "type": "string",
+      "pattern": "^ugv_1_[a-f0-9]{12,64}$"
+    },
+    "specHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "spec": {
+      "$ref": "#/$defs/viewSpec"
+    },
+    "text": {
+      "type": "string"
+    },
+    "includedNodeIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "includedEdgeIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evidenceRequests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceRequest"
+      }
+    },
+    "budget": {
+      "$ref": "#/$defs/budget"
+    },
+    "truncation": {
+      "$ref": "#/$defs/truncation"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "budget": {
+            "properties": {
+              "estimatedVisualTokens": {
+                "minimum": 1
+              }
+            },
+            "required": [
+              "estimatedVisualTokens"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "spec": {
+            "required": [
+              "visualTokenProfile"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rect": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "viewSpec": {
+      "type": "object",
+      "required": [
+        "kind",
+        "maxTextTokens",
+        "maxNodes",
+        "maxEdges",
+        "maxCrops",
+        "includeSensitive",
+        "tokenizerProfile",
+        "rendererVersion"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "summary",
+            "violations",
+            "focus",
+            "actionMap",
+            "patchContext",
+            "diff"
+          ]
+        },
+        "refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^ug:[a-f0-9]{6,16}:[0-9]+$"
+          }
+        },
+        "task": {
+          "type": "string"
+        },
+        "comparisonSnapshotId": {
+          "type": "string",
+          "pattern": "^ugs_1_[a-f0-9]{12,64}$"
+        },
+        "comparisonContentHash": {
+          "$ref": "#/$defs/sha256"
+        },
+        "maxTextTokens": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "maxNodes": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "maxEdges": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "maxCrops": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "includeSensitive": {
+          "const": false
+        },
+        "tokenizerProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visualTokenProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rendererVersion": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "dependentRequired": {
+        "comparisonSnapshotId": [
+          "comparisonContentHash"
+        ],
+        "comparisonContentHash": [
+          "comparisonSnapshotId"
+        ]
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "focus",
+                  "patchContext"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "refs"
+            ],
+            "properties": {
+              "refs": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "diff"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "comparisonSnapshotId",
+              "comparisonContentHash"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "evidenceRequest": {
+      "type": "object",
+      "required": [
+        "requestId",
+        "kind",
+        "sourceArtifactRef",
+        "coordinateSpaceId",
+        "elementRefs",
+        "reason",
+        "priority"
+      ],
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "crop",
+            "full_screenshot",
+            "marked_overlay"
+          ]
+        },
+        "sourceArtifactRef": {
+          "type": "string",
+          "pattern": "^artifact://[A-Za-z0-9._:/-]+$"
+        },
+        "coordinateSpaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rect": {
+          "$ref": "#/$defs/rect"
+        },
+        "elementRefs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^ug:[a-f0-9]{6,16}:[0-9]+$"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "crop",
+                  "marked_overlay"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "rect"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "budget": {
+      "type": "object",
+      "required": [
+        "estimatedTextTokens",
+        "estimatedVisualTokens",
+        "serializedBytes",
+        "includedNodes",
+        "includedEdges",
+        "includedCrops"
+      ],
+      "properties": {
+        "estimatedTextTokens": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "estimatedVisualTokens": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "serializedBytes": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "includedNodes": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "includedEdges": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "includedCrops": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      },
+      "additionalProperties": false
+    },
+    "truncation": {
+      "type": "object",
+      "required": [
+        "truncated",
+        "reasons",
+        "omittedNodeCount",
+        "omittedEdgeCount"
+      ],
+      "properties": {
+        "truncated": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "omittedNodeCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "omittedEdgeCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      },
+      "additionalProperties": false
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9.-]+/[A-Za-z0-9._-]+$"
+      },
+      "additionalProperties": true
+    }
+  }
+}
