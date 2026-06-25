@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0.0",
+  "captureId": "capture_multi_frame",
+  "captureVersion": "playwright-capture@3",
+  "repository": { "owner": "apatureai", "name": "example" },
+  "route": "/dashboard",
+  "viewport": {
+    "widthCssPx": 1440,
+    "heightCssPx": 900,
+    "deviceScaleFactor": 2,
+    "scrollXCssPx": 0,
+    "scrollYCssPx": 0
+  },
+  "documents": [
+    {
+      "frameId": "main",
+      "url": "https://app.example.com/dashboard",
+      "domLayoutNodes": [
+        {
+          "sourceId": "dom_0",
+          "frameId": "main",
+          "tag": "main",
+          "bounds": { "x": 0, "y": 0, "width": 1440, "height": 900 },
+          "visible": true
+        },
+        {
+          "sourceId": "dom_iframe",
+          "parentSourceId": "dom_0",
+          "frameId": "main",
+          "tag": "iframe",
+          "bounds": { "x": 0, "y": 100, "width": 600, "height": 400 },
+          "visible": true
+        }
+      ],
+      "accessibilityNodes": [
+        { "sourceId": "ax_0", "frameId": "main", "role": "main", "ignored": false }
+      ]
+    },
+    {
+      "frameId": "child_1",
+      "parentFrameId": "main",
+      "url": "https://embed.example.com/widget",
+      "transformToParent": [1, 0, 0, 1, 0, 100],
+      "domLayoutNodes": [
+        {
+          "sourceId": "dom_c0",
+          "frameId": "child_1",
+          "tag": "button",
+          "role": "button",
+          "bounds": { "x": 10, "y": 10, "width": 120, "height": 40 },
+          "visible": true
+        }
+      ],
+      "accessibilityNodes": [
+        {
+          "sourceId": "ax_c0",
+          "frameId": "child_1",
+          "role": "button",
+          "name": "Submit",
+          "ignored": false,
+          "backendDomSourceId": "dom_c0"
+        }
+      ],
+      "textRuns": [
+        { "sourceId": "txt_c0", "frameId": "child_1", "text": "Submit", "domSourceId": "dom_c0" }
+      ]
+    }
+  ],
+  "screenshotEvidence": [
+    {
+      "artifactRef": "artifact:capture_multi_frame/main.png",
+      "frameId": "main",
+      "widthImagePx": 2880,
+      "heightImagePx": 1800,
+      "deviceScaleFactor": 2
+    }
+  ],
+  "pageHealth": { "stable": true, "partial": false, "reasons": [] },
+  "redaction": { "policyVersion": "redaction@1", "applied": true, "redactedSourceIds": [] }
+}

@@ -1,0 +1,1200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0",
+  "title": "Apature UIGraphSnapshot",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "snapshotId",
+    "contentHash",
+    "build",
+    "source",
+    "coordinateSpaces",
+    "nodes",
+    "edges",
+    "regions",
+    "metrics",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^ugs_1_[a-f0-9]{12,64}$"
+    },
+    "contentHash": {
+      "$ref": "#/$defs/sha256"
+    },
+    "build": {
+      "$ref": "#/$defs/buildMetadata"
+    },
+    "source": {
+      "$ref": "#/$defs/sourceMetadata"
+    },
+    "coordinateSpaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/coordinateSpace"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "regions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/region"
+      }
+    },
+    "dnaProjection": {
+      "$ref": "#/$defs/dnaProjection"
+    },
+    "metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "required": [
+              "dnaVersion"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "dnaProjection"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "dnaProjection"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source": {
+            "required": [
+              "dnaVersion",
+              "dnaProjectionSchemaVersion",
+              "dnaContentDigest",
+              "dnaState",
+              "dnaUseMode"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "finiteNumber": {
+      "type": "number"
+    },
+    "nonNegativeNumber": {
+      "type": "number",
+      "minimum": 0
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9.-]+/[A-Za-z0-9._-]+$"
+      },
+      "additionalProperties": true
+    },
+    "rect": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "y": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "width": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "height": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        }
+      },
+      "additionalProperties": false
+    },
+    "normalizedRect": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/rect"
+        },
+        {
+          "properties": {
+            "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "width": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "height": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    "buildMetadata": {
+      "type": "object",
+      "required": [
+        "builderVersion",
+        "relationPolicyVersion",
+        "dnaProjectionVersion",
+        "redactionPolicyVersion",
+        "deterministicInputHash"
+      ],
+      "properties": {
+        "builderVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationPolicyVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dnaProjectionVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "redactionPolicyVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "deterministicInputHash": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "additionalProperties": false
+    },
+    "repository": {
+      "type": "object",
+      "required": [
+        "owner",
+        "name"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "viewport": {
+      "type": "object",
+      "required": [
+        "widthCssPx",
+        "heightCssPx",
+        "deviceScaleFactor",
+        "scrollXCssPx",
+        "scrollYCssPx"
+      ],
+      "properties": {
+        "widthCssPx": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "heightCssPx": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "deviceScaleFactor": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "scrollXCssPx": {
+          "type": "number"
+        },
+        "scrollYCssPx": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceMetadata": {
+      "type": "object",
+      "required": [
+        "captureId",
+        "captureSchemaVersion",
+        "captureVersion",
+        "repository",
+        "route",
+        "viewport",
+        "derivedProviders"
+      ],
+      "properties": {
+        "captureId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "captureSchemaVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "captureVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "$ref": "#/$defs/repository"
+        },
+        "route": {
+          "type": "string"
+        },
+        "headSha": {
+          "type": "string",
+          "minLength": 7
+        },
+        "viewport": {
+          "$ref": "#/$defs/viewport"
+        },
+        "dnaVersion": {
+          "type": "string"
+        },
+        "dnaProjectionSchemaVersion": {
+          "type": "string"
+        },
+        "dnaContentDigest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "dnaState": {
+          "enum": [
+            "approved",
+            "draft",
+            "in_review",
+            "superseded",
+            "revoked"
+          ]
+        },
+        "dnaUseMode": {
+          "enum": [
+            "production",
+            "offline_eval",
+            "shadow"
+          ]
+        },
+        "derivedProviders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "provider",
+              "providerVersion"
+            ],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "provider": {
+                "type": "string",
+                "minLength": 1
+              },
+              "providerVersion": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "dependentRequired": {
+        "dnaVersion": [
+          "dnaProjectionSchemaVersion",
+          "dnaContentDigest",
+          "dnaState",
+          "dnaUseMode"
+        ]
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dnaState": {
+                "not": {
+                  "const": "approved"
+                }
+              }
+            },
+            "required": [
+              "dnaState"
+            ]
+          },
+          "then": {
+            "properties": {
+              "dnaUseMode": {
+                "enum": [
+                  "offline_eval",
+                  "shadow"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "coordinateSpace": {
+      "type": "object",
+      "required": [
+        "coordinateSpaceId",
+        "kind",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "coordinateSpaceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "document_css",
+            "viewport_css",
+            "frame_css",
+            "image_px",
+            "normalized"
+          ]
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "transformToParent": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "type": "number"
+          }
+        },
+        "parentCoordinateSpaceId": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidenceClaim": {
+      "type": "object",
+      "required": [
+        "sourceType",
+        "confidence",
+        "claims"
+      ],
+      "properties": {
+        "sourceType": {
+          "enum": [
+            "dom",
+            "layout",
+            "accessibility",
+            "computed_style",
+            "text_run",
+            "screenshot",
+            "vision_parser",
+            "ocr",
+            "ui_dna"
+          ]
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "artifactRef": {
+          "type": "string"
+        },
+        "coordinateSpaceId": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "providerVersion": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "claims": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "locatorHint": {
+      "type": "object",
+      "required": [
+        "kind",
+        "value",
+        "scope",
+        "uniqueness",
+        "stability",
+        "confidence"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "explicit_test_id",
+            "role_name",
+            "label",
+            "href_or_form_name",
+            "stable_dom_id",
+            "text",
+            "structural_path",
+            "css",
+            "xpath",
+            "geometry"
+          ]
+        },
+        "value": {
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "capture_session",
+            "route_version",
+            "cross_capture_candidate"
+          ]
+        },
+        "uniqueness": {
+          "$ref": "#/$defs/confidence"
+        },
+        "stability": {
+          "$ref": "#/$defs/confidence"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dnaMatch": {
+      "type": "object",
+      "required": [
+        "dnaRef",
+        "category",
+        "status",
+        "method",
+        "authoritative",
+        "confidence",
+        "evidence"
+      ],
+      "properties": {
+        "dnaRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "enum": [
+            "token",
+            "scale",
+            "component_family",
+            "rule",
+            "exception"
+          ]
+        },
+        "status": {
+          "enum": [
+            "exact",
+            "within_tolerance",
+            "drift",
+            "unknown",
+            "excepted"
+          ]
+        },
+        "observed": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "canonical": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "delta": {
+          "type": "number"
+        },
+        "method": {
+          "enum": [
+            "exact_value",
+            "numeric_tolerance",
+            "declared_component",
+            "structural_signature",
+            "embedding_candidate",
+            "rule_evaluation"
+          ]
+        },
+        "authoritative": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceClaim"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "semantics": {
+      "type": "object",
+      "required": [
+        "states"
+      ],
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "states": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometry": {
+      "type": "object",
+      "required": [
+        "frameId",
+        "clipped"
+      ],
+      "properties": {
+        "documentRect": {
+          "$ref": "#/$defs/rect"
+        },
+        "viewportRect": {
+          "$ref": "#/$defs/rect"
+        },
+        "visibleRect": {
+          "$ref": "#/$defs/rect"
+        },
+        "normalizedViewportRect": {
+          "$ref": "#/$defs/normalizedRect"
+        },
+        "frameId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clipped": {
+          "type": "boolean"
+        },
+        "occlusion": {
+          "enum": [
+            "none",
+            "partial",
+            "full",
+            "unknown"
+          ]
+        },
+        "paintOrder": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "backgroundColor": {
+          "type": "string"
+        },
+        "fontFamily": {
+          "type": "string"
+        },
+        "fontSizeCssPx": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "fontWeight": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "lineHeightCssPx": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "borderRadiusCssPx": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/nonNegativeNumber"
+          }
+        },
+        "opacity": {
+          "$ref": "#/$defs/confidence"
+        },
+        "display": {
+          "type": "string"
+        },
+        "position": {
+          "type": "string"
+        },
+        "zIndex": {
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "const": "auto"
+            }
+          ]
+        },
+        "spacing": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "affordance": {
+      "enum": [
+        "click",
+        "type",
+        "select",
+        "toggle",
+        "scroll",
+        "hover",
+        "focus",
+        "drag",
+        "navigate",
+        "submit"
+      ]
+    },
+    "sensitivity": {
+      "enum": [
+        "public",
+        "tenant_private",
+        "pii",
+        "secret",
+        "credential",
+        "redacted"
+      ]
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "nodeId",
+        "elementRef",
+        "kind",
+        "regionIds",
+        "semantics",
+        "geometry",
+        "style",
+        "affordances",
+        "dnaMatches",
+        "locatorHints",
+        "evidence",
+        "sensitivity",
+        "confidence",
+        "flags"
+      ],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "pattern": "^n_[a-zA-Z0-9_-]+$"
+        },
+        "elementRef": {
+          "type": "string",
+          "pattern": "^ug:[a-f0-9]{6,16}:[0-9]+$"
+        },
+        "kind": {
+          "enum": [
+            "document",
+            "region",
+            "element",
+            "text",
+            "control",
+            "image",
+            "canvas",
+            "visual_candidate"
+          ]
+        },
+        "parentNodeId": {
+          "type": "string"
+        },
+        "regionIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "semantics": {
+          "$ref": "#/$defs/semantics"
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "affordances": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/affordance"
+          }
+        },
+        "dnaMatches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dnaMatch"
+          }
+        },
+        "locatorHints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/locatorHint"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidenceClaim"
+          }
+        },
+        "sensitivity": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/sensitivity"
+          }
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "flags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "edge": {
+      "type": "object",
+      "required": [
+        "edgeId",
+        "fromNodeId",
+        "toNodeId",
+        "kind",
+        "directed",
+        "weight",
+        "attributes",
+        "evidence"
+      ],
+      "properties": {
+        "edgeId": {
+          "type": "string",
+          "pattern": "^e_[a-zA-Z0-9_-]+$"
+        },
+        "fromNodeId": {
+          "type": "string"
+        },
+        "toNodeId": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "contains",
+            "labels",
+            "controls",
+            "reading_next",
+            "overlaps",
+            "aligned_start",
+            "aligned_center",
+            "aligned_end",
+            "near",
+            "groups",
+            "learned"
+          ]
+        },
+        "directed": {
+          "type": "boolean"
+        },
+        "weight": {
+          "$ref": "#/$defs/confidence"
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidenceClaim"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "region": {
+      "type": "object",
+      "required": [
+        "regionId",
+        "rootNodeId",
+        "kind",
+        "memberNodeIds",
+        "summary",
+        "evidence",
+        "confidence"
+      ],
+      "properties": {
+        "regionId": {
+          "type": "string",
+          "pattern": "^r_[a-zA-Z0-9_-]+$"
+        },
+        "rootNodeId": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "document",
+            "landmark",
+            "form",
+            "list",
+            "table",
+            "repeated",
+            "visual_group",
+            "custom"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "memberNodeIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "itemCount": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "visibleItemCount": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "repeatedPatternHash": {
+              "$ref": "#/$defs/sha256"
+            }
+          },
+          "additionalProperties": false
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidenceClaim"
+          }
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dnaProjection": {
+      "type": "object",
+      "required": [
+        "dnaVersion",
+        "projectionSchemaVersion",
+        "dnaContentDigest",
+        "state",
+        "useMode",
+        "authoritativeMatchCount",
+        "advisoryMatchCount",
+        "driftCount"
+      ],
+      "properties": {
+        "dnaVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projectionSchemaVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dnaContentDigest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "state": {
+          "enum": [
+            "approved",
+            "draft",
+            "in_review",
+            "superseded",
+            "revoked"
+          ]
+        },
+        "useMode": {
+          "enum": [
+            "production",
+            "offline_eval",
+            "shadow"
+          ]
+        },
+        "authoritativeMatchCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "advisoryMatchCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "driftCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "approved"
+                }
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "useMode": {
+                "enum": [
+                  "offline_eval",
+                  "shadow"
+                ]
+              },
+              "authoritativeMatchCount": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "source",
+        "graph",
+        "coverage"
+      ],
+      "properties": {
+        "source": {
+          "type": "object",
+          "required": [
+            "domNodes",
+            "accessibilityNodes",
+            "visualCandidates"
+          ],
+          "properties": {
+            "domNodes": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "accessibilityNodes": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "visualCandidates": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            }
+          },
+          "additionalProperties": false
+        },
+        "graph": {
+          "type": "object",
+          "required": [
+            "nodes",
+            "edges",
+            "regions",
+            "maxDegree",
+            "conflictCount"
+          ],
+          "properties": {
+            "nodes": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "edges": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "regions": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "maxDegree": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "conflictCount": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            }
+          },
+          "additionalProperties": false
+        },
+        "coverage": {
+          "type": "object",
+          "properties": {
+            "structuredVisibleAreaRatio": {
+              "$ref": "#/$defs/confidence"
+            },
+            "parserOnlyAreaRatio": {
+              "$ref": "#/$defs/confidence"
+            },
+            "accessibleInteractiveRatio": {
+              "$ref": "#/$defs/confidence"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "warning": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "nodeIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
