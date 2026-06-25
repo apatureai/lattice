@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0.0",
+  "captureId": "capture_with_derived",
+  "captureVersion": "playwright-capture@3",
+  "repository": { "owner": "apatureai", "name": "example" },
+  "route": "/canvas",
+  "viewport": {
+    "widthCssPx": 1280,
+    "heightCssPx": 720,
+    "deviceScaleFactor": 1,
+    "scrollXCssPx": 0,
+    "scrollYCssPx": 0
+  },
+  "documents": [
+    {
+      "frameId": "main",
+      "domLayoutNodes": [
+        {
+          "sourceId": "dom_canvas",
+          "frameId": "main",
+          "tag": "canvas",
+          "bounds": { "x": 0, "y": 0, "width": 1280, "height": 720 },
+          "visible": true
+        }
+      ],
+      "accessibilityNodes": []
+    }
+  ],
+  "screenshotEvidence": [
+    {
+      "artifactRef": "artifact:capture_with_derived/main.png",
+      "frameId": "main",
+      "widthImagePx": 1280,
+      "heightImagePx": 720,
+      "deviceScaleFactor": 1
+    }
+  ],
+  "pageHealth": { "stable": true, "partial": false, "reasons": [] },
+  "redaction": { "policyVersion": "redaction@1", "applied": true, "redactedSourceIds": [] },
+  "derivedObservations": [
+    {
+      "kind": "vision_parser",
+      "provider": "internal-parser",
+      "providerVersion": "vp@2026-06",
+      "sourceImageRef": "artifact:capture_with_derived/main.png",
+      "elements": [
+        {
+          "sourceId": "vp_0",
+          "rectImagePx": { "x": 40, "y": 40, "width": 200, "height": 60 },
+          "class": "button",
+          "text": "Start",
+          "confidence": 0.91
+        }
+      ]
+    },
+    {
+      "kind": "ocr",
+      "provider": "internal-ocr",
+      "providerVersion": "ocr@2026-06",
+      "sourceImageRef": "artifact:capture_with_derived/main.png",
+      "runs": [
+        {
+          "sourceId": "ocr_0",
+          "rectImagePx": { "x": 50, "y": 55, "width": 120, "height": 24 },
+          "text": "Start",
+          "confidence": 0.97
+        }
+      ]
+    },
+    {
+      "kind": "embedding",
+      "provider": "internal-embed",
+      "providerVersion": "embed@2026-06",
+      "targetSourceId": "dom_canvas",
+      "vectorRef": "artifact:capture_with_derived/embed_0.bin",
+      "dimensions": 768
+    },
+    {
+      "kind": "learned_relation",
+      "provider": "internal-rel",
+      "providerVersion": "rel@2026-06",
+      "fromSourceId": "vp_0",
+      "toSourceId": "ocr_0",
+      "relation": "labels",
+      "confidence": 0.8
+    }
+  ]
+}

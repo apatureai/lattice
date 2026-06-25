@@ -1,0 +1,16 @@
+{
+  "projectionSchemaVersion": "1.0.0",
+  "dnaVersion": "dna@2026-06-15-draft",
+  "dnaContentDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "state": "draft",
+  "useMode": "shadow",
+  "tokens": {
+    "color.primary": { "value": "#1b6ef3", "category": "color", "confidence": 0.7 }
+  },
+  "semanticRoles": [],
+  "componentFamilies": [],
+  "distributions": [],
+  "rules": [],
+  "exceptions": [],
+  "contexts": []
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "captureId": "capture_minimal",
+  "captureVersion": "playwright-capture@3",
+  "repository": { "owner": "apatureai", "name": "example" },
+  "route": "/",
+  "headSha": "0123456789abcdef",
+  "viewport": {
+    "widthCssPx": 1440,
+    "heightCssPx": 900,
+    "deviceScaleFactor": 2,
+    "scrollXCssPx": 0,
+    "scrollYCssPx": 0
+  },
+  "documents": [
+    {
+      "frameId": "main",
+      "domLayoutNodes": [
+        {
+          "sourceId": "dom_0",
+          "frameId": "main",
+          "tag": "body",
+          "bounds": { "x": 0, "y": 0, "width": 1440, "height": 900 },
+          "visible": true,
+          "paintOrder": 0
+        }
+      ],
+      "accessibilityNodes": [
+        {
+          "sourceId": "ax_0",
+          "frameId": "main",
+          "role": "document",
+          "ignored": false,
+          "backendDomSourceId": "dom_0"
+        }
+      ]
+    }
+  ],
+  "pageHealth": { "stable": true, "partial": false, "reasons": [] },
+  "redaction": { "policyVersion": "redaction@1", "applied": true, "redactedSourceIds": [] }
+}
