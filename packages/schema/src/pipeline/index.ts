@@ -27,6 +27,13 @@ export type {
   FusedKind,
   FuseOptions,
 } from "./fuse.js";
+export { buildHierarchy } from "./hierarchy.js";
+export type {
+  HierarchyResult,
+  NodeHierarchy,
+  HierarchyTruncation,
+  HierarchyOptions,
+} from "./hierarchy.js";
 
 export type ValidateAndNormalizeResult =
   | { ok: true; normalized: NormalizedCapture }
