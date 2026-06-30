@@ -23,7 +23,8 @@ export type PipelineErrorCode =
   | "unresolved_coordinate_space"
   | "transform_tolerance_exceeded"
   | "unparseable_color"
-  | "unparseable_length";
+  | "unparseable_length"
+  | "source_conflict";
 
 export type PipelineSeverity = "error" | "warning" | "info";
 

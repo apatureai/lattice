@@ -19,6 +19,14 @@ export * from "./text.js";
 export { validateCapture, type ValidateResult } from "./validate.js";
 export { normalizeCapture, type NormalizedCapture } from "./normalize.js";
 export type { NormalizedNode, NormalizedGeometry, Visibility } from "./normalize.js";
+export { fuseCapture } from "./fuse.js";
+export type {
+  FusionResult,
+  FusedNode,
+  FusedFact,
+  FusedKind,
+  FuseOptions,
+} from "./fuse.js";
 
 export type ValidateAndNormalizeResult =
   | { ok: true; normalized: NormalizedCapture }
