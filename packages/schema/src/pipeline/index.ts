@@ -36,6 +36,8 @@ export type {
 } from "./hierarchy.js";
 export { heuristicSaliency, heuristicSaliencyProvider, rankBySaliency } from "./saliency.js";
 export type { SaliencyScore, SaliencyProvider, SaliencyViewport } from "./saliency.js";
+export { buildRelations } from "./relations.js";
+export type { RelationResult, RelationOptions } from "./relations.js";
 
 export type ValidateAndNormalizeResult =
   | { ok: true; normalized: NormalizedCapture }
