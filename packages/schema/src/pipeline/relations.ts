@@ -65,7 +65,17 @@ class SpatialGrid {
     return out;
   }
   insert(id: string, r: Rect): void {
-    for (const k of this.keys(r)) this.buckets.set(k, [...(this.buckets.get(k) ?? []), id]);
+    // Push into the existing bucket array rather than spread-copying it: the old
+    // `set(k, [...(get(k) ?? []), id])` reallocated the whole bucket per insert,
+    // making a run of inserts into one cell O(n²). Append order is unchanged.
+    for (const k of this.keys(r)) {
+      let bucket = this.buckets.get(k);
+      if (bucket === undefined) {
+        bucket = [];
+        this.buckets.set(k, bucket);
+      }
+      bucket.push(id);
+    }
   }
   candidates(id: string, r: Rect): string[] {
     const found = new Set<string>();
@@ -106,7 +116,16 @@ export function buildRelations(nodes: readonly FusedNode[], hierarchy: readonly 
   const byParent = new Map<string, FusedNode[]>();
   for (const n of withGeom) {
     const p = hierById.get(n.candidateId)?.parentNodeId ?? "__root__";
-    byParent.set(p, [...(byParent.get(p) ?? []), n]);
+    // Append into the existing sibling array (same reason as SpatialGrid.insert):
+    // the prior spread-copy was O(siblings²) when many nodes share one parent.
+    // `withGeom` is already sorted, so append order — and thus every downstream
+    // sort/edge — is byte-identical to before.
+    let siblings = byParent.get(p);
+    if (siblings === undefined) {
+      siblings = [];
+      byParent.set(p, siblings);
+    }
+    siblings.push(n);
   }
   for (const siblings of byParent.values()) {
     const ordered = [...siblings].sort((a, b) => {

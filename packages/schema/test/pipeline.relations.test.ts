@@ -70,4 +70,56 @@ describe("buildRelations", () => {
     const b = buildRelations(scene().nodes, scene().hierarchy);
     expect(a).toEqual(b);
   });
+
+  /**
+   * Ordering-stability golden. Exercises both spread-copy → push seams with more
+   * than one element (four siblings under one parent, several nodes sharing grid
+   * cells) and pins the exact ordered edge set. Push preserves the same append
+   * order as the old `[...(get() ?? []), x]`, so this output is byte-identical to
+   * pre-change; any future regression that perturbs insertion/near ordering trips
+   * here. (Region tag: `#O(n^2)` fix in SpatialGrid.insert / byParent.)
+   */
+  it("emits a byte-stable ordered edge set (multi-sibling, multi-cell scene)", () => {
+    const nodes = [
+      node("root", { x: 0, y: 0, width: 400, height: 400 }),
+      node("a", { x: 10, y: 10, width: 200, height: 40 }),
+      node("b", { x: 10, y: 60, width: 200, height: 40 }),
+      node("c", { x: 10, y: 110, width: 200, height: 40 }),
+      node("d", { x: 10, y: 160, width: 200, height: 40 }),
+    ];
+    const hierarchy: NodeHierarchy[] = [
+      { candidateId: "root", regionIds: ["reg1"], depth: 0 },
+      { candidateId: "a", parentNodeId: "root", regionIds: ["reg1"], depth: 1 },
+      { candidateId: "b", parentNodeId: "root", regionIds: ["reg1"], depth: 1 },
+      { candidateId: "c", parentNodeId: "root", regionIds: ["reg1"], depth: 1 },
+      { candidateId: "d", parentNodeId: "root", regionIds: ["reg1"], depth: 1 },
+    ];
+    const { edges, metrics } = buildRelations(nodes, hierarchy);
+    expect(metrics).toEqual({ edges: 23, maxDegree: 12 });
+    expect(edges.map((e) => `${e.kind}:${e.fromNodeId}->${e.toNodeId}`)).toEqual([
+      "reading_next:b->c",
+      "aligned_center:b->c",
+      "aligned_end:b->c",
+      "aligned_end:a->b",
+      "near:b->c",
+      "contains:root->a",
+      "aligned_center:a->b",
+      "near:a->b",
+      "aligned_start:b->c",
+      "aligned_center:c->d",
+      "near:c->root",
+      "reading_next:c->d",
+      "contains:root->c",
+      "reading_next:a->b",
+      "aligned_end:c->d",
+      "near:d->root",
+      "aligned_start:a->b",
+      "contains:root->d",
+      "contains:root->b",
+      "near:c->d",
+      "near:b->root",
+      "aligned_start:c->d",
+      "near:a->root",
+    ]);
+  });
 });
