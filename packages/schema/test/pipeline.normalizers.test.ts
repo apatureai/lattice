@@ -32,6 +32,15 @@ describe("normalizeColor", () => {
     expect(r.canonical).toBeNull();
     expect(r.original).toBe("not-a-color");
   });
+  it("treats prototype-chain keys as unparseable, not named colors", () => {
+    // `constructor`/`__proto__` must not resolve through the named-color map's
+    // prototype; `canonical` stays `null` (a string|null), never a function/object.
+    for (const key of ["constructor", "__proto__", "hasOwnProperty", "toString"]) {
+      const r = normalizeColor(key);
+      expect(r.canonical).toBeNull();
+      expect(r.original).toBe(key);
+    }
+  });
 });
 
 describe("normalizeCssLength", () => {
@@ -48,6 +57,14 @@ describe("normalizeCssLength", () => {
   it("returns nulls for non-numeric input", () => {
     expect(normalizeCssLength("auto").valueCssPx).toBeNull();
     expect(normalizeCssLength("auto").unit).toBeNull();
+  });
+  it("treats a prototype-chain unit as unknown, not px", () => {
+    // A `constructor` unit must not resolve through the absolute-unit map's
+    // prototype: it is an unknown unit, kept verbatim with no invented px value —
+    // exactly like any other unresolved unit.
+    const r = normalizeCssLength("5constructor");
+    expect(r.unit).toBe("constructor");
+    expect(r.valueCssPx).toBeNull();
   });
 });
 

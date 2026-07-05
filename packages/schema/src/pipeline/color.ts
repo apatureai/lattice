@@ -47,7 +47,10 @@ export function normalizeColor(input: string): NormalizedColor {
   const original = input;
   const value = input.trim().toLowerCase();
 
-  if (value in NAMED) {
+  // `Object.hasOwn`, not `in`: the input is untrusted capture data, and `in`
+  // walks the prototype chain — a color fact of `constructor`/`__proto__` would
+  // otherwise resolve to an inherited value and leak a non-string `canonical`.
+  if (Object.hasOwn(NAMED, value)) {
     return { original, canonical: NAMED[value] ?? null };
   }
 

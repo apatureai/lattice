@@ -42,7 +42,11 @@ export function normalizeCssLength(input: string | number): NormalizedLength {
   const unit = m[2] === "" ? "px" : (m[2] as string);
   if (!Number.isFinite(magnitude)) return { original: input, valueCssPx: null, unit };
 
-  const factor = ABSOLUTE_PX[unit];
+  // `Object.hasOwn`, not a bare index: `unit` comes from untrusted capture data,
+  // and a plain-object lookup walks the prototype chain — a `constructor` unit
+  // would otherwise resolve to an inherited value, skip the unknown-unit branch,
+  // and be mislabeled `px`.
+  const factor = Object.hasOwn(ABSOLUTE_PX, unit) ? ABSOLUTE_PX[unit] : undefined;
   if (factor === undefined) {
     // Relative or unknown unit: keep the unit, do not invent a pixel value.
     return { original: input, valueCssPx: null, unit };
