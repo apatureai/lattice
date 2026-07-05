@@ -41,6 +41,23 @@ describe("heuristicSaliency", () => {
     expect(heading).toBeGreaterThan(generic);
   });
 
+  it("treats a prototype-chain role as unknown, never NaN or a function weight", () => {
+    // `constructor`/`__proto__`/`toString`/`valueOf` must not resolve through the
+    // ROLE_WEIGHT map's prototype: they are unknown roles, weighted at the 0.3
+    // default exactly like any other unrecognized role — never an inherited
+    // function/object that poisons the arithmetic with NaN.
+    const rect = { x: 400, y: 400, width: 100, height: 40 };
+    const generic = heuristicSaliency([node("g", rect, "totally-unknown-role")], VP)[0]!.saliency;
+    for (const role of ["constructor", "__proto__", "toString", "valueOf", "hasOwnProperty"]) {
+      // both the geometry and geometry-less branches read roleWeight
+      const withGeom = heuristicSaliency([node("g", rect, role)], VP)[0]!.saliency;
+      const noGeom = heuristicSaliency([node("g", undefined, role)], VP)[0]!.saliency;
+      expect(Number.isFinite(withGeom)).toBe(true);
+      expect(Number.isFinite(noGeom)).toBe(true);
+      expect(withGeom).toBe(generic); // same as an ordinary unknown role
+    }
+  });
+
   it("is deterministic and order-stable", () => {
     const nodes = [node("b", { x: 0, y: 0, width: 100, height: 100 }), node("a", { x: 500, y: 500, width: 50, height: 50 })];
     expect(heuristicSaliency(nodes, VP)).toEqual(heuristicSaliency([...nodes].reverse(), VP));

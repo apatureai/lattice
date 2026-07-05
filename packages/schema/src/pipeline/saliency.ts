@@ -66,7 +66,13 @@ export function heuristicSaliency(nodes: readonly FusedNode[], viewport?: Salien
 
   const scores = nodes.map((node): SaliencyScore => {
     const g = node.geometry?.viewportRect;
-    const roleWeight = node.role?.value !== undefined ? ROLE_WEIGHT[node.role.value] ?? 0.3 : 0.3;
+    // `Object.hasOwn`, not a bare index: `role.value` is untrusted capture data,
+    // and a plain-object lookup walks the prototype chain — a role of
+    // `constructor`/`__proto__`/`toString` would otherwise resolve to an inherited
+    // member (a function/object, which `?? 0.3` does NOT catch), poisoning the
+    // score with `NaN`. An unknown role falls through to the 0.3 default.
+    const role = node.role?.value;
+    const roleWeight = role !== undefined && Object.hasOwn(ROLE_WEIGHT, role) ? ROLE_WEIGHT[role] ?? 0.3 : 0.3;
     if (g === undefined) return { candidateId: node.candidateId, saliency: clamp01(0.1 + 0.1 * roleWeight) };
 
     const topness = clamp01(1 - g.y / vp.height); // higher on the page = more salient
