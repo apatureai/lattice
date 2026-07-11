@@ -17,7 +17,7 @@
     "guard:capability": "node scripts/capability-guard.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^9.17.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^26.1.1",
     "eslint": "^10.7.0",
     "typescript": "6.0.3",
