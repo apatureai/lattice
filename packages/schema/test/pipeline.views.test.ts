@@ -4,6 +4,7 @@ import {
   buildRelations,
   fuseCapture,
   normalizeCapture,
+  renderActionMapView,
   renderFocusView,
   renderSummaryView,
   VIEW_POLICY_VERSION,
@@ -107,6 +108,63 @@ describe("renderSummaryView (#41, PRD §6.4)", () => {
     expect(capped.meta.truncated).toBe(true);
     expect(capped.meta.omitted.nodes).toBe(1); // two affordances, one kept
     const again = renderSummaryView(g, { maxAffordances: 1 });
+    expect(again.text).toBe(capped.text);
+  });
+});
+
+describe("renderActionMapView (#16, PRD §6.4)", () => {
+  it("lists visible interactive refs with role/name/rect/state, deterministically", () => {
+    const g = graph();
+    const a = renderActionMapView(g, { snapshotId: "snap_1" });
+    const b = renderActionMapView(g, { snapshotId: "snap_1" });
+    expect(a.text).toBe(b.text); // byte-identical over the same graph
+    expect(a.meta).toEqual(b.meta);
+    expect(a.meta.view).toBe("actionMap");
+    expect(a.meta.policyVersion).toBe(VIEW_POLICY_VERSION);
+    expect(a.meta.tokenEstimate).toBe(Math.ceil(a.text.length / 4));
+
+    // The two interactive affordances appear; refs are the synthetic candidate ids.
+    expect(a.meta.refsResolved).toEqual([...a.meta.refsResolved].sort());
+    expect(a.meta.refsResolved).toHaveLength(2);
+    expect(a.text).toContain("button");
+    expect(a.text).toContain("link");
+    expect(a.text).toContain("Start free trial");
+    expect(a.text).toContain("\"visibility\":\"visible\"");
+    expect(a.text).toContain("snap_1");
+  });
+
+  it("is perception-only: no action commands, no browser handles, no raw source ids", () => {
+    const g = graph();
+    const view = renderActionMapView(g);
+    expect(view.text).toContain("\"perceptionOnly\":true");
+    // Raw source ids / AX ids live only in node.evidence and must never leak.
+    for (const leak of ["ax_cta", "ax_link", "backendDomSourceId", "sourceId", "cardlink"]) {
+      expect(view.text).not.toContain(leak);
+    }
+    // No command/action verbs or browser-handle keys in the emitted structure.
+    for (const verb of ["\"click\"", "\"type\"", "\"press\"", "\"navigate\"", "capture_session", "command"]) {
+      expect(view.text).not.toContain(verb);
+    }
+  });
+
+  it("excludes non-interactive nodes and elements without an on-screen rect", () => {
+    const g = graph();
+    const refs = renderActionMapView(g).meta.refsResolved;
+    // Only the button + link are interactive; page/header/main/card/footer are not.
+    const interactiveIds = g.nodes
+      .filter((n) => n.role?.value === "button" || n.role?.value === "link")
+      .map((n) => n.candidateId)
+      .sort();
+    expect(refs).toEqual(interactiveIds);
+  });
+
+  it("stays within budget or reports truncation, deterministically", () => {
+    const g = graph();
+    const capped = renderActionMapView(g, { budget: { maxNodes: 1 } });
+    expect(capped.meta.truncated).toBe(true);
+    expect(capped.meta.omitted.nodes).toBe(1);
+    expect(capped.meta.refsResolved).toHaveLength(1);
+    const again = renderActionMapView(g, { budget: { maxNodes: 1 } });
     expect(again.text).toBe(capped.text);
   });
 });

@@ -14,7 +14,7 @@
  */
 
 import { canonicalize } from "../canonical.js";
-import type { UIGraphEdge, UIRegion } from "../types.js";
+import type { Rect, UIGraphEdge, UIRegion } from "../types.js";
 import type { FusedNode } from "./fuse.js";
 import type { NodeHierarchy } from "./hierarchy.js";
 
@@ -35,7 +35,7 @@ export interface ViewBudget {
 }
 
 export interface ViewMeta {
-  readonly view: "focus" | "summary";
+  readonly view: "focus" | "summary" | "actionMap";
   readonly policyVersion: typeof VIEW_POLICY_VERSION;
   /** True when the budget cut anything; the counts say exactly how much. */
   readonly truncated: boolean;
@@ -239,6 +239,83 @@ export function renderSummaryView(
       omitted: { nodes: omittedAffordances, edges: 0 },
       tokenEstimate: tokenEstimate(text),
       refsResolved: [],
+      refsUnresolved: [],
+    },
+  };
+}
+
+export interface ActionMapOptions {
+  /** Max interactive refs listed; beyond it the view truncates (never errors). */
+  readonly budget?: ViewBudget;
+  /** Snapshot the refs belong to; carried so a durable ref is (snapshotId, ref). */
+  readonly snapshotId?: string;
+}
+
+/** An interactive element's perception state — only what capture actually observed. */
+export interface ActionMapEntry {
+  /** Snapshot-local candidate id (§6.4): the durable ref, never a raw source id or locator. */
+  readonly ref: string;
+  readonly role: string;
+  readonly name?: string;
+  /** Normalized [0,1] viewport rect — resolution-independent, so refs stay durable. */
+  readonly rect: Rect;
+  /** Perception-only state: visibility + retained pipeline flags. No action verbs, no handles. */
+  readonly state: { readonly visibility: string; readonly clipped: boolean; readonly flags: readonly string[] };
+}
+
+/** On-screen enough to be a perceivable affordance (§6.4: "visible interactive refs"). */
+const ACTIONMAP_VISIBILITIES = new Set(["visible", "clipped"]);
+
+/**
+ * Render the `actionMap` view (§6.4, TRD §10.2): visible interactive elements as
+ * PERCEPTION CONTEXT ONLY — role, accessible name, normalized rect, and observed
+ * state — never action commands (UI Graph is not a browser agent, PRD §5.2/§12).
+ *
+ * Fail-closed and durable-ref clean: an element needs an interactive role AND an
+ * on-screen rect to appear (no geometry ⇒ nothing to point at, so it is omitted,
+ * not guessed); only the synthetic `candidateId` is emitted as the ref, and raw
+ * source ids / `capture_session` locators (which live only in `node.evidence`)
+ * are never serialized. Untrusted names are carried as canonicalized string DATA,
+ * not markup. Deterministic order (by ref) so a budget always cuts the same tail.
+ */
+export function renderActionMapView(graph: GraphView, options: ActionMapOptions = {}): RenderedView {
+  const budget = options.budget ?? DEFAULT_BUDGET;
+
+  const candidates: ActionMapEntry[] = [];
+  for (const n of graph.nodes) {
+    const role = n.role?.value;
+    if (role === undefined || !AFFORDANCE_ROLES.has(role)) continue;
+    const geom = n.geometry;
+    if (geom === undefined || !ACTIONMAP_VISIBILITIES.has(geom.visibility)) continue; // no rect / off-screen ⇒ omit
+    candidates.push({
+      ref: n.candidateId,
+      role,
+      ...(n.name !== undefined ? { name: n.name.value } : {}),
+      rect: geom.normalizedViewportRect,
+      state: { visibility: geom.visibility, clipped: geom.clipped, flags: [...n.flags].sort() },
+    });
+  }
+  candidates.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
+
+  const kept = candidates.slice(0, budget.maxNodes);
+  const omittedNodes = candidates.length - kept.length;
+
+  const text = canonicalize({
+    view: "actionMap",
+    policyVersion: VIEW_POLICY_VERSION,
+    ...(options.snapshotId !== undefined ? { snapshotId: options.snapshotId } : {}),
+    perceptionOnly: true,
+    actions: kept,
+  });
+  return {
+    text,
+    meta: {
+      view: "actionMap",
+      policyVersion: VIEW_POLICY_VERSION,
+      truncated: omittedNodes > 0,
+      omitted: { nodes: omittedNodes, edges: 0 },
+      tokenEstimate: tokenEstimate(text),
+      refsResolved: kept.map((e) => e.ref),
       refsUnresolved: [],
     },
   };

@@ -37,7 +37,7 @@ export type {
 export { heuristicSaliency, heuristicSaliencyProvider, rankBySaliency } from "./saliency.js";
 export type { SaliencyScore, SaliencyProvider, SaliencyViewport } from "./saliency.js";
 export { buildRelations } from "./relations.js";
-export { renderFocusView, renderSummaryView, VIEW_POLICY_VERSION } from "./views.js";
+export { renderFocusView, renderSummaryView, renderActionMapView, VIEW_POLICY_VERSION } from "./views.js";
 export type {
   GraphView,
   RenderedView,
@@ -45,6 +45,8 @@ export type {
   ViewBudget,
   FocusOptions,
   SummaryOptions,
+  ActionMapOptions,
+  ActionMapEntry,
 } from "./views.js";
 export type { RelationResult, RelationOptions } from "./relations.js";
 
