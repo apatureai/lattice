@@ -86,12 +86,18 @@ describe("runRepresentationBenchmark (#20)", () => {
     }
   });
 
-  it("B5 fails closed: unavailable with an explicit reason, never a guessed number", () => {
+  it("B5 renders the focused view (#41): available, non-empty, text-only", () => {
     for (const fixture of report.fixtures) {
       const b5 = fixture.measurements.find((m) => m.baseline === "b5_focused_view");
-      expect(b5?.available).toBe(false);
-      expect(b5?.reason).toMatch(/not implemented/);
-      expect(b5?.textTokens).toBe(0);
+      expect(b5?.available).toBe(true);
+      expect(b5?.reason).toBeUndefined();
+      expect(b5?.textTokens ?? 0).toBeGreaterThan(0);
+      expect(b5?.imageTokens ?? 1).toBe(0);
+      // Token-REDUCTION claims (B5 vs B4/B0) are a property of real page
+      // sizes: on these tiny synthetic fixtures the whole graph fits inside
+      // the focus radius, so ratios are meaningless here. The R1 corpus run
+      // (#20) is where reduction is measured; this test pins only that the
+      // renderer produces a real, deterministic measurement.
     }
   });
 
@@ -127,10 +133,10 @@ describe("runRepresentationBenchmark (#20)", () => {
     }
   });
 
-  it("the unavailable B5 candidate yields an unavailable comparison, not zeros", () => {
+  it("the B5 candidate now yields a real comparison (#41 unblocked #20's B5 rows)", () => {
     const b5 = report.comparisons.find((c) => c.candidate === "b5_focused_view");
-    expect(b5?.available).toBe(false);
-    expect(b5?.pairedFixtures).toBe(0);
+    expect(b5?.available).toBe(true);
+    expect(b5?.pairedFixtures).toBeGreaterThan(0);
   });
 
   it("renders deterministic, timestamp-free markdown", () => {

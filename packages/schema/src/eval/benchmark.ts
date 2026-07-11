@@ -42,6 +42,9 @@ import {
   fuseCapture,
   buildHierarchy,
   buildRelations,
+  renderFocusView,
+  heuristicSaliency,
+  rankBySaliency,
 } from "../pipeline/index.js";
 import type { EvalCohort, RepresentationManifest } from "./manifest.js";
 import {
@@ -296,12 +299,30 @@ function serializeB4(capture: CaptureBundleReadProfile): Serialized {
   };
 }
 
-function serializeB5(): Serialized {
-  return {
-    text: "",
-    includeImages: false,
-    unavailableReason: "task-focused view renderer not implemented yet (PRD §6.4); failing closed instead of guessing",
-  };
+function serializeB5(capture: CaptureBundleReadProfile): Serialized {
+  const vn = validateAndNormalize(capture);
+  if (!vn.ok) {
+    return {
+      text: "",
+      includeImages: false,
+      unavailableReason: `capture failed validate/normalize: ${vn.errors.map((e) => e.code).join(",")}`,
+    };
+  }
+  const fusion = fuseCapture(capture, vn.normalized);
+  const hier = buildHierarchy(fusion.nodes);
+  const rel = buildRelations(fusion.nodes, hier.hierarchy);
+  // Benchmark manifests carry no task refs today, so B5 focuses on the top-3
+  // heuristically-salient nodes — a deterministic, documented proxy for
+  // "task-relevant" until manifests grow task refs (#41).
+  const refs = rankBySaliency(heuristicSaliency(fusion.nodes)).slice(0, 3);
+  const view = renderFocusView(
+    { nodes: fusion.nodes, hierarchy: hier.hierarchy, regions: hier.regions, edges: rel.edges },
+    refs,
+  );
+  if (view.meta.emptyReason !== undefined) {
+    return { text: "", includeImages: false, unavailableReason: view.meta.emptyReason };
+  }
+  return { text: view.text, includeImages: false };
 }
 
 // --- Runner -----------------------------------------------------------------
@@ -394,7 +415,7 @@ export function runRepresentationBenchmark(
         measureOne("b2_screenshot_only", serializeB2(capture), capture),
         measureOne("b3_screenshot_ax", serializeB3(capture), capture),
         measureOne("b4_full_graph", serializeB4(capture), capture),
-        measureOne("b5_focused_view", serializeB5(), capture),
+        measureOne("b5_focused_view", serializeB5(capture), capture),
       ];
       fixtures.push({
         fixtureId: entry.fixtureId,
