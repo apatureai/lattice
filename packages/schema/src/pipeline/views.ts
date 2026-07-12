@@ -16,6 +16,7 @@
 import { canonicalize } from "../canonical.js";
 import type { LocatorHint, Rect, SensitivityLabel, UIDNAMatch, UIDNAProjection, UIGraphEdge, UIGraphNode, UIRegion, Viewport } from "../types.js";
 import { normalizeCssLength } from "./css.js";
+import { addedTargetIds, matchNodes, type MatchOptions } from "./lineage.js";
 import type { FusedNode } from "./fuse.js";
 import type { NodeHierarchy } from "./hierarchy.js";
 
@@ -36,7 +37,7 @@ export interface ViewBudget {
 }
 
 export interface ViewMeta {
-  readonly view: "focus" | "summary" | "actionMap" | "patchContext" | "violations";
+  readonly view: "focus" | "summary" | "actionMap" | "patchContext" | "violations" | "diff";
   readonly policyVersion: typeof VIEW_POLICY_VERSION;
   /** True when the budget cut anything; the counts say exactly how much. */
   readonly truncated: boolean;
@@ -674,6 +675,167 @@ export function renderViolationsView(
       omitted: { nodes: omittedNodes, edges: 0 },
       tokenEstimate: tokenEstimate(text),
       refsResolved,
+      refsUnresolved: [],
+    },
+  };
+}
+
+// --- diff (cross-snapshot change; capture instability vs product change) ------
+
+/** The two snapshots' identity — a diff refuses to run without matching id + hash. */
+export interface DiffComparison {
+  readonly baseSnapshotId: string;
+  readonly baseContentHash: string;
+  readonly targetSnapshotId: string;
+  readonly targetContentHash: string;
+}
+
+export interface DiffOptions extends MatchOptions {
+  readonly budget?: ViewBudget;
+  /** Normalized-rect movement at or below this is capture jitter, not a product change. */
+  readonly geometryJitter?: number;
+}
+
+const DEFAULT_GEOMETRY_JITTER = 0.005;
+
+type ChangeKind = "unchanged" | "capture_instability" | "product_change";
+
+export interface MatchedDiffEntry {
+  readonly baseRef: string;
+  readonly targetRef: string;
+  readonly score: number;
+  readonly changeKind: ChangeKind;
+  readonly changed: { readonly semantic: boolean; readonly style: boolean; readonly geometry: boolean; readonly dna: boolean };
+}
+
+function rectMoved(a: UIGraphNode, b: UIGraphNode): number {
+  const ra = a.geometry.normalizedViewportRect ?? a.geometry.viewportRect;
+  const rb = b.geometry.normalizedViewportRect ?? b.geometry.viewportRect;
+  if (ra === undefined || rb === undefined) return 0;
+  return Math.max(Math.abs(ra.x - rb.x), Math.abs(ra.y - rb.y), Math.abs(ra.width - rb.width), Math.abs(ra.height - rb.height));
+}
+
+function semanticChanged(a: UIGraphNode, b: UIGraphNode): boolean {
+  return a.semantics.role !== b.semantics.role || a.semantics.name !== b.semantics.name || a.semantics.text !== b.semantics.text;
+}
+
+function styleChanged(a: UIGraphNode, b: UIGraphNode): boolean {
+  return canonicalize(a.style) !== canonicalize(b.style);
+}
+
+function dnaSignature(node: UIGraphNode): string {
+  return canonicalize(
+    [...node.dnaMatches]
+      .map((m) => ({ category: m.category, status: m.status, canonical: m.canonical ?? null }))
+      .sort((x, y) => canonicalize(x).localeCompare(canonicalize(y))),
+  );
+}
+
+function classifyChange(a: UIGraphNode, b: UIGraphNode, jitter: number): MatchedDiffEntry["changed"] & { changeKind: ChangeKind } {
+  const semantic = semanticChanged(a, b);
+  const style = styleChanged(a, b);
+  const dna = dnaSignature(a) !== dnaSignature(b);
+  const moved = rectMoved(a, b);
+  const geometry = moved > 0;
+  const changeKind: ChangeKind =
+    semantic || style || dna || moved > jitter
+      ? "product_change"
+      : geometry
+        ? "capture_instability" // only a small positional jitter — not a product change
+        : "unchanged";
+  return { semantic, style, geometry, dna, changeKind };
+}
+
+/**
+ * Render the `diff` view (#13, TRD §10.2): matched / added / removed / ambiguous
+ * nodes across two snapshots, with each matched pair's changed facts classified
+ * to SEPARATE capture instability (sub-jitter positional noise) from product
+ * change (semantics/style/DNA, or a real move). Runs the abstaining lineage
+ * matcher (`matchNodes`) internally — a low-confidence pair abstains, never
+ * points to the wrong element.
+ *
+ * Fail-closed: requires a comparison snapshot id AND content hash for both
+ * sides (PRD §6.6) — a missing identity renders an explicit empty view, never a
+ * diff against an unknown baseline. Deterministic and budgeted with truncation.
+ */
+export function renderDiffView(
+  base: readonly UIGraphNode[],
+  target: readonly UIGraphNode[],
+  comparison: DiffComparison,
+  options: DiffOptions = {},
+): RenderedView {
+  const budget = options.budget ?? DEFAULT_BUDGET;
+  const jitter = options.geometryJitter ?? DEFAULT_GEOMETRY_JITTER;
+
+  const idOk = [comparison.baseSnapshotId, comparison.baseContentHash, comparison.targetSnapshotId, comparison.targetContentHash].every(
+    (s) => typeof s === "string" && s.length > 0,
+  );
+  if (!idOk) {
+    return {
+      text: "",
+      meta: {
+        view: "diff",
+        policyVersion: VIEW_POLICY_VERSION,
+        truncated: false,
+        omitted: { nodes: 0, edges: 0 },
+        tokenEstimate: 0,
+        refsResolved: [],
+        refsUnresolved: [],
+        emptyReason: "diff requires a comparison snapshot id and content hash for both sides; refusing to diff an unknown baseline",
+      },
+    };
+  }
+
+  const matches = matchNodes(base, target, options);
+  const baseByNode = new Map(base.map((n) => [n.nodeId, n]));
+  const targetByNode = new Map(target.map((n) => [n.nodeId, n]));
+
+  const matched: MatchedDiffEntry[] = [];
+  const removed: string[] = [];
+  const ambiguous: string[] = [];
+  for (const m of matches) {
+    const a = baseByNode.get(m.baseNodeId)!;
+    if (m.status === "matched" && m.targetNodeId !== undefined) {
+      const b = targetByNode.get(m.targetNodeId)!;
+      const { changeKind, ...changed } = classifyChange(a, b, jitter);
+      matched.push({ baseRef: a.elementRef, targetRef: b.elementRef, score: m.score, changeKind, changed });
+    } else if (m.status === "removed") {
+      removed.push(a.elementRef);
+    } else if (m.status === "ambiguous") {
+      ambiguous.push(a.elementRef);
+    }
+    // `abstained` is intentionally neither matched nor asserted removed — it is
+    // an explicit non-answer (PRD §6.2), surfaced only in the counts below.
+  }
+
+  const added = addedTargetIds(target, matches).map((id) => targetByNode.get(id)!.elementRef).sort();
+  matched.sort((x, y) => (x.baseRef < y.baseRef ? -1 : x.baseRef > y.baseRef ? 1 : 0));
+  removed.sort();
+  ambiguous.sort();
+  const abstainedCount = matches.filter((m) => m.status === "abstained").length;
+
+  const keptMatched = matched.slice(0, budget.maxNodes);
+  const omittedNodes = matched.length - keptMatched.length;
+
+  const text = canonicalize({
+    view: "diff",
+    policyVersion: VIEW_POLICY_VERSION,
+    comparison,
+    matched: keptMatched,
+    added,
+    removed,
+    ambiguous,
+    abstainedCount,
+  });
+  return {
+    text,
+    meta: {
+      view: "diff",
+      policyVersion: VIEW_POLICY_VERSION,
+      truncated: omittedNodes > 0,
+      omitted: { nodes: omittedNodes, edges: 0 },
+      tokenEstimate: tokenEstimate(text),
+      refsResolved: sortedIds(keptMatched.map((e) => e.baseRef)),
       refsUnresolved: [],
     },
   };

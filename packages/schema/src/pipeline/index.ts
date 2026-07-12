@@ -43,8 +43,11 @@ export {
   renderActionMapView,
   renderPatchContextView,
   renderViolationsView,
+  renderDiffView,
   VIEW_POLICY_VERSION,
 } from "./views.js";
+export { matchNodes, addedTargetIds, LINEAGE_MATCH_VERSION, DEFAULT_LINEAGE_THRESHOLDS } from "./lineage.js";
+export type { LineageThresholds, MatchOptions } from "./lineage.js";
 export type {
   GraphView,
   RenderedView,
@@ -62,6 +65,9 @@ export type {
   ViolationsOptions,
   ViolationEntry,
   SuppressedViolation,
+  DiffComparison,
+  DiffOptions,
+  MatchedDiffEntry,
 } from "./views.js";
 export type { RelationResult, RelationOptions } from "./relations.js";
 export { projectDna, DNA_MATCH_VERSION, DEFAULT_TOLERANCES } from "./dna-match.js";
