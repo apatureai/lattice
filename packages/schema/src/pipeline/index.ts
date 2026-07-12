@@ -42,6 +42,7 @@ export {
   renderSummaryView,
   renderActionMapView,
   renderPatchContextView,
+  renderViolationsView,
   VIEW_POLICY_VERSION,
 } from "./views.js";
 export type {
@@ -58,6 +59,9 @@ export type {
   PatchContextEntry,
   PatchSelectorHint,
   ComponentFamilyCandidate,
+  ViolationsOptions,
+  ViolationEntry,
+  SuppressedViolation,
 } from "./views.js";
 export type { RelationResult, RelationOptions } from "./relations.js";
 export { projectDna, DNA_MATCH_VERSION, DEFAULT_TOLERANCES } from "./dna-match.js";

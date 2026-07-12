@@ -14,7 +14,8 @@
  */
 
 import { canonicalize } from "../canonical.js";
-import type { LocatorHint, Rect, SensitivityLabel, UIGraphEdge, UIGraphNode, UIRegion, Viewport } from "../types.js";
+import type { LocatorHint, Rect, SensitivityLabel, UIDNAMatch, UIDNAProjection, UIGraphEdge, UIGraphNode, UIRegion, Viewport } from "../types.js";
+import { normalizeCssLength } from "./css.js";
 import type { FusedNode } from "./fuse.js";
 import type { NodeHierarchy } from "./hierarchy.js";
 
@@ -35,7 +36,7 @@ export interface ViewBudget {
 }
 
 export interface ViewMeta {
-  readonly view: "focus" | "summary" | "actionMap" | "patchContext";
+  readonly view: "focus" | "summary" | "actionMap" | "patchContext" | "violations";
   readonly policyVersion: typeof VIEW_POLICY_VERSION;
   /** True when the budget cut anything; the counts say exactly how much. */
   readonly truncated: boolean;
@@ -514,6 +515,166 @@ export function renderPatchContextView(
       tokenEstimate: tokenEstimate(text),
       refsResolved: kept,
       refsUnresolved,
+    },
+  };
+}
+
+// --- violations (ranked DNA drift; authoritative vs advisory) ------------------
+
+export interface ViolationsOptions {
+  /** Max violation entries across both groups; beyond it the view truncates. */
+  readonly budget?: ViewBudget;
+}
+
+/** One DNA-drift finding for an element (never a canonical assignment). */
+export interface ViolationEntry {
+  readonly ref: string;
+  readonly category: UIDNAMatch["category"];
+  readonly observed?: string | number;
+  readonly canonical?: string | number;
+  readonly delta?: number;
+  readonly method: UIDNAMatch["method"];
+  readonly confidence: number;
+  /** Deterministic [0,1] severity: confidence-weighted, larger scale deviation ranks higher. */
+  readonly severity: number;
+  /** What evidence would confirm/refute this finding (§6.4 evidence requirement). */
+  readonly evidenceRequirement: string;
+}
+
+/** A drift suppressed by an approved exception — surfaced, never silently dropped. */
+export interface SuppressedViolation {
+  readonly ref: string;
+  readonly category: UIDNAMatch["category"];
+  readonly observed?: string | number;
+}
+
+function severityOf(m: UIDNAMatch): number {
+  const conf = Math.max(0, Math.min(1, m.confidence));
+  if (m.category === "scale" && typeof m.delta === "number" && m.canonical !== undefined) {
+    const canonicalPx = normalizeCssLength(m.canonical).valueCssPx;
+    const rel = canonicalPx !== null && canonicalPx > 0 ? Math.min(1, m.delta / canonicalPx) : 1;
+    return Math.round(conf * (0.5 + 0.5 * rel) * 1e6) / 1e6;
+  }
+  return Math.round(conf * 1e6) / 1e6;
+}
+
+function evidenceRequirementFor(category: UIDNAMatch["category"]): string {
+  return category === "scale"
+    ? "computed length at the element confirms the off-scale value"
+    : "computed style + a rendered pixel sample at the element confirm the off-palette value";
+}
+
+function violationEntry(ref: string, m: UIDNAMatch): ViolationEntry {
+  return {
+    ref,
+    category: m.category,
+    ...(m.observed !== undefined ? { observed: m.observed } : {}),
+    ...(m.canonical !== undefined ? { canonical: m.canonical } : {}),
+    ...(m.delta !== undefined ? { delta: m.delta } : {}),
+    method: m.method,
+    confidence: m.confidence,
+    severity: severityOf(m),
+    evidenceRequirement: evidenceRequirementFor(m.category),
+  };
+}
+
+/** Deterministic rank: severity desc, then ref, category, observed for stability. */
+function rankViolations(entries: ViolationEntry[]): ViolationEntry[] {
+  return [...entries].sort(
+    (a, b) =>
+      b.severity - a.severity ||
+      (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0) ||
+      (a.category < b.category ? -1 : a.category > b.category ? 1 : 0) ||
+      String(a.observed).localeCompare(String(b.observed)),
+  );
+}
+
+/**
+ * Render the `violations` view (#12, PRD §6.4, TRD §10.2): the ranked DNA drift
+ * an element carries, with AUTHORITATIVE deterministic drift separated from
+ * ADVISORY matches. A drift is authoritative only when the projection was
+ * authoritative-capable (approved DNA in a production build) AND the match was
+ * deterministic (not an embedding candidate); everything else is advisory.
+ *
+ * Consumes the `UIDNAMatch` facts `projectDna` (#11) stamps on each node —
+ * `drift` entries are findings, `excepted` are surfaced as suppressed, `exact`/
+ * `within_tolerance` are conformant and omitted. Each finding carries
+ * observed/canonical/delta/ref + an evidence requirement, ranked by severity,
+ * budgeted with truncation. No DNA projected ⇒ a fail-closed empty view (no
+ * drift claims without an authority). Deterministic: same input ⇒ byte-identical.
+ */
+export function renderViolationsView(
+  nodes: readonly UIGraphNode[],
+  projection: UIDNAProjection | undefined,
+  options: ViolationsOptions = {},
+): RenderedView {
+  const budget = options.budget ?? DEFAULT_BUDGET;
+
+  if (projection === undefined) {
+    return {
+      text: "",
+      meta: {
+        view: "violations",
+        policyVersion: VIEW_POLICY_VERSION,
+        truncated: false,
+        omitted: { nodes: 0, edges: 0 },
+        tokenEstimate: 0,
+        refsResolved: [],
+        refsUnresolved: [],
+        emptyReason: "no UI-DNA projected onto this snapshot; refusing to claim drift without an authority",
+      },
+    };
+  }
+
+  const authoritativeContext = projection.state === "approved" && projection.useMode === "production";
+  const authoritative: ViolationEntry[] = [];
+  const advisory: ViolationEntry[] = [];
+  const suppressed: SuppressedViolation[] = [];
+
+  for (const node of nodes) {
+    for (const m of node.dnaMatches) {
+      if (m.status === "excepted") {
+        suppressed.push({ ref: node.elementRef, category: m.category, ...(m.observed !== undefined ? { observed: m.observed } : {}) });
+        continue;
+      }
+      if (m.status !== "drift") continue; // exact / within_tolerance are conformant
+      const entry = violationEntry(node.elementRef, m);
+      const isAuthoritative = authoritativeContext && m.method !== "embedding_candidate";
+      (isAuthoritative ? authoritative : advisory).push(entry);
+    }
+  }
+
+  const rankedAuthoritative = rankViolations(authoritative);
+  const rankedAdvisory = rankViolations(advisory);
+  suppressed.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0) || a.category.localeCompare(b.category));
+
+  // Budget: authoritative findings are kept first, advisory fills the remainder.
+  const keptAuthoritative = rankedAuthoritative.slice(0, budget.maxNodes);
+  const remaining = Math.max(0, budget.maxNodes - keptAuthoritative.length);
+  const keptAdvisory = rankedAdvisory.slice(0, remaining);
+  const omittedNodes =
+    rankedAuthoritative.length - keptAuthoritative.length + (rankedAdvisory.length - keptAdvisory.length);
+
+  const refsResolved = sortedIds(new Set([...keptAuthoritative, ...keptAdvisory].map((e) => e.ref)));
+
+  const text = canonicalize({
+    view: "violations",
+    policyVersion: VIEW_POLICY_VERSION,
+    authoritativeContext,
+    authoritative: keptAuthoritative,
+    advisory: keptAdvisory,
+    suppressed,
+  });
+  return {
+    text,
+    meta: {
+      view: "violations",
+      policyVersion: VIEW_POLICY_VERSION,
+      truncated: omittedNodes > 0,
+      omitted: { nodes: omittedNodes, edges: 0 },
+      tokenEstimate: tokenEstimate(text),
+      refsResolved,
+      refsUnresolved: [],
     },
   };
 }
