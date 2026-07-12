@@ -14,7 +14,7 @@
  */
 
 import { canonicalize } from "../canonical.js";
-import type { Rect, UIGraphEdge, UIRegion } from "../types.js";
+import type { LocatorHint, Rect, SensitivityLabel, UIGraphEdge, UIGraphNode, UIRegion, Viewport } from "../types.js";
 import type { FusedNode } from "./fuse.js";
 import type { NodeHierarchy } from "./hierarchy.js";
 
@@ -35,7 +35,7 @@ export interface ViewBudget {
 }
 
 export interface ViewMeta {
-  readonly view: "focus" | "summary" | "actionMap";
+  readonly view: "focus" | "summary" | "actionMap" | "patchContext";
   readonly policyVersion: typeof VIEW_POLICY_VERSION;
   /** True when the budget cut anything; the counts say exactly how much. */
   readonly truncated: boolean;
@@ -317,6 +317,203 @@ export function renderActionMapView(graph: GraphView, options: ActionMapOptions 
       tokenEstimate: tokenEstimate(text),
       refsResolved: kept.map((e) => e.ref),
       refsUnresolved: [],
+    },
+  };
+}
+
+// --- patchContext (repair facts for a coding agent; NEVER a patch) ------------
+
+export interface PatchContextOptions {
+  /** Max ref entries; beyond it the view truncates (never errors). */
+  readonly budget?: ViewBudget;
+  /** Max durable selector hints listed per entry. */
+  readonly maxHintsPerRef?: number;
+}
+
+/** A durable selector hint an agent can use to locate the element in source. */
+export interface PatchSelectorHint {
+  readonly kind: LocatorHint["kind"];
+  readonly value: string;
+  readonly scope: LocatorHint["scope"];
+  readonly uniqueness: number;
+  readonly stability: number;
+  readonly confidence: number;
+}
+
+/** The canonical component family an element likely belongs to (from DNA matches, #11). */
+export interface ComponentFamilyCandidate {
+  readonly ref: string;
+  readonly method: string;
+  readonly confidence: number;
+}
+
+/** Repair facts for one element ref — observed context only, never a generated change. */
+export interface PatchContextEntry {
+  readonly ref: string;
+  readonly role?: string;
+  readonly name?: string;
+  readonly rect?: Rect;
+  /** Observed style/token facts (colors, type, spacing, radius). */
+  readonly style?: UIGraphNode["style"];
+  /** Durable selector hints (capture-session-scoped locators excluded). */
+  readonly selectorHints: readonly PatchSelectorHint[];
+  readonly selectorHintsTruncated: boolean;
+  /** Canonical component-family candidate, if DNA projected one. Absent ⇒ none (never guessed). */
+  readonly componentFamilyCandidate?: ComponentFamilyCandidate;
+  /** Evidence pointers (artifact refs), never raw source ids or content. */
+  readonly evidenceRefs: readonly string[];
+  readonly sensitivity: readonly SensitivityLabel[];
+  /** True when the element carries a withholding sensitivity label; content fields are dropped. */
+  readonly redacted: boolean;
+}
+
+const DEFAULT_MAX_HINTS_PER_REF = 8;
+
+/** Sensitivity labels whose presence withholds a node's content (includeSensitive: false). */
+const SENSITIVE_WITHHOLD = new Set<SensitivityLabel>(["pii", "secret", "credential", "redacted"]);
+
+function isWithheld(labels: readonly SensitivityLabel[]): boolean {
+  return labels.some((l) => SENSITIVE_WITHHOLD.has(l));
+}
+
+function selectorHintsOf(node: UIGraphNode, max: number): { hints: PatchSelectorHint[]; truncated: boolean } {
+  // Durable only: capture-session locators are ephemeral and cannot repair source.
+  const durable = node.locatorHints.filter((h) => h.scope !== "capture_session");
+  durable.sort(
+    (a, b) => b.stability - a.stability || b.uniqueness - a.uniqueness || (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0),
+  );
+  const kept = durable.slice(0, max).map((h) => ({
+    kind: h.kind,
+    value: h.value,
+    scope: h.scope,
+    uniqueness: h.uniqueness,
+    stability: h.stability,
+    confidence: h.confidence,
+  }));
+  return { hints: kept, truncated: durable.length > kept.length };
+}
+
+function componentFamilyOf(node: UIGraphNode): ComponentFamilyCandidate | undefined {
+  // The canonical family a real DNA match names (drift still identifies the family;
+  // an `unknown` match names nothing). Absent when DNA projected no family (#11).
+  const match = node.dnaMatches.find(
+    (m) => m.category === "component_family" && m.status !== "unknown" && m.canonical !== undefined,
+  );
+  return match ? { ref: String(match.canonical), method: match.method, confidence: match.confidence } : undefined;
+}
+
+function evidenceRefsOf(node: UIGraphNode): string[] {
+  // Evidence POINTERS only (artifactRef); raw source ids / content never leave.
+  return [...new Set(node.evidence.map((e) => e.artifactRef).filter((r): r is string => r !== undefined))].sort();
+}
+
+function definedStyle(style: UIGraphNode["style"]): UIGraphNode["style"] | undefined {
+  const entries = Object.entries(style).filter(([, v]) => v !== undefined);
+  return entries.length > 0 ? (Object.fromEntries(entries) as UIGraphNode["style"]) : undefined;
+}
+
+function patchEntry(node: UIGraphNode, maxHints: number): PatchContextEntry {
+  const rect = node.geometry.normalizedViewportRect ?? node.geometry.viewportRect;
+  const redacted = isWithheld(node.sensitivity);
+  if (redacted) {
+    // Fail-closed: structural facts only, no name/text/style/selectors/evidence.
+    return {
+      ref: node.elementRef,
+      ...(node.semantics.role !== undefined ? { role: node.semantics.role } : {}),
+      ...(rect !== undefined ? { rect } : {}),
+      selectorHints: [],
+      selectorHintsTruncated: false,
+      evidenceRefs: [],
+      sensitivity: [...node.sensitivity].sort(),
+      redacted: true,
+    };
+  }
+  const { hints, truncated } = selectorHintsOf(node, maxHints);
+  const style = definedStyle(node.style);
+  const family = componentFamilyOf(node);
+  return {
+    ref: node.elementRef,
+    ...(node.semantics.role !== undefined ? { role: node.semantics.role } : {}),
+    ...(node.semantics.name !== undefined ? { name: node.semantics.name } : {}),
+    ...(rect !== undefined ? { rect } : {}),
+    ...(style !== undefined ? { style } : {}),
+    selectorHints: hints,
+    selectorHintsTruncated: truncated,
+    ...(family !== undefined ? { componentFamilyCandidate: family } : {}),
+    evidenceRefs: evidenceRefsOf(node),
+    sensitivity: [...node.sensitivity].sort(),
+    redacted: false,
+  };
+}
+
+/** The page context a patch applies within (route + viewport), from UIGraphSourceMetadata. */
+export interface PatchContextSource {
+  readonly route: string;
+  readonly viewport: Viewport;
+}
+
+/**
+ * Render the `patchContext` view (§12, PRD §6.3/§6.4, TRD §10.2): the repair
+ * FACTS a coding agent needs to fix an element — ref, route, viewport,
+ * component-family candidate, observed style/token facts, durable selector
+ * hints, and evidence pointers — for one or more refs.
+ *
+ * It NEVER emits a generated source patch or any model-authored content: UI
+ * Graph plans/perceives, it does not modify code (PRD §5.2). Requires ≥1 ref to
+ * resolve, else a fail-closed empty view naming the unresolved refs. Sensitive
+ * elements (pii/secret/credential/redacted) are withheld to structural facts
+ * only (`includeSensitive: false`). Deterministic: same snapshot ⇒ byte-identical.
+ */
+export function renderPatchContextView(
+  nodes: readonly UIGraphNode[],
+  refs: readonly string[],
+  source: PatchContextSource,
+  options: PatchContextOptions = {},
+): RenderedView {
+  const budget = options.budget ?? DEFAULT_BUDGET;
+  const maxHints = options.maxHintsPerRef ?? DEFAULT_MAX_HINTS_PER_REF;
+  const byRef = new Map(nodes.map((n) => [n.elementRef, n]));
+  const refsResolved = sortedIds(refs.filter((r) => byRef.has(r)));
+  const refsUnresolved = sortedIds(refs.filter((r) => !byRef.has(r)));
+
+  if (refsResolved.length === 0) {
+    return {
+      text: "",
+      meta: {
+        view: "patchContext",
+        policyVersion: VIEW_POLICY_VERSION,
+        truncated: false,
+        omitted: { nodes: 0, edges: 0 },
+        tokenEstimate: 0,
+        refsResolved: [],
+        refsUnresolved,
+        emptyReason: "patchContext requires at least one resolvable ref; refusing to guess repair context",
+      },
+    };
+  }
+
+  const kept = refsResolved.slice(0, budget.maxNodes);
+  const omittedNodes = refsResolved.length - kept.length;
+  const entries = kept.map((ref) => patchEntry(byRef.get(ref)!, maxHints));
+
+  const text = canonicalize({
+    view: "patchContext",
+    policyVersion: VIEW_POLICY_VERSION,
+    advisory: true,
+    route: source.route,
+    viewport: source.viewport,
+    entries,
+  });
+  return {
+    text,
+    meta: {
+      view: "patchContext",
+      policyVersion: VIEW_POLICY_VERSION,
+      truncated: omittedNodes > 0,
+      omitted: { nodes: omittedNodes, edges: 0 },
+      tokenEstimate: tokenEstimate(text),
+      refsResolved: kept,
+      refsUnresolved,
     },
   };
 }
