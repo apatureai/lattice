@@ -60,6 +60,13 @@ export type {
   ComponentFamilyCandidate,
 } from "./views.js";
 export type { RelationResult, RelationOptions } from "./relations.js";
+export { projectDna, DNA_MATCH_VERSION, DEFAULT_TOLERANCES } from "./dna-match.js";
+export type {
+  DnaMatchTolerances,
+  DnaExceptionRule,
+  DnaProjectionInput,
+  DnaProjectionResult,
+} from "./dna-match.js";
 
 export type ValidateAndNormalizeResult =
   | { ok: true; normalized: NormalizedCapture }
