@@ -1,0 +1,20 @@
+{
+  "descriptorVersion": "ui-graph-capability/1",
+  "surface": "ui-graph",
+  "exposure": "library_in_judgment_engine",
+  "capabilityClass": "representation",
+  "operations": ["buildUiGraph", "queryUiGraph", "diffUiGraphs", "applyUiGraphDelta"],
+  "viewKinds": ["summary", "violations", "focus", "actionMap", "patchContext", "diff"],
+  "actionMapIsPerceptionOnly": true,
+  "produced": {
+    "snapshot": { "supported": ["1"], "onePrior": [] },
+    "view": { "supported": ["1"], "onePrior": [] },
+    "delta": { "supported": ["1"], "onePrior": [] }
+  },
+  "consumed": {
+    "captureBundle": { "supported": ["1"], "onePrior": [] },
+    "dnaProjection": { "supported": ["1"], "onePrior": [] }
+  },
+  "excludes": ["model_calls", "browser_actions", "capture", "delivery", "action_execution"],
+  "negotiation": { "extensionsNamespacePrefix": "x-uigraph-", "unknownEnumPolicy": "reject" }
+}

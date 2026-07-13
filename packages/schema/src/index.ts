@@ -13,5 +13,6 @@ export * from "./api.js";
 export * from "./canonical.js";
 export * from "./readprofile.js";
 export * from "./adapter.js";
+export * from "./capability-descriptor.js";
 export * from "./pipeline/index.js";
 export * from "./eval/index.js";
