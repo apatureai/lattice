@@ -6,7 +6,7 @@
   "description": "Apature UI Graph - deterministic, UI-DNA-aware visual scene graph for agents",
   "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=24 <25"
   },
   "scripts": {
     "build": "tsc -b",
