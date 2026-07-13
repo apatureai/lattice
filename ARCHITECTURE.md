@@ -202,7 +202,7 @@ No source globally outranks another.
 ```mermaid
 flowchart LR
   A["Source observations"] --> B["Deterministic nodeId"]
-  B --> C["Short elementRef scoped to snapshot"]
+  B --> C["Acyclic ref-scope digest → short elementRef"]
   C --> D["Consumer finding or pointer"]
   D --> E{"Same snapshot?"}
   E -- "yes" --> F["Resolve node, geometry, evidence"]

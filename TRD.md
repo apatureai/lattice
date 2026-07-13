@@ -510,8 +510,17 @@ It must not include mutable prompt text or array position alone.
 Format:
 
 ```text
-ug:<snapshot-prefix>:<node-ordinal>
+ug:<ref-scope-prefix>:<node-ordinal>
 ```
+
+**Pre-R0 identity correction (July 12, 2026).** `ref-scope-prefix` is the first
+eight hexadecimal characters of a SHA-256 digest over the canonical semantic
+snapshot with `snapshotId`, `contentHash`, and every `elementRef` omitted. Nodes
+are sorted deterministically before ordinals are assigned. The final
+`contentHash` is computed only after refs are assigned and therefore covers the
+refs without requiring a circular hash fixed point. The short prefix is a prompt
+convenience, not authority: resolution always verifies the exact
+`(snapshotId, contentHash)` tuple and recomputes the full ref-scope digest.
 
 Requirements:
 
@@ -685,10 +694,11 @@ Spatial candidate generation must use a spatial index or sweep-line equivalent, 
 
 - Sort nodes by deterministic document/frame/reading order before assigning short refs.
 - Sort all id-addressed collections by ID for canonical serialization.
+- Compute the ref-scope digest with identity fields and refs omitted; assign refs from that digest plus the sorted node ordinal.
 - Canonicalize semantic JSON using RFC 8785-compatible rules.
-- Compute SHA-256 content hash.
+- Compute the final SHA-256 content hash including the assigned refs.
 - Derive `snapshotId` from hash plus schema major.
-- Revalidate against JSON Schema after hashing metadata is inserted.
+- Recompute and verify the ref-scope/ref/hash/ID invariants, then revalidate against JSON Schema after hashing metadata is inserted.
 
 ## 9. Canonical Serialization and Versioning
 
@@ -727,6 +737,11 @@ Major bump required for:
 - changing coordinate conventions;
 - changing ref scope;
 - changing edge direction semantics.
+
+The July 12, 2026 ref-scope correction remains schema `1.0.0` because R0 has not
+frozen or promoted a consumer fixture and the previous circular rule could not
+produce a conforming snapshot. Once R0 freezes this corrected identity contract,
+any subsequent hash or ref-scope semantic change requires a new major.
 
 Reader compatibility:
 

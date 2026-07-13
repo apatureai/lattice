@@ -3,7 +3,9 @@ import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import {
   canonicalize,
+  assertSnapshotIdentity,
   computeContentHash,
+  computeRefScopeDigest,
   deriveSnapshotId,
   makeElementRef,
   sealSnapshot,
@@ -11,6 +13,7 @@ import {
   validateSnapshot,
   formatErrors,
   type UIGraphSnapshot,
+  type UIGraphSnapshotDraft,
 } from "@apature/ui-graph";
 
 const minimalSnapshot = JSON.parse(
@@ -19,6 +22,19 @@ const minimalSnapshot = JSON.parse(
     "utf8",
   ),
 ) as UIGraphSnapshot;
+
+function refFreeDraft(snapshot = minimalSnapshot): UIGraphSnapshotDraft {
+  const {
+    snapshotId: _snapshotId,
+    contentHash: _contentHash,
+    nodes,
+    ...semantic
+  } = structuredClone(snapshot);
+  return {
+    ...semantic,
+    nodes: nodes.map(({ elementRef: _elementRef, ...node }) => node),
+  };
+}
 
 describe("RFC 8785 canonicalization", () => {
   it("sorts object keys by UTF-16 code unit", () => {
@@ -82,8 +98,8 @@ describe("content-addressed IDs (TRD §6)", () => {
   });
 
   it("makes snapshot-scoped element refs", () => {
-    const h = computeContentHash(minimalSnapshot);
-    expect(makeElementRef(h, 0)).toMatch(/^ug:[a-f0-9]{8}:0$/);
+    const scope = computeRefScopeDigest(refFreeDraft());
+    expect(makeElementRef(scope, 0)).toMatch(/^ug:[a-f0-9]{8}:0$/);
   });
 
   it("sha256 returns the prefixed lowercase hex digest", () => {
@@ -94,18 +110,60 @@ describe("content-addressed IDs (TRD §6)", () => {
 });
 
 describe("sealSnapshot", () => {
-  it("assigns a stable content hash and snapshotId and revalidates against the schema", () => {
-    const draft = structuredClone(minimalSnapshot);
-    draft.contentHash =
-      "sha256:1111111111111111111111111111111111111111111111111111111111111111";
-    draft.snapshotId = "ugs_1_111111111111";
+  it("keeps the normative example identity-valid", () => {
+    expect(() => assertSnapshotIdentity(minimalSnapshot)).not.toThrow();
+    expect(sealSnapshot(minimalSnapshot)).toEqual(minimalSnapshot);
+  });
+
+  it("assigns refs, content hash, and snapshotId from a ref-free draft", () => {
+    const draft = refFreeDraft();
     const sealed = sealSnapshot(draft);
-    // Idempotent: re-sealing a sealed snapshot yields the same hash/id.
     const resealed = sealSnapshot(sealed);
+    expect(sealed.nodes[0]?.elementRef).toMatch(/^ug:[a-f0-9]{8}:0$/);
     expect(resealed.contentHash).toBe(sealed.contentHash);
     expect(resealed.snapshotId).toBe(sealed.snapshotId);
-    // The sealed snapshot still validates against the normative schema.
+    expect(resealed).toEqual(sealed);
+    expect(() => assertSnapshotIdentity(sealed)).not.toThrow();
     const r = validateSnapshot(sealed);
     expect(r.valid, r.valid ? "" : formatErrors(r.errors)).toBe(true);
+  });
+
+  it("is byte-stable when ref-free nodes arrive in a different order", () => {
+    const first = refFreeDraft();
+    first.nodes.push({ ...structuredClone(first.nodes[0]!), nodeId: "n_second" });
+    const reordered = structuredClone(first);
+    reordered.nodes.reverse();
+    expect(canonicalize(sealSnapshot(reordered))).toBe(canonicalize(sealSnapshot(first)));
+  });
+
+  it("changes to semantic input produce a new self-consistent tuple", () => {
+    const original = sealSnapshot(refFreeDraft());
+    const changedDraft = refFreeDraft();
+    changedDraft.source.route = "/changed";
+    const changed = sealSnapshot(changedDraft);
+    expect(changed.contentHash).not.toBe(original.contentHash);
+    expect(changed.snapshotId).not.toBe(original.snapshotId);
+    expect(changed.nodes[0]?.elementRef).not.toBe(original.nodes[0]?.elementRef);
+    expect(() => assertSnapshotIdentity(changed)).not.toThrow();
+  });
+
+  it.each([
+    ["copied foreign ref", (snapshot: UIGraphSnapshot) => { snapshot.nodes[0]!.elementRef = "ug:deadbeef:0"; }],
+    ["duplicate ordinal", (snapshot: UIGraphSnapshot) => {
+      snapshot.nodes.push({ ...structuredClone(snapshot.nodes[0]!), nodeId: "n_second" });
+    }],
+    ["stale content hash", (snapshot: UIGraphSnapshot) => { snapshot.source.route = "/mutated"; }],
+    ["wrong snapshot id", (snapshot: UIGraphSnapshot) => { snapshot.snapshotId = "ugs_1_ffffffffffff"; }],
+  ])("rejects %s", (_label, corrupt) => {
+    const sealed = sealSnapshot(refFreeDraft());
+    corrupt(sealed);
+    expect(() => assertSnapshotIdentity(sealed)).toThrow();
+    expect(() => sealSnapshot(sealed)).toThrow();
+  });
+
+  it("rejects caller-supplied placeholder identity instead of preserving it", () => {
+    const stale = structuredClone(minimalSnapshot);
+    stale.nodes[0]!.elementRef = "ug:aaaaaaaa:0";
+    expect(() => sealSnapshot(stale)).toThrow(/inconsistent elementRef/);
   });
 });

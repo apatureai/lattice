@@ -7,19 +7,26 @@
  *  - `canonicalize` emits RFC 8785 (JCS) canonical JSON: UTF-8, lexicographic
  *    key ordering by UTF-16 code unit, ECMAScript `Number` serialization, and
  *    rejection of NaN/Infinity (TRD §9.1).
+ *  - `computeRefScopeDigest` hashes the semantic snapshot with identity fields
+ *    and element refs removed, breaking the ref/hash cycle (TRD §6.2).
  *  - `computeContentHash` hashes the snapshot with `snapshotId` and
- *    `contentHash` removed (TRD §9.2).
+ *    `contentHash` removed, after refs have been assigned (TRD §9.2).
  *  - `deriveSnapshotId` derives `ugs_1_*` from the content hash + schema major
  *    (TRD §6.1, §8.8).
- *  - `sealSnapshot` assigns both and is deterministic for byte-identical
- *    semantic input (TRD §15.2, §19).
+ *  - `sealSnapshot` assigns refs and both snapshot identity fields, then
+ *    validates their invariant and the normative schema (TRD §8.8, §19).
  *
  * Determinism contract: this module reads no wall-clock, randomness, or
  * locale-dependent formatting (enforced by the capability guard, issue #22).
  */
 
 import { createHash } from "node:crypto";
-import type { UIGraphSnapshot } from "./types.js";
+import type {
+  UIGraphNode,
+  UIGraphSnapshot,
+  UIGraphSnapshotDraft,
+} from "./types.js";
+import { formatErrors, validateSnapshot } from "./validate.js";
 
 /** A JSON value with no `undefined`; canonicalization rejects non-finite numbers. */
 type JsonValue =
@@ -155,6 +162,45 @@ export function sha256(input: string): string {
   return "sha256:" + createHash("sha256").update(input, "utf8").digest("hex");
 }
 
+type SnapshotInput = UIGraphSnapshot | UIGraphSnapshotDraft;
+
+/** Sort top-level id-addressed collections before assigning identity. */
+function canonicalCollectionOrder<T extends SnapshotInput>(snapshot: T): T {
+  return {
+    ...snapshot,
+    coordinateSpaces: [...snapshot.coordinateSpaces].sort((a, b) =>
+      compareCodeUnits(a.coordinateSpaceId, b.coordinateSpaceId),
+    ),
+    nodes: [...snapshot.nodes].sort((a, b) => compareCodeUnits(a.nodeId, b.nodeId)),
+    edges: [...snapshot.edges].sort((a, b) => compareCodeUnits(a.edgeId, b.edgeId)),
+    regions: [...snapshot.regions].sort((a, b) =>
+      compareCodeUnits(a.regionId, b.regionId),
+    ),
+  } as T;
+}
+
+/**
+ * Acyclic scope digest for snapshot-local element refs (TRD §6.2).
+ *
+ * The projection excludes `snapshotId`, `contentHash`, and every `elementRef`.
+ * Refs are derived from this digest, then included in the final content hash.
+ * This is deliberately distinct from the final snapshot hash: deriving refs
+ * from a hash that itself includes refs would require an accidental fixed point.
+ */
+export function computeRefScopeDigest(snapshot: SnapshotInput): string {
+  const ordered = canonicalCollectionOrder(snapshot);
+  const {
+    contentHash: _contentHash,
+    snapshotId: _snapshotId,
+    nodes,
+    ...semantic
+  } = ordered;
+  const refFreeNodes = nodes.map(({ elementRef: _elementRef, ...node }) => node);
+  return sha256(
+    canonicalize({ ...semantic, nodes: refFreeNodes } as unknown as JsonValue),
+  );
+}
+
 /**
  * Content hash covering all semantic snapshot fields except `contentHash` and
  * `snapshotId` (TRD §9.2). The two excluded fields are stripped before
@@ -162,7 +208,8 @@ export function sha256(input: string): string {
  * already present.
  */
 export function computeContentHash(snapshot: UIGraphSnapshot): string {
-  const { contentHash: _c, snapshotId: _s, ...semantic } = snapshot;
+  const ordered = canonicalCollectionOrder(snapshot);
+  const { contentHash: _c, snapshotId: _s, ...semantic } = ordered;
   return sha256(canonicalize(semantic as unknown as JsonValue));
 }
 
@@ -184,24 +231,105 @@ export function deriveSnapshotId(snapshot: UIGraphSnapshot, contentHash: string)
 
 /**
  * Element ref for a node ordinal within a snapshot (TRD §6.2):
- * `ug:<snapshot-prefix>:<node-ordinal>`. The prefix is the first 8 hex chars of
- * the content hash — enough to scope refs to one snapshot and reject foreign
- * refs, with no semantic promise in the ordinal.
+ * `ug:<ref-scope-prefix>:<node-ordinal>`. The prefix is the first 8 hex chars of
+ * the acyclic ref-scope digest. Authorization and stale-ref checks always bind
+ * the ref to the full `(snapshotId, contentHash)` tuple; the short prefix alone
+ * is not global authority.
  */
-export function makeElementRef(contentHash: string, ordinal: number): string {
-  const hex = contentHash.replace(/^sha256:/, "");
+export function makeElementRef(refScopeDigest: string, ordinal: number): string {
+  if (!/^sha256:[a-f0-9]{64}$/.test(refScopeDigest)) {
+    throw new Error("makeElementRef: ref-scope digest must be a sha256 digest");
+  }
+  if (!Number.isSafeInteger(ordinal) || ordinal < 0) {
+    throw new Error("makeElementRef: ordinal must be a non-negative safe integer");
+  }
+  const hex = refScopeDigest.slice("sha256:".length);
   return `ug:${hex.slice(0, 8)}:${ordinal}`;
 }
 
+function assertUniqueNodeIds(nodes: SnapshotInput["nodes"]): void {
+  const ids = new Set<string>();
+  for (const node of nodes) {
+    if (ids.has(node.nodeId)) {
+      throw new Error(`sealSnapshot: duplicate nodeId ${node.nodeId}`);
+    }
+    ids.add(node.nodeId);
+  }
+}
+
+function assignElementRefs(snapshot: SnapshotInput, refScopeDigest: string): UIGraphNode[] {
+  assertUniqueNodeIds(snapshot.nodes);
+  return snapshot.nodes.map((node, ordinal) => {
+    const expected = makeElementRef(refScopeDigest, ordinal);
+    if (node.elementRef !== undefined && node.elementRef !== expected) {
+      throw new Error(
+        `sealSnapshot: inconsistent elementRef for ${node.nodeId}; expected ${expected}`,
+      );
+    }
+    return { ...node, elementRef: expected } as UIGraphNode;
+  });
+}
+
 /**
- * Assign `contentHash` then `snapshotId` to a snapshot and return the sealed,
- * immutable copy. Deterministic for byte-identical semantic input.
- *
- * Note: `snapshotId` is intentionally excluded from the hash, so assigning it
- * after the hash does not change the hash (TRD §9.2).
+ * Assert that refs, hash, and snapshot ID form one self-consistent identity.
+ * Throws on stale, foreign, copied, duplicate, or otherwise corrupt refs.
  */
-export function sealSnapshot(snapshot: UIGraphSnapshot): UIGraphSnapshot {
-  const contentHash = computeContentHash(snapshot);
-  const snapshotId = deriveSnapshotId(snapshot, contentHash);
-  return { ...snapshot, contentHash, snapshotId };
+export function assertSnapshotIdentity(snapshot: UIGraphSnapshot): void {
+  const ordered = canonicalCollectionOrder(snapshot);
+  assertUniqueNodeIds(ordered.nodes);
+  const scope = computeRefScopeDigest(ordered);
+  const refs = new Set<string>();
+  for (const [ordinal, node] of ordered.nodes.entries()) {
+    const expected = makeElementRef(scope, ordinal);
+    if (node.elementRef !== expected) {
+      throw new Error(
+        `snapshot identity: ${node.nodeId} has ${node.elementRef}; expected ${expected}`,
+      );
+    }
+    if (refs.has(node.elementRef)) {
+      throw new Error(`snapshot identity: duplicate elementRef ${node.elementRef}`);
+    }
+    refs.add(node.elementRef);
+  }
+
+  const expectedHash = computeContentHash(ordered);
+  if (snapshot.contentHash !== expectedHash) {
+    throw new Error(
+      `snapshot identity: contentHash mismatch; expected ${expectedHash}`,
+    );
+  }
+  const expectedId = deriveSnapshotId(ordered, expectedHash);
+  if (snapshot.snapshotId !== expectedId) {
+    throw new Error(`snapshot identity: snapshotId mismatch; expected ${expectedId}`);
+  }
+}
+
+/**
+ * Assign refs, `contentHash`, and `snapshotId`, then return a validated sealed
+ * copy. A caller may omit all identity fields or pass an already sealed
+ * snapshot. Supplied fields that do not match the recomputed identity fail
+ * closed instead of silently surviving sealing.
+ */
+export function sealSnapshot(snapshot: SnapshotInput): UIGraphSnapshot {
+  const ordered = canonicalCollectionOrder(snapshot);
+  const refScopeDigest = computeRefScopeDigest(ordered);
+  const nodes = assignElementRefs(ordered, refScopeDigest);
+  const withRefs = { ...ordered, nodes } as UIGraphSnapshot;
+  const contentHash = computeContentHash(withRefs);
+  const snapshotId = deriveSnapshotId(withRefs, contentHash);
+
+  if (snapshot.contentHash !== undefined && snapshot.contentHash !== contentHash) {
+    throw new Error(`sealSnapshot: inconsistent contentHash; expected ${contentHash}`);
+  }
+  if (snapshot.snapshotId !== undefined && snapshot.snapshotId !== snapshotId) {
+    throw new Error(`sealSnapshot: inconsistent snapshotId; expected ${snapshotId}`);
+  }
+
+  const sealed = { ...withRefs, contentHash, snapshotId };
+  assertSnapshotIdentity(sealed);
+  const validation = validateSnapshot(sealed);
+  if (!validation.valid) {
+    throw new Error(`sealSnapshot: schema validation failed: ${formatErrors(validation.errors)}`);
+  }
+  return sealed;
 }

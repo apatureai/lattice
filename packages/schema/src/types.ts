@@ -323,6 +323,23 @@ export type UIGraphSnapshot = {
   warnings: UIGraphWarning[];
 };
 
+/**
+ * Ref-free input accepted by `sealSnapshot` before snapshot identity exists.
+ *
+ * Builders own semantic node IDs, but the canonical sealer owns snapshot-local
+ * `elementRef`, `contentHash`, and `snapshotId` assignment. Callers may pass an
+ * already-sealed snapshot for idempotent verification; any supplied identity
+ * that does not match the recomputed tuple is rejected.
+ */
+export type UIGraphSnapshotDraft = Omit<
+  UIGraphSnapshot,
+  "snapshotId" | "contentHash" | "nodes"
+> & {
+  snapshotId?: string;
+  contentHash?: string;
+  nodes: Array<Omit<UIGraphNode, "elementRef"> & { elementRef?: string }>;
+};
+
 // --- View ----------------------------------------------------------------
 
 export type UIGraphViewSpec = {
