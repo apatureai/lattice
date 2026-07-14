@@ -107,11 +107,18 @@ export type UIDNAProjection = {
 
 // --- Node ----------------------------------------------------------------
 
-export type UIAffordance = {
-  kind: string;
-  enabled?: boolean;
-  evidence?: EvidenceClaim[];
-};
+/** Perception-only interaction affordance; mirrors the normative JSON Schema. */
+export type UIAffordance =
+  | "click"
+  | "type"
+  | "select"
+  | "toggle"
+  | "scroll"
+  | "hover"
+  | "focus"
+  | "drag"
+  | "navigate"
+  | "submit";
 
 export type LocatorHint = {
   kind:

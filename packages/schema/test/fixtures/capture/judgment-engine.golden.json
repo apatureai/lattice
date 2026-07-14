@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0.0",
+  "captureId": "je_job_01hxyz_route_home_desktop",
+  "captureVersion": "playwright-capture@3",
+  "repository": {
+    "owner": "apatureai",
+    "name": "demo-storefront"
+  },
+  "route": "/",
+  "headSha": "0123456789abcdef0123456789abcdef01234567",
+  "viewport": {
+    "widthCssPx": 1440,
+    "heightCssPx": 900,
+    "deviceScaleFactor": 2,
+    "scrollXCssPx": 0,
+    "scrollYCssPx": 0
+  },
+  "documents": [
+    {
+      "frameId": "main",
+      "url": "https://preview.example.test/",
+      "domLayoutNodes": [
+        {
+          "sourceId": "dom_main",
+          "frameId": "main",
+          "role": "main",
+          "tag": "main",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 1440,
+            "height": 900
+          },
+          "visible": true,
+          "paintOrder": 1,
+          "styleFacts": {
+            "backgroundColor": "rgb(255, 255, 255)",
+            "color": "#111111",
+            "fontSizeCssPx": 16,
+            "padding": "16px"
+          }
+        },
+        {
+          "sourceId": "dom_cta",
+          "parentSourceId": "dom_main",
+          "frameId": "main",
+          "role": "button",
+          "tag": "button",
+          "bounds": {
+            "x": 64,
+            "y": 96,
+            "width": 160,
+            "height": 48
+          },
+          "visible": true,
+          "paintOrder": 2,
+          "styleFacts": {
+            "backgroundColor": "#1b6ef3",
+            "color": "white",
+            "borderRadius": "8px",
+            "paddingInline": "16px",
+            "fontWeight": 600
+          },
+          "textSourceIds": [
+            "text_cta"
+          ]
+        }
+      ],
+      "accessibilityNodes": [
+        {
+          "sourceId": "ax_main",
+          "frameId": "main",
+          "role": "main",
+          "ignored": false,
+          "backendDomSourceId": "dom_main"
+        },
+        {
+          "sourceId": "ax_cta",
+          "parentSourceId": "ax_main",
+          "frameId": "main",
+          "role": "button",
+          "name": "Start review",
+          "state": {
+            "disabled": false
+          },
+          "ignored": false,
+          "backendDomSourceId": "dom_cta"
+        }
+      ],
+      "textRuns": [
+        {
+          "sourceId": "text_cta",
+          "frameId": "main",
+          "text": "Start review",
+          "domSourceId": "dom_cta",
+          "bounds": {
+            "x": 88,
+            "y": 108,
+            "width": 112,
+            "height": 24
+          }
+        }
+      ]
+    }
+  ],
+  "screenshotEvidence": [
+    {
+      "artifactRef": "uiart:sha256/0123456789abcdef",
+      "frameId": "main",
+      "widthImagePx": 2880,
+      "heightImagePx": 1800,
+      "deviceScaleFactor": 2
+    }
+  ],
+  "pageHealth": {
+    "stable": true,
+    "partial": false,
+    "reasons": []
+  },
+  "redaction": {
+    "policyVersion": "redaction@1",
+    "applied": true,
+    "redactedSourceIds": []
+  }
+}

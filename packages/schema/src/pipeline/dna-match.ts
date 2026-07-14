@@ -106,18 +106,26 @@ interface MatchContext {
   readonly mayBeAuthoritative: boolean;
 }
 
-function tokensInCategory(tokens: Record<string, UIDNAToken>, category: string): UIDNAToken[] {
-  return Object.values(tokens).filter((t) => t.category === category);
+interface TokenCandidate {
+  readonly dnaRef: string;
+  readonly token: UIDNAToken;
+}
+
+function tokensInCategory(tokens: Record<string, UIDNAToken>, category: string): TokenCandidate[] {
+  return Object.entries(tokens)
+    .filter(([, token]) => token.category === category)
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
+    .map(([dnaRef, token]) => ({ dnaRef, token }));
 }
 
 /** Nearest numeric token by absolute delta; null when the category has no numeric tokens. */
-function nearestNumeric(observedPx: number, candidates: UIDNAToken[]): { token: UIDNAToken; delta: number } | null {
-  let best: { token: UIDNAToken; delta: number } | null = null;
-  for (const token of candidates) {
-    const canonical = normalizeCssLength(token.value).valueCssPx;
+function nearestNumeric(observedPx: number, candidates: TokenCandidate[]): { candidate: TokenCandidate; delta: number } | null {
+  let best: { candidate: TokenCandidate; delta: number } | null = null;
+  for (const candidate of candidates) {
+    const canonical = normalizeCssLength(candidate.token.value).valueCssPx;
     if (canonical === null) continue;
     const delta = Math.abs(observedPx - canonical);
-    if (best === null || delta < best.delta) best = { token, delta };
+    if (best === null || delta < best.delta) best = { candidate, delta };
   }
   return best;
 }
@@ -139,14 +147,20 @@ function matchObservation(obs: StyleObservation, node: UIGraphNode, ctx: MatchCo
   if (obs.kind === "color") {
     const observed = normalizeColor(String(obs.value)).canonical;
     if (observed === null) return null; // unparseable observed color ⇒ abstain, never guess
-    const hit = candidates.find((t) => normalizeColor(String(t.value)).canonical === observed);
+    const hit = candidates.find((candidate) => normalizeColor(String(candidate.token.value)).canonical === observed);
     if (hit) {
       return finalize(node, ctx, {
+        dnaRef: hit.dnaRef,
         category: "token", status: "exact", method: "exact_value",
-        observed: obs.value, canonical: hit.value, confidence: hit.confidence, evidence,
+        observed: obs.value, canonical: hit.token.value, confidence: hit.token.confidence, evidence,
       });
     }
-    return withDriftOrException(node, ctx, "token", { observed: obs.value, method: "exact_value", evidence });
+    return withDriftOrException(node, ctx, "token", {
+      dnaRef: `category:${obs.tokenCategory}`,
+      observed: obs.value,
+      method: "exact_value",
+      evidence,
+    });
   }
 
   // numeric scale
@@ -157,18 +171,25 @@ function matchObservation(obs: StyleObservation, node: UIGraphNode, ctx: MatchCo
   const band = Math.max(ctx.tolerances.numericAbsPx, ctx.tolerances.numericRelative * observedPx);
   if (nearest.delta === 0) {
     return finalize(node, ctx, {
+      dnaRef: nearest.candidate.dnaRef,
       category: "scale", status: "exact", method: "numeric_tolerance",
-      observed: obs.value, canonical: nearest.token.value, delta: 0, confidence: nearest.token.confidence, evidence,
+      observed: obs.value, canonical: nearest.candidate.token.value, delta: 0, confidence: nearest.candidate.token.confidence, evidence,
     });
   }
   if (nearest.delta <= band) {
     return finalize(node, ctx, {
+      dnaRef: nearest.candidate.dnaRef,
       category: "scale", status: "within_tolerance", method: "numeric_tolerance",
-      observed: obs.value, canonical: nearest.token.value, delta: nearest.delta, confidence: nearest.token.confidence, evidence,
+      observed: obs.value, canonical: nearest.candidate.token.value, delta: nearest.delta, confidence: nearest.candidate.token.confidence, evidence,
     });
   }
   return withDriftOrException(node, ctx, "scale", {
-    observed: obs.value, canonical: nearest.token.value, delta: nearest.delta, method: "numeric_tolerance", evidence,
+    dnaRef: nearest.candidate.dnaRef,
+    observed: obs.value,
+    canonical: nearest.candidate.token.value,
+    delta: nearest.delta,
+    method: "numeric_tolerance",
+    evidence,
   });
 }
 
@@ -176,17 +197,19 @@ function withDriftOrException(
   node: UIGraphNode,
   ctx: MatchContext,
   category: UIDNAMatch["category"],
-  parts: { observed: string | number; canonical?: string | number; delta?: number; method: UIDNAMatch["method"]; evidence: EvidenceClaim[] },
+  parts: { dnaRef: string; observed: string | number; canonical?: string | number; delta?: number; method: UIDNAMatch["method"]; evidence: EvidenceClaim[] },
 ): UIDNAMatch {
   const exception = exceptionApplies(ctx, node, category);
   if (exception) {
     return finalize(node, ctx, {
+      dnaRef: parts.dnaRef,
       category, status: "excepted", method: "rule_evaluation",
       observed: parts.observed, canonical: parts.canonical, delta: parts.delta, confidence: node.confidence,
       evidence: [...parts.evidence, { sourceType: "ui_dna", confidence: 1, claims: [`exception:${exception.reason}`] }],
     });
   }
   return finalize(node, ctx, {
+    dnaRef: parts.dnaRef,
     category, status: "drift", method: parts.method,
     observed: parts.observed, canonical: parts.canonical, delta: parts.delta, confidence: node.confidence, evidence: parts.evidence,
   });
@@ -203,13 +226,13 @@ const DETERMINISTIC_METHODS: ReadonlySet<UIDNAMatch["method"]> = new Set([
 function finalize(
   node: UIGraphNode,
   ctx: MatchContext,
-  m: Omit<UIDNAMatch, "dnaRef" | "authoritative">,
+  m: Omit<UIDNAMatch, "authoritative">,
 ): UIDNAMatch {
   // Authoritative only for a deterministic method against approved+production DNA;
   // a `drift` is a finding, not an authoritative canonical assignment.
   const authoritative =
     ctx.mayBeAuthoritative && DETERMINISTIC_METHODS.has(m.method) && m.status !== "drift" && m.status !== "unknown";
-  return { dnaRef: node.elementRef, authoritative, ...m };
+  return { authoritative, ...m };
 }
 
 /** Match one node's style facts against the approved tokens (pure). */

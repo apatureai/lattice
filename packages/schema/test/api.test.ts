@@ -10,13 +10,14 @@ import {
   type UIGraphViewSpec,
   type UIGraphDelta,
 } from "@apature/ui-graph";
+import { validCapture } from "./pipeline-fixtures.js";
 
 const fakeSnapshot = {} as UIGraphSnapshot;
 const fakeSpec = {} as UIGraphViewSpec;
 const fakeDelta = {} as UIGraphDelta;
 
 const buildRequest: BuildUiGraphRequest = {
-  capture: { schemaVersion: "1.0.0", captureId: "c", captureVersion: "v" },
+  capture: validCapture(),
   options: {
     builderVersion: "ui-graph-builder@0.1.0",
     schemaVersion: "1.0.0",
@@ -32,13 +33,16 @@ const buildRequest: BuildUiGraphRequest = {
   },
 };
 
-describe("API stubs throw a typed not_implemented error (issue #2)", () => {
-  it("buildUiGraph rejects with not_implemented", async () => {
-    await expect(buildUiGraph(buildRequest)).rejects.toMatchObject({
-      code: "not_implemented",
-    });
+describe("buildUiGraph public entry point (issue #9)", () => {
+  it("builds a materialized capture through the public export", async () => {
+    const result = await buildUiGraph(buildRequest);
+    expect(result.snapshot.schemaVersion).toBe("1.0.0");
+    expect(result.snapshot.nodes.length).toBeGreaterThan(0);
+    expect(result.snapshot.contentHash).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
+});
 
+describe("remaining API stubs throw a typed not_implemented error", () => {
   it("queryUiGraph throws not_implemented", () => {
     try {
       queryUiGraph({ snapshot: fakeSnapshot, spec: fakeSpec });

@@ -1,9 +1,8 @@
 /**
  * Public API surface for `@apature/ui-graph` (TRD §1).
  *
- * These are the four entry points Judgment Engine calls. In this scaffold slice
- * they validate their declared contracts and throw a typed `not_implemented`
- * error; later slices fill in the deterministic build/query/diff/delta logic.
+ * These are the four entry points Judgment Engine calls. `buildUiGraph` composes
+ * the deterministic pipeline; query/diff/delta remain independently staged.
  *
  * The package is a deterministic library: no DB, model, browser, or network
  * capability crosses this boundary (TRD §2, §3.1).
@@ -17,30 +16,17 @@ import type {
   UIGraphUseMode,
   CoordinateSpace,
 } from "./types.js";
+import type {
+  AnyUIDNAReadProfile,
+  CaptureBundleReadProfile,
+} from "./readprofile.js";
+import { BuildPipelineFailure, executeBuild } from "./builder.js";
 
 // --- Cross-repo input read profiles (TRD §4) ----------------------------
 //
-// UI Graph does not redefine the producers' full schemas; it declares the
-// minimum read profiles it consumes and records the source schema versions.
-// These are deliberately structurally-minimal: later slices (#3) own the full
-// `CaptureBundleReadProfile`/`UIDNAGraphProjectionReadProfile` and their golden
-// fixtures. They are NOT fabricated upstream schemas — UI Graph mirrors only
-// what it reads. See issue #3.
-
-/** Opaque, structurally-minimal reference to a versioned capture bundle. */
-export type CaptureBundleRef = {
-  schemaVersion: string;
-  captureId: string;
-  captureVersion: string;
-};
-
-/** Opaque, structurally-minimal reference to a UI-DNA graph projection. */
-export type UIDNAProjectionRef = {
-  projectionSchemaVersion: string;
-  dnaVersion: string;
-  dnaContentDigest: string;
-  state: "approved" | "draft" | "in_review" | "superseded" | "revoked";
-};
+// UI Graph has no resolver/storage authority. Callers supply the materialized
+// producer read profiles owned by issue #3; the adapter validates exactly the
+// fields this package consumes before any stage runs.
 
 // --- Build options (TRD §4.4) -------------------------------------------
 
@@ -67,8 +53,8 @@ export type UIGraphBuildOptions = {
 };
 
 export type BuildUiGraphRequest = {
-  capture: CaptureBundleRef;
-  dna?: UIDNAProjectionRef;
+  capture: CaptureBundleReadProfile;
+  dna?: AnyUIDNAReadProfile;
   options: UIGraphBuildOptions;
 };
 
@@ -116,6 +102,9 @@ export type UIGraphDiff = {
 
 export type UIGraphErrorCode =
   | "not_implemented"
+  | "invalid_build_options"
+  | "invalid_capture"
+  | "invalid_dna"
   | "invalid_snapshot"
   | "invalid_view_spec"
   | "invalid_delta"
@@ -125,10 +114,16 @@ export type UIGraphErrorCode =
 
 export class UIGraphError extends Error {
   readonly code: UIGraphErrorCode;
-  constructor(code: UIGraphErrorCode, message: string) {
+  readonly issues: ReadonlyArray<{ code: string; message: string }>;
+  constructor(
+    code: UIGraphErrorCode,
+    message: string,
+    issues: ReadonlyArray<{ code: string; message: string }> = [],
+  ) {
     super(message);
     this.name = "UIGraphError";
     this.code = code;
+    this.issues = issues;
   }
 }
 
@@ -139,12 +134,19 @@ const NOT_IMPLEMENTED = (entry: string): never => {
   );
 };
 
-// --- API stubs (TRD §1) -------------------------------------------------
+// --- Public entry points (TRD §1) ---------------------------------------
 
 export async function buildUiGraph(
-  _request: BuildUiGraphRequest,
+  request: BuildUiGraphRequest,
 ): Promise<UIGraphBuildResult> {
-  return NOT_IMPLEMENTED("buildUiGraph");
+  try {
+    return await executeBuild(request);
+  } catch (error) {
+    if (error instanceof BuildPipelineFailure) {
+      throw new UIGraphError(error.code, error.message, error.issues);
+    }
+    throw error;
+  }
 }
 
 export function queryUiGraph(_request: QueryUiGraphRequest): UIGraphView {

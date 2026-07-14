@@ -87,6 +87,10 @@ function hashHex(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex").slice(0, 16);
 }
 
+function digest(value: string): string {
+  return `sha256:${createHash("sha256").update(value, "utf8").digest("hex")}`;
+}
+
 export function buildHierarchy(nodes: readonly FusedNode[], options: HierarchyOptions = {}): HierarchyResult {
   const warnings: PipelineIssue[] = [];
   const threshold = options.repeatedRegionThreshold ?? 3;
@@ -176,7 +180,7 @@ export function buildHierarchy(nodes: readonly FusedNode[], options: HierarchyOp
         rootNodeId: parent ?? members[0]!,
         kind: "repeated",
         memberNodeIds: members,
-        summary: { itemCount: group.length, visibleItemCount: visible, repeatedPatternHash: hashHex(signature) },
+        summary: { itemCount: group.length, visibleItemCount: visible, repeatedPatternHash: digest(signature) },
         evidence: group[0]!.evidence,
         confidence: group[0]!.confidence,
       };
@@ -185,39 +189,55 @@ export function buildHierarchy(nodes: readonly FusedNode[], options: HierarchyOp
     }
   }
 
-  // (5) regionIds per node.
+  // (5) Node cap: summarize repeated regions only; never orphan retained hierarchy.
+  const maxNodes = options.maxNodes;
+  const omittedCandidateIds = new Set<string>();
+  let truncation: HierarchyTruncation = { truncated: false, summarizedRegionIds: [], omittedNodeCount: 0 };
+  if (maxNodes !== undefined && sorted.length > maxNodes) {
+    const summarizedRegionIds: string[] = [];
+    for (const id of repeatedRegionIds) {
+      const region = regions.find((r) => r.regionId === id)!;
+      let summarized = false;
+      // Keep one representative. Omit whole sibling subtrees so no retained node
+      // points at a parent that the canonical graph no longer contains.
+      for (const member of region.memberNodeIds.slice(1)) {
+        if (sorted.length - omittedCandidateIds.size <= maxNodes) break;
+        for (const candidateId of [member, ...descendants(member)]) {
+          omittedCandidateIds.add(candidateId);
+        }
+        summarized = true;
+      }
+      if (summarized) summarizedRegionIds.push(id);
+      if (sorted.length - omittedCandidateIds.size <= maxNodes) break;
+    }
+    truncation = { truncated: true, summarizedRegionIds, omittedNodeCount: omittedCandidateIds.size };
+    if (sorted.length - omittedCandidateIds.size > maxNodes) {
+      warnings.push(warn("source_conflict", `node count ${sorted.length} exceeds maxNodes ${maxNodes} even after summarizing repeated regions`));
+    }
+  }
+
+  const retainedIds = new Set(sorted.map((node) => node.candidateId).filter((id) => !omittedCandidateIds.has(id)));
+  const retainedRegions = regions
+    .filter((region) => retainedIds.has(region.rootNodeId))
+    .map((region) => ({
+      ...region,
+      memberNodeIds: region.memberNodeIds.filter((member) => retainedIds.has(member)),
+    }));
+
+  // (6) regionIds per retained node.
   const regionsByNode = new Map<string, string[]>();
-  for (const region of regions) {
+  for (const region of retainedRegions) {
     for (const member of region.memberNodeIds) {
       regionsByNode.set(member, [...(regionsByNode.get(member) ?? []), region.regionId]);
     }
   }
 
-  // (6) Node cap: summarize repeated regions only; never drop required hierarchy.
-  const maxNodes = options.maxNodes;
-  let truncation: HierarchyTruncation = { truncated: false, summarizedRegionIds: [], omittedNodeCount: 0 };
-  if (maxNodes !== undefined && sorted.length > maxNodes) {
-    const summarizedRegionIds: string[] = [];
-    let omitted = 0;
-    for (const id of repeatedRegionIds) {
-      const region = regions.find((r) => r.regionId === id)!;
-      // Keep one representative; the rest are summarized away under cap pressure.
-      omitted += Math.max(0, region.memberNodeIds.length - 1);
-      summarizedRegionIds.push(id);
-      if (sorted.length - omitted <= maxNodes) break;
-    }
-    truncation = { truncated: true, summarizedRegionIds, omittedNodeCount: omitted };
-    if (sorted.length - omitted > maxNodes) {
-      warnings.push(warn("source_conflict", `node count ${sorted.length} exceeds maxNodes ${maxNodes} even after summarizing repeated regions`));
-    }
-  }
-
-  const hierarchy: NodeHierarchy[] = sorted.map((node) => {
+  const hierarchy: NodeHierarchy[] = sorted.filter((node) => retainedIds.has(node.candidateId)).map((node) => {
     const h: NodeHierarchy = { candidateId: node.candidateId, regionIds: (regionsByNode.get(node.candidateId) ?? []).sort(), depth: depthOf.get(node.candidateId) ?? 0 };
     const p = parentOf.get(node.candidateId);
     if (p !== undefined) h.parentNodeId = p;
     return h;
   });
 
-  return { hierarchy, regions, truncation, warnings };
+  return { hierarchy, regions: retainedRegions, truncation, warnings };
 }

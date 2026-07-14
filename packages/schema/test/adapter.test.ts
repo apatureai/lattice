@@ -20,6 +20,8 @@ const manifest = load<{ files: Record<string, string> }>("MANIFEST.json");
 
 const minimalCapture = () =>
   load<CaptureBundleReadProfile>("capture/minimal.json");
+const judgmentEngineCapture = () =>
+  load<CaptureBundleReadProfile>("capture/judgment-engine.golden.json");
 const multiFrameCapture = () =>
   load<CaptureBundleReadProfile>("capture/multi-frame.json");
 const derivedCapture = () =>
@@ -37,8 +39,8 @@ describe("golden fixtures are frozen (TRD M0)", () => {
 });
 
 describe("capture read profile (TRD §4.1)", () => {
-  it("accepts minimal, multi-frame, and derived-observation fixtures", () => {
-    for (const cap of [minimalCapture(), multiFrameCapture(), derivedCapture()]) {
+  it("accepts minimal, Judgment Engine, multi-frame, and derived-observation fixtures", () => {
+    for (const cap of [minimalCapture(), judgmentEngineCapture(), multiFrameCapture(), derivedCapture()]) {
       const r = validateCaptureBundle(cap);
       expect(r.ok, r.ok ? "" : JSON.stringify(r.issues)).toBe(true);
     }

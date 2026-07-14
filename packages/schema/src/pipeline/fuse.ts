@@ -28,6 +28,7 @@ import type {
   DerivedObservation,
 } from "../readprofile.js";
 import type { NormalizedCapture, NormalizedGeometry, NormalizedNode } from "./normalize.js";
+import { compose, IDENTITY, transformRect, translateRect, type Affine } from "./geometry.js";
 import { warn, type PipelineIssue } from "./errors.js";
 
 export type FusedKind = "dom" | "ax_only" | "text" | "visual";
@@ -295,7 +296,8 @@ function fuseDerived(
   iouThreshold: number,
 ): void {
   if (derived.kind !== "vision_parser" && derived.kind !== "ocr") return;
-  const dsf = capture.screenshotEvidence?.find((s) => s.artifactRef === derived.sourceImageRef)?.deviceScaleFactor;
+  const screenshot = capture.screenshotEvidence?.find((s) => s.artifactRef === derived.sourceImageRef);
+  const dsf = screenshot?.deviceScaleFactor;
   const items =
     derived.kind === "vision_parser"
       ? derived.elements.map((e) => ({ sourceId: e.sourceId, rect: e.rectImagePx, text: e.text, confidence: e.confidence }))
@@ -307,6 +309,9 @@ function fuseDerived(
       dsf !== undefined && dsf > 0
         ? { x: item.rect.x / dsf, y: item.rect.y / dsf, width: item.rect.width / dsf, height: item.rect.height / dsf }
         : undefined;
+    const standaloneGeometry = screenshot !== undefined && viewportRect !== undefined
+      ? derivedGeometry(capture, screenshot.frameId, viewportRect)
+      : undefined;
 
     // Best-overlapping structured candidate (overlap, never proximity).
     let best: Candidate | undefined;
@@ -324,16 +329,75 @@ function fuseDerived(
     const target =
       best !== undefined && bestIou >= iouThreshold
         ? best
-        : ({ kind: "visual", frameId: structured[0]?.frameId ?? "root", geometry: undefined, evidence: [], flags: [], roleClaims: [], nameClaims: [], textClaims: [] } satisfies Candidate);
+        : ({
+            kind: "visual",
+            frameId: screenshot?.frameId ?? structured[0]?.frameId ?? "root",
+            geometry: standaloneGeometry,
+            evidence: [],
+            flags: [],
+            roleClaims: [],
+            nameClaims: [],
+            textClaims: [],
+          } satisfies Candidate);
 
     const claims: string[] = [];
     if (item.text !== undefined && item.text.length > 0) {
       claims.push(`text=${item.text}`);
       target.textClaims.push({ sourceType, value: item.text, confidence: clamp01(item.confidence) });
     }
-    addClaim(target, sourceType, item.sourceId, claims, clamp01(item.confidence), { provider: derived.provider, providerVersion: derived.providerVersion });
+    addClaim(target, sourceType, item.sourceId, claims, clamp01(item.confidence), {
+      artifactRef: derived.sourceImageRef,
+      provider: derived.provider,
+      providerVersion: derived.providerVersion,
+      ...(standaloneGeometry !== undefined ? { coordinateSpaceId: standaloneGeometry.coordinateSpaceId } : {}),
+    });
     if (target !== best) extras.push(target);
   }
+}
+
+function derivedGeometry(
+  capture: CaptureBundleReadProfile,
+  frameId: string,
+  frameRect: Rect,
+): NormalizedGeometry {
+  const resolveFrame = (currentFrameId: string, seen: Set<string>): Affine => {
+    if (seen.has(currentFrameId)) return IDENTITY;
+    seen.add(currentFrameId);
+    const document = capture.documents.find((candidate) => candidate.frameId === currentFrameId);
+    if (document === undefined) return IDENTITY;
+    const local = (document.transformToParent ?? IDENTITY) as Affine;
+    return document.parentFrameId === undefined
+      ? local
+      : compose(resolveFrame(document.parentFrameId, seen), local);
+  };
+  const documentRect = transformRect(resolveFrame(frameId, new Set()), frameRect);
+  const viewportRect = translateRect(
+    documentRect,
+    -capture.viewport.scrollXCssPx,
+    -capture.viewport.scrollYCssPx,
+  );
+  const normalizedViewportRect: Rect = {
+    x: viewportRect.x / capture.viewport.widthCssPx,
+    y: viewportRect.y / capture.viewport.heightCssPx,
+    width: viewportRect.width / capture.viewport.widthCssPx,
+    height: viewportRect.height / capture.viewport.heightCssPx,
+  };
+  const ix0 = Math.max(0, viewportRect.x);
+  const iy0 = Math.max(0, viewportRect.y);
+  const ix1 = Math.min(capture.viewport.widthCssPx, viewportRect.x + viewportRect.width);
+  const iy1 = Math.min(capture.viewport.heightCssPx, viewportRect.y + viewportRect.height);
+  const visible = ix1 > ix0 && iy1 > iy0;
+  const clipped = !visible || ix1 - ix0 < viewportRect.width - 1e-6 || iy1 - iy0 < viewportRect.height - 1e-6;
+  return {
+    frameId,
+    frameRect,
+    documentRect,
+    viewportRect,
+    normalizedViewportRect,
+    coordinateSpaceId: `cs_frame_${frameId}`,
+    visibility: !visible ? "offscreen" : clipped ? "clipped" : "visible",
+    clipped,
+  };
 }
 
 function clamp01(n: number): number {

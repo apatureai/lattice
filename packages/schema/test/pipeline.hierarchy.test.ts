@@ -57,7 +57,7 @@ describe("buildHierarchy", () => {
     const repB = b.regions.find((r) => r.kind === "repeated");
     expect(repA?.summary.itemCount).toBe(4);
     expect(repA?.summary.visibleItemCount).toBe(4);
-    expect(repA?.summary.repeatedPatternHash).toBeDefined();
+    expect(repA?.summary.repeatedPatternHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(repA?.summary.repeatedPatternHash).toBe(repB?.summary.repeatedPatternHash); // stable
   });
 
@@ -71,11 +71,13 @@ describe("buildHierarchy", () => {
   });
 
   it("summarizes repeated regions under the node cap, never the required hierarchy", () => {
-    const { truncation, regions } = buildHierarchy(scene(), { maxNodes: 4 });
+    const { truncation, regions, hierarchy } = buildHierarchy(scene(), { maxNodes: 4 });
     expect(truncation.truncated).toBe(true);
     const rep = regions.find((r) => r.kind === "repeated")!;
     expect(truncation.summarizedRegionIds).toContain(rep.regionId);
     expect(truncation.omittedNodeCount).toBe(3); // 4 items -> keep 1
+    expect(hierarchy).toHaveLength(4);
+    expect(hierarchy.every((entry) => entry.parentNodeId === undefined || hierarchy.some((parent) => parent.candidateId === entry.parentNodeId))).toBe(true);
     // Landmark/list regions are never summarized away.
     const nav = regions.find((r) => r.kind === "landmark" && r.rootNodeId === "c_nav")!;
     expect(truncation.summarizedRegionIds).not.toContain(nav.regionId);

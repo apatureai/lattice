@@ -66,8 +66,10 @@ describe("projectDna — token/scale matcher (#11, TRD §8.7)", () => {
     expect(color.status).toBe("exact");
     expect(color.method).toBe("exact_value");
     expect(color.canonical).toBe("#0a0a0a");
+    expect(color.dnaRef).toBe("--color-brand");
     expect(color.authoritative).toBe(true); // approved + production
     const spacing = matches.find((m) => m.category === "scale")!;
+    expect(spacing.dnaRef).toBe("--spacing-gap");
     expect(spacing.status).toBe("exact");
     expect(res.projection?.authoritativeMatchCount).toBe(2);
     expect(res.projection?.driftCount).toBe(0);
@@ -94,6 +96,7 @@ describe("projectDna — token/scale matcher (#11, TRD §8.7)", () => {
     // The scale drift still reports the nearest canonical + delta.
     const spacing = matches.find((m) => m.category === "scale")!;
     expect(spacing.canonical).toBe("16px");
+    expect(spacing.dnaRef).toBe("--spacing-lg");
     expect(spacing.delta).toBeCloseTo(3, 6);
   });
 

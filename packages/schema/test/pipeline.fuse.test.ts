@@ -100,6 +100,16 @@ describe("fuseCapture", () => {
     const standalone = nodes.find((n) => n.evidence.some((e) => e.sourceId === "v2"));
     expect(standalone?.kind).toBe("visual");
     expect(standalone?.evidence.some((e) => e.sourceId === "d1")).toBe(false);
+    expect(standalone?.geometry).toMatchObject({
+      frameId: "root",
+      viewportRect: { x: 600, y: 600, width: 20, height: 20 },
+      coordinateSpaceId: "cs_frame_root",
+      visibility: "visible",
+    });
+    expect(standalone?.evidence[0]).toMatchObject({
+      artifactRef: "uiart:shot/1",
+      coordinateSpaceId: "cs_frame_root",
+    });
   });
 
   it("excludes hidden DOM nodes unless explanatory nodes are enabled", () => {
