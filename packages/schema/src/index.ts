@@ -26,3 +26,12 @@ export {
   assertNoSensitiveTextSurvives,
   sensitiveTextDigest,
 } from "./pipeline/untrusted.js";
+export { buildEvidenceRequests } from "./pipeline/evidence-request.js";
+export type {
+  EvidenceRequest,
+  EvidenceRequestKind,
+  EvidenceRequestReason,
+  EvidenceRequestOptions,
+  EvidenceRequestPlan,
+  RejectedVisualTarget,
+} from "./pipeline/evidence-request.js";
