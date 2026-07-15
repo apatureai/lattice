@@ -83,11 +83,13 @@ function fixture(args: {
   return entry;
 }
 
-// Placeholder canonical target hashes for the ug-delta reconstruction tests.
-// These are frozen 64-hex `sha256:` labels; issue #14 (delta encode/apply) binds
-// them to real reconstructed snapshots. They are stable by construction here.
-const H = (seed: string): string =>
-  "sha256:" + seed.repeat(64).slice(0, 64).replace(/[^a-f0-9]/g, "0");
+// REAL canonical target hashes for the ug-delta reconstruction tests (#14/#19):
+// each value is the sealed contentHash after applying the fixture's cumulative
+// mutation chain (eval/delta-mutations.ts) to the canonical example snapshot.
+// eval.delta-reconstruction.test.ts regenerates every chain via the live
+// sealer AND round-trips it through encodeUiGraphDelta/applyUiGraphDelta, so a
+// drifted hash fails CI. The reorder step deliberately equals its baseline:
+// canonical collection ordering makes a pure sibling reorder hash-neutral.
 
 const UNSEALED_SETS: readonly UnsealedFixtureSet[] = [
   {
@@ -163,9 +165,9 @@ const UNSEALED_SETS: readonly UnsealedFixtureSet[] = [
         cohorts: ["clean"],
         captureRef: "capture/minimal.json",
         deltaSequence: [
-          { label: "baseline", mutation: "insert", canonicalTargetHash: H("a") },
-          { label: "insert-header", mutation: "insert", canonicalTargetHash: H("b") },
-          { label: "insert-footer", mutation: "insert", canonicalTargetHash: H("c") },
+          { label: "baseline", mutation: "insert", canonicalTargetHash: "sha256:d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696" },
+          { label: "insert-header", mutation: "insert", canonicalTargetHash: "sha256:83635f6e7a798bb27360f5060bd580b4653f330e361c0a7ca2eb85efd0d5a2f3" },
+          { label: "insert-footer", mutation: "insert", canonicalTargetHash: "sha256:9f8cdec4d35eef812c864f6fc9f951badb5e5ac1841af3e4cf7dbc30b2ba3ce8" },
         ],
       }),
       fixture({
@@ -175,9 +177,9 @@ const UNSEALED_SETS: readonly UnsealedFixtureSet[] = [
         cohorts: ["clean"],
         captureRef: "capture/multi-frame.json",
         deltaSequence: [
-          { label: "baseline", mutation: "reorder", canonicalTargetHash: H("d") },
-          { label: "reorder-nav", mutation: "reorder", canonicalTargetHash: H("e") },
-          { label: "edit-title", mutation: "text_edit", canonicalTargetHash: H("f") },
+          { label: "baseline", mutation: "reorder", canonicalTargetHash: "sha256:d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696" },
+          { label: "reorder-nav", mutation: "reorder", canonicalTargetHash: "sha256:d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696" },
+          { label: "edit-title", mutation: "text_edit", canonicalTargetHash: "sha256:64a656d313340ddef4a6fb64ddb40434f93973c58f39d19b087145af86aa12be" },
         ],
       }),
       fixture({
@@ -188,9 +190,9 @@ const UNSEALED_SETS: readonly UnsealedFixtureSet[] = [
         captureRef: "capture/minimal.json",
         viewport: MOBILE,
         deltaSequence: [
-          { label: "baseline", mutation: "component_replace", canonicalTargetHash: H("2") },
-          { label: "replace-card", mutation: "component_replace", canonicalTargetHash: H("3") },
-          { label: "responsive-collapse", mutation: "responsive", canonicalTargetHash: H("4") },
+          { label: "baseline", mutation: "component_replace", canonicalTargetHash: "sha256:d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696" },
+          { label: "replace-card", mutation: "component_replace", canonicalTargetHash: "sha256:bcb7e960e6ddbffe794965b7c40bd5a75b0f76dccea6abca8e7f9b1aab3535be" },
+          { label: "responsive-collapse", mutation: "responsive", canonicalTargetHash: "sha256:78380306a74f04076535a711b544cfa15ee55651c7ac11669a4674b619d69cf3" },
         ],
       }),
     ],

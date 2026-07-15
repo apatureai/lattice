@@ -36,7 +36,7 @@ describe("representation manifest is frozen + content-addressed (#19)", () => {
     // Freeze the manifest id so any drift in a fixture is a failing test, not a
     // silent change (mirrors the golden-fixture freeze in adapter.test.ts).
     expect(REPRESENTATION_MANIFEST.manifestContentHash).toBe(
-      "sha256:f33f9a695490119ee9603ce0eb8337b16ec68d504c9919e3c62d73fd709aa26b",
+      "sha256:61c30bf0126deae2cf54fd4d10d781dce4e56df46072fbc679b5bf70999b6c9b" // re-pinned July 15, 2026: ug-delta placeholder hashes replaced with real canonical chain hashes (#14),
     );
   });
 

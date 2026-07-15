@@ -12,3 +12,5 @@ export { REPRESENTATION_MANIFEST } from "./fixtures.js";
 export * from "./stats.js";
 export * from "./benchmark.js";
 export * from "./gates.js";
+export { applyDeltaMutation, deltaChainHashes } from "./delta-mutations.js";
+export type { DeltaMutationKind } from "./delta-mutations.js";
