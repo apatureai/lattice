@@ -18,3 +18,11 @@ export * from "./consumer-contract.js";
 export * from "./pipeline/index.js";
 export * from "./eval/index.js";
 export { encodeUiGraphDelta, applyUiGraphDeltaStrict } from "./pipeline/delta.js";
+export {
+  UNTRUSTED_UI_CONTENT_OPEN,
+  UNTRUSTED_UI_CONTENT_CLOSE,
+  sanitizeUntrustedText,
+  delimitUntrusted,
+  assertNoSensitiveTextSurvives,
+  sensitiveTextDigest,
+} from "./pipeline/untrusted.js";

@@ -14,6 +14,7 @@
  */
 
 import { canonicalize } from "../canonical.js";
+import { assertNoSensitiveTextSurvives, delimitUntrusted, sanitizeNodeText } from "./untrusted.js";
 import type { LocatorHint, Rect, SensitivityLabel, UIDNAMatch, UIDNAProjection, UIGraphEdge, UIGraphNode, UIRegion, Viewport } from "../types.js";
 import { normalizeCssLength } from "./css.js";
 import { addedTargetIds, matchNodes, type MatchOptions } from "./lineage.js";
@@ -140,7 +141,10 @@ export function renderFocusView(
   const keptSet = new Set(kept);
   const omittedNodes = reachable.length - kept.length;
 
-  const nodes = graph.nodes.filter((n) => keptSet.has(n.candidateId));
+  // #10/#17: fail closed on surviving sensitive text, then serialize page text
+  // sanitized and inside the untrusted boundary — data, never instructions.
+  assertNoSensitiveTextSurvives(graph.nodes);
+  const nodes = graph.nodes.filter((n) => keptSet.has(n.candidateId)).map(sanitizeNodeText);
   const hierarchy = graph.hierarchy.filter((h) => keptSet.has(h.candidateId));
   const edgesAll = graph.edges.filter(
     (e) => keptSet.has(e.fromNodeId) || keptSet.has(e.toNodeId),
@@ -151,7 +155,7 @@ export function renderFocusView(
   const regionIds = new Set(hierarchy.flatMap((h) => h.regionIds));
   const regions = graph.regions.filter((r) => regionIds.has(r.regionId));
 
-  const text = canonicalize({
+  const text = delimitUntrusted(canonicalize({
     view: "focus",
     policyVersion: VIEW_POLICY_VERSION,
     refs: refsResolved,
@@ -160,7 +164,7 @@ export function renderFocusView(
     hierarchy,
     regions,
     edges,
-  });
+  }));
   return {
     text,
     meta: {
@@ -212,7 +216,8 @@ export function renderSummaryView(
 
   const shallow = graph.hierarchy.filter((h) => h.depth <= 2);
   const shallowSet = new Set(shallow.map((h) => h.candidateId));
-  const outline = graph.nodes.filter((n) => shallowSet.has(n.candidateId));
+  assertNoSensitiveTextSurvives(graph.nodes);
+  const outline = graph.nodes.filter((n) => shallowSet.has(n.candidateId)).map(sanitizeNodeText);
 
   const affordancesAll = graph.nodes
     .filter((n) => n.role !== undefined && AFFORDANCE_ROLES.has(n.role.value))
@@ -221,9 +226,9 @@ export function renderSummaryView(
   const affordances = affordancesAll.slice(0, maxAffordances);
   const omittedAffordances = affordancesAll.length - affordances.length;
   const affordanceSet = new Set(affordances);
-  const affordanceNodes = graph.nodes.filter((n) => affordanceSet.has(n.candidateId));
+  const affordanceNodes = graph.nodes.filter((n) => affordanceSet.has(n.candidateId)).map(sanitizeNodeText);
 
-  const text = canonicalize({
+  const text = delimitUntrusted(canonicalize({
     view: "summary",
     policyVersion: VIEW_POLICY_VERSION,
     regions: graph.regions,
@@ -231,7 +236,7 @@ export function renderSummaryView(
     hierarchy: shallow,
     affordances: affordanceNodes,
     caveats,
-  });
+  }));
   return {
     text,
     meta: {
