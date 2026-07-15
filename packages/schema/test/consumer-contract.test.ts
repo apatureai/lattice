@@ -1,7 +1,9 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import {
+  assertElementRefInSnapshot,
   assertShadowNeverPublishes,
-  assertSnapshotLocalRef,
   compareShadow,
   CONSUMER_CONTRACT_VERSION,
   CONSUMER_VIEW_CONTRACT,
@@ -9,13 +11,14 @@ import {
   isElementRef,
   mayRequestView,
   resolveDelta,
-  resolveSnapshotLocalRef,
+  resolveElementRefInSnapshot,
+  sealSnapshot,
   ShadowPublishError,
   UIGraphError,
   type ShadowRun,
+  type UIGraphSnapshot,
 } from "../src/index.js";
 
-const DIGEST_A = "sha256:" + "ab".repeat(4) + "0".repeat(56);
 // ref-scope prefixes: A → "abababab", B → "cdcdcdcd"
 const REF_A = "ug:abababab:3";
 const REF_B = "ug:cdcdcdcd:1";
@@ -69,27 +72,123 @@ describe("R2 shadow-build contract (#26, PRD §9 R2)", () => {
   });
 });
 
-describe("honest-reference seam — snapshot-local refs (#26, TRD §6/§16)", () => {
+describe("honest-reference seam — exact snapshot membership (#56, TRD §6/§16)", () => {
+  const sealed = JSON.parse(
+    readFileSync(fileURLToPath(new URL("./examples/minimal-snapshot.json", import.meta.url)), "utf8"),
+  ) as UIGraphSnapshot;
+  const claimed = { snapshotId: sealed.snapshotId, contentHash: sealed.contentHash };
+  const realRef = sealed.nodes[0]!.elementRef;
+  const prefix = realRef.split(":")[1]!;
+
   it("recognizes a well-formed elementRef and rejects non-refs (never a selector)", () => {
     expect(isElementRef(REF_A)).toBe(true);
     expect(isElementRef("#my-button")).toBe(false);
     expect(isElementRef("button.primary")).toBe(false);
   });
 
-  it("a ref local to the current snapshot resolves; a foreign ref is stale_or_foreign_ref + requery recovery", () => {
-    expect(resolveSnapshotLocalRef(REF_A, DIGEST_A)).toEqual({ ok: true, elementRef: REF_A });
-    expect(resolveSnapshotLocalRef(REF_B, DIGEST_A)).toEqual({ ok: false, reason: "stale_or_foreign_ref", recovery: "requery_lineage_match" });
+  it("a real member ref of the verified snapshot resolves", () => {
+    expect(resolveElementRefInSnapshot(sealed, claimed, realRef)).toEqual({ ok: true, elementRef: realRef });
   });
 
-  it("assertSnapshotLocalRef throws a typed UIGraphError on a foreign ref", () => {
-    expect(() => assertSnapshotLocalRef(REF_A, DIGEST_A)).not.toThrow();
+  it("the #56 repro: a fabricated ordinal under the CORRECT prefix is refused", () => {
+    expect(resolveElementRefInSnapshot(sealed, claimed, `ug:${prefix}:999999`)).toMatchObject({
+      ok: false,
+      reason: "stale_or_foreign_ref",
+      detail: "ref_not_in_snapshot",
+    });
+  });
+
+  it("prefix is not authority: same ref prefix but a different full digest tuple is foreign", () => {
+    const mutatedTail = { ...claimed, contentHash: claimed.contentHash.slice(0, -1) + (claimed.contentHash.endsWith("0") ? "1" : "0") };
+    expect(resolveElementRefInSnapshot(sealed, mutatedTail, realRef)).toMatchObject({
+      ok: false,
+      detail: "wrong_snapshot_identity",
+    });
+    const wrongId = { ...claimed, snapshotId: `${claimed.snapshotId.slice(0, -1)}f` };
+    expect(resolveElementRefInSnapshot(sealed, wrongId, realRef)).toMatchObject({
+      ok: false,
+      detail: "wrong_snapshot_identity",
+    });
+  });
+
+  it("a copied foreign-prefix ref and malformed refs are refused with typed details", () => {
+    expect(resolveElementRefInSnapshot(sealed, claimed, REF_B)).toMatchObject({ ok: false, detail: "ref_not_in_snapshot" });
+    expect(resolveElementRefInSnapshot(sealed, claimed, "not-a-ref")).toMatchObject({ ok: false, detail: "malformed_ref" });
+    expect(resolveElementRefInSnapshot(sealed, claimed, "ug:ZZZZZZZZ:0")).toMatchObject({ ok: false, detail: "malformed_ref" });
+  });
+
+  it("a tampered snapshot fails identity verification before any resolution", () => {
+    const tampered = structuredClone(sealed);
+    tampered.nodes[0]!.elementRef = `ug:${prefix}:7`;
+    expect(resolveElementRefInSnapshot(tampered, claimed, realRef)).toMatchObject({
+      ok: false,
+      detail: "snapshot_identity_invalid",
+    });
+  });
+
+  it("assertElementRefInSnapshot throws the typed UIGraphError fail-closed", () => {
+    expect(() => assertElementRefInSnapshot(sealed, claimed, realRef)).not.toThrow();
     try {
-      assertSnapshotLocalRef(REF_B, DIGEST_A);
+      assertElementRefInSnapshot(sealed, claimed, `ug:${prefix}:999999`);
       throw new Error("should have thrown");
     } catch (e) {
       expect(e).toBeInstanceOf(UIGraphError);
       expect((e as UIGraphError).code).toBe("stale_or_foreign_ref");
     }
+  });
+
+  it("property: random fabricated ordinals and mutated identity tuples yield ZERO false accepts", () => {
+    let seed = 0xc0ffee;
+    const rng = (): number => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 2 ** 32;
+    };
+    const memberOrdinals = new Set(sealed.nodes.map((n) => Number(n.elementRef.split(":")[2])));
+    for (let i = 0; i < 300; i += 1) {
+      const ordinal = Math.floor(rng() * 2 ** 20);
+      if (memberOrdinals.has(ordinal)) continue;
+      expect(resolveElementRefInSnapshot(sealed, claimed, `ug:${prefix}:${ordinal}`).ok).toBe(false);
+    }
+    const hex = "0123456789abcdef";
+    for (let i = 0; i < 200; i += 1) {
+      const pos = 7 + Math.floor(rng() * (claimed.contentHash.length - 7));
+      const original = claimed.contentHash[pos]!;
+      const replacement = hex[Math.floor(rng() * 16)]!;
+      if (replacement === original) continue;
+      const mutated = claimed.contentHash.slice(0, pos) + replacement + claimed.contentHash.slice(pos + 1);
+      expect(resolveElementRefInSnapshot(sealed, { ...claimed, contentHash: mutated }, realRef).ok).toBe(false);
+    }
+  });
+
+  it("re-sealing an equivalent draft preserves identity and refs still resolve", () => {
+    const { snapshotId: _i, contentHash: _h, nodes, ...semantic } = structuredClone(sealed);
+    const draft = { ...semantic, nodes: nodes.map(({ elementRef: _r, ...node }) => node) };
+    const resealed = sealSnapshot(draft as Parameters<typeof sealSnapshot>[0]);
+    expect(resealed.snapshotId).toBe(sealed.snapshotId);
+    expect(
+      resolveElementRefInSnapshot(resealed, { snapshotId: resealed.snapshotId, contentHash: resealed.contentHash }, realRef).ok,
+    ).toBe(true);
+  });
+
+  it("golden membership fixture replays byte-for-byte (Pointer / Judgment Engine mirror source)", () => {
+    const golden = JSON.parse(
+      readFileSync(fileURLToPath(new URL("./fixtures/element-ref-membership.golden.json", import.meta.url)), "utf8"),
+    ) as {
+      claimed: { snapshotId: string; contentHash: string };
+      vectors: Array<{ name: string; elementRef: string; claimed?: { snapshotId: string; contentHash: string }; expect: { ok: boolean; detail?: string } }>;
+    };
+    expect(golden.claimed).toEqual(claimed);
+    for (const vector of golden.vectors) {
+      const result = resolveElementRefInSnapshot(sealed, vector.claimed ?? golden.claimed, vector.elementRef);
+      expect(result.ok, vector.name).toBe(vector.expect.ok);
+      if (!result.ok) expect(result.detail, vector.name).toBe(vector.expect.detail);
+    }
+  });
+
+  it("the prefix-only resolver is gone from the package surface (capability guard)", async () => {
+    const surface = await import("../src/index.js");
+    expect("resolveSnapshotLocalRef" in surface).toBe(false);
+    expect("assertSnapshotLocalRef" in surface).toBe(false);
   });
 });
 

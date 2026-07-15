@@ -1,0 +1,65 @@
+{
+  "description": "Canonical element-ref membership vectors (ui-graph#56). Pointer and Judgment Engine adapters mirror this file BYTE-IDENTICALLY and replay it against their resolveElementRefInSnapshot binding when their integration owners (#6/#10, JE adapter) land. The snapshot under test is test/examples/minimal-snapshot.json; regenerate only in ui-graph.",
+  "snapshotFile": "../examples/minimal-snapshot.json",
+  "claimed": {
+    "snapshotId": "ugs_1_d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696",
+    "contentHash": "sha256:d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696"
+  },
+  "vectors": [
+    {
+      "name": "member ref resolves",
+      "elementRef": "ug:4386822b:0",
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "name": "#56 repro: fabricated ordinal under correct prefix",
+      "elementRef": "ug:4386822b:999999",
+      "expect": {
+        "ok": false,
+        "detail": "ref_not_in_snapshot"
+      }
+    },
+    {
+      "name": "foreign-prefix copied ref",
+      "elementRef": "ug:cdcdcdcd:1",
+      "expect": {
+        "ok": false,
+        "detail": "ref_not_in_snapshot"
+      }
+    },
+    {
+      "name": "malformed ref",
+      "elementRef": "not-a-ref",
+      "expect": {
+        "ok": false,
+        "detail": "malformed_ref"
+      }
+    },
+    {
+      "name": "prefix matches but full contentHash differs (prefix is not authority)",
+      "elementRef": "ug:4386822b:0",
+      "claimed": {
+        "snapshotId": "ugs_1_d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696",
+        "contentHash": "sha256:d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6690"
+      },
+      "expect": {
+        "ok": false,
+        "detail": "wrong_snapshot_identity"
+      }
+    },
+    {
+      "name": "wrong snapshotId",
+      "elementRef": "ug:4386822b:0",
+      "claimed": {
+        "snapshotId": "ugs_1_d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e669f",
+        "contentHash": "sha256:d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696"
+      },
+      "expect": {
+        "ok": false,
+        "detail": "wrong_snapshot_identity"
+      }
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 import { UIGraphError } from "./api.js";
+import { assertSnapshotIdentity } from "./canonical.js";
 import type { UiGraphViewKind } from "./capability-descriptor.js";
+import type { UIGraphSnapshot } from "./types.js";
 
 /**
  * Consumer view-consumption contract + R2 shadow-build seam (ui-graph#26; PRD §4
@@ -136,11 +138,6 @@ export function isElementRef(value: unknown): value is string {
   return typeof value === "string" && ELEMENT_REF.test(value);
 }
 
-function scopeOf(elementRef: string): string | null {
-  const m = ELEMENT_REF.exec(elementRef);
-  return m ? m[1]! : null;
-}
-
 /** The 8-hex ref-scope prefix a snapshot's `refScopeDigest` produces. */
 export function snapshotRefScope(refScopeDigest: string): string {
   const m = /^sha256:([0-9a-f]{8})[0-9a-f]{56}$/.exec(refScopeDigest);
@@ -148,25 +145,83 @@ export function snapshotRefScope(refScopeDigest: string): string {
   return m[1]!;
 }
 
+/** Why a ref was refused. Consumers map every detail fail-closed (#56). */
+export type RefRejectDetail =
+  | "malformed_ref"
+  | "snapshot_identity_invalid"
+  | "wrong_snapshot_identity"
+  | "ref_not_in_snapshot";
+
 export type RefResolution =
   | { ok: true; elementRef: string }
-  | { ok: false; reason: "stale_or_foreign_ref"; recovery: "requery_lineage_match" };
+  | {
+      ok: false;
+      reason: "stale_or_foreign_ref";
+      detail: RefRejectDetail;
+      recovery: "requery_lineage_match";
+    };
 
-/**
- * Resolve an `elementRef` against the current snapshot's ref scope. A ref minted
- * under a different snapshot (or malformed) is `stale_or_foreign_ref` with the
- * requery/lineage-match recovery path — never silently treated as valid.
- */
-export function resolveSnapshotLocalRef(elementRef: string, refScopeDigest: string): RefResolution {
-  const scope = scopeOf(elementRef);
-  if (scope !== null && scope === snapshotRefScope(refScopeDigest)) return { ok: true, elementRef };
-  return { ok: false, reason: "stale_or_foreign_ref", recovery: "requery_lineage_match" };
+/** The caller's claim about WHICH snapshot its ref belongs to (full tuple, never a prefix). */
+export interface ClaimedSnapshotIdentity {
+  snapshotId: string;
+  contentHash: string;
 }
 
-/** Assert an `elementRef` is snapshot-local, throwing a typed `stale_or_foreign_ref` otherwise. */
-export function assertSnapshotLocalRef(elementRef: string, refScopeDigest: string): string {
-  const r = resolveSnapshotLocalRef(elementRef, refScopeDigest);
-  if (!r.ok) throw new UIGraphError("stale_or_foreign_ref", `elementRef ${elementRef} is not local to this snapshot`);
+const refuse = (detail: RefRejectDetail): RefResolution => ({
+  ok: false,
+  reason: "stale_or_foreign_ref",
+  detail,
+  recovery: "requery_lineage_match",
+});
+
+/**
+ * Resolve an `elementRef` against a VERIFIED snapshot with EXACT membership
+ * (#56; TRD §6/§16). The 8-hex ref-scope prefix is deliberately not authority:
+ * this resolver (1) verifies the supplied snapshot's own identity (refs, hash,
+ * id self-consistent via `assertSnapshotIdentity`), (2) requires the caller's
+ * claimed `(snapshotId, contentHash)` tuple to equal that verified identity
+ * exactly — a same-prefix/different-digest snapshot is foreign — and (3)
+ * requires the ref to be one of the snapshot's actual node refs, so a
+ * fabricated ordinal under the correct prefix names nothing and is refused.
+ * Every refusal is a typed `stale_or_foreign_ref` with a fail-closed detail.
+ *
+ * `ug:*` refs remain immutable evidence only: never a locator hint, selector,
+ * browser handle, or a Pointer `ptr:*` ref.
+ */
+export function resolveElementRefInSnapshot(
+  snapshot: UIGraphSnapshot,
+  claimed: ClaimedSnapshotIdentity,
+  elementRef: string,
+): RefResolution {
+  if (!isElementRef(elementRef)) return refuse("malformed_ref");
+  try {
+    assertSnapshotIdentity(snapshot);
+  } catch {
+    return refuse("snapshot_identity_invalid");
+  }
+  if (claimed.snapshotId !== snapshot.snapshotId || claimed.contentHash !== snapshot.contentHash) {
+    return refuse("wrong_snapshot_identity");
+  }
+  // Exact membership in the verified snapshot's nodes — never prefix matching.
+  if (!snapshot.nodes.some((node) => node.elementRef === elementRef)) {
+    return refuse("ref_not_in_snapshot");
+  }
+  return { ok: true, elementRef };
+}
+
+/** Assert exact snapshot membership, throwing a typed `stale_or_foreign_ref` otherwise. */
+export function assertElementRefInSnapshot(
+  snapshot: UIGraphSnapshot,
+  claimed: ClaimedSnapshotIdentity,
+  elementRef: string,
+): string {
+  const r = resolveElementRefInSnapshot(snapshot, claimed, elementRef);
+  if (!r.ok) {
+    throw new UIGraphError(
+      "stale_or_foreign_ref",
+      `elementRef ${elementRef} is not a member of the claimed snapshot (${r.detail})`,
+    );
+  }
   return elementRef;
 }
 
