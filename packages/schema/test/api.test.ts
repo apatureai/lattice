@@ -53,12 +53,23 @@ describe("remaining API stubs throw a typed not_implemented error", () => {
     }
   });
 
-  it("diffUiGraphs throws not_implemented", () => {
-    expect(() => diffUiGraphs(fakeSnapshot, fakeSnapshot)).toThrow(UIGraphError);
+  it("diffUiGraphs is implemented (#13/#14): matches carried under both snapshot ids", () => {
+    const empty = { ...fakeSnapshot, snapshotId: "ugs_x", nodes: [] } as UIGraphSnapshot;
+    const diff = diffUiGraphs(empty, empty);
+    expect(diff.baseSnapshotId).toBe("ugs_x");
+    expect(diff.targetSnapshotId).toBe("ugs_x");
+    expect(diff.matches).toEqual([]);
   });
 
-  it("applyUiGraphDelta throws not_implemented", () => {
-    expect(() => applyUiGraphDelta(fakeSnapshot, fakeDelta)).toThrow(UIGraphError);
+  it("applyUiGraphDelta fails closed on an unbound base (never not_implemented)", () => {
+    try {
+      applyUiGraphDelta(fakeSnapshot, fakeDelta);
+      throw new Error("should have thrown");
+    } catch (e) {
+      expect(e).toBeInstanceOf(UIGraphError);
+      // fakeSnapshot is not identity-valid → invalid_snapshot; a stub would say not_implemented.
+      expect((e as UIGraphError).code).not.toBe("not_implemented");
+    }
   });
 });
 

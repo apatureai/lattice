@@ -21,6 +21,8 @@ import type {
   CaptureBundleReadProfile,
 } from "./readprofile.js";
 import { BuildPipelineFailure, executeBuild } from "./builder.js";
+import { applyUiGraphDeltaStrict } from "./pipeline/delta.js";
+import { matchNodes } from "./pipeline/lineage.js";
 
 // --- Cross-repo input read profiles (TRD §4) ----------------------------
 //
@@ -153,18 +155,29 @@ export function queryUiGraph(_request: QueryUiGraphRequest): UIGraphView {
   return NOT_IMPLEMENTED("queryUiGraph");
 }
 
+/** Cross-snapshot node lineage (#13): deterministic matches with abstention. */
 export function diffUiGraphs(
-  _base: UIGraphSnapshot,
-  _target: UIGraphSnapshot,
+  base: UIGraphSnapshot,
+  target: UIGraphSnapshot,
 ): UIGraphDiff {
-  return NOT_IMPLEMENTED("diffUiGraphs");
+  return {
+    baseSnapshotId: base.snapshotId,
+    targetSnapshotId: target.snapshotId,
+    matches: matchNodes(base.nodes, target.nodes),
+  };
 }
 
+/**
+ * Hash-verified delta application (#14; TRD §12): verified base binding,
+ * ordered ID-keyed ops, explicit incident-edge removal, re-sealed target that
+ * must equal the delta's declared identity — or a typed error and NO partial
+ * result. Deltas are transport artifacts; full snapshots remain canonical.
+ */
 export function applyUiGraphDelta(
-  _base: UIGraphSnapshot,
-  _delta: UIGraphDelta,
+  base: UIGraphSnapshot,
+  delta: UIGraphDelta,
 ): UIGraphSnapshot {
-  return NOT_IMPLEMENTED("applyUiGraphDelta");
+  return applyUiGraphDeltaStrict(base, delta);
 }
 
 export type { CoordinateSpace };

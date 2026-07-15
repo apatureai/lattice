@@ -17,3 +17,4 @@ export * from "./capability-descriptor.js";
 export * from "./consumer-contract.js";
 export * from "./pipeline/index.js";
 export * from "./eval/index.js";
+export { encodeUiGraphDelta, applyUiGraphDeltaStrict } from "./pipeline/delta.js";
