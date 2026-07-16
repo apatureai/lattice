@@ -14,3 +14,5 @@ export * from "./benchmark.js";
 export * from "./gates.js";
 export { applyDeltaMutation, deltaChainHashes } from "./delta-mutations.js";
 export type { DeltaMutationKind } from "./delta-mutations.js";
+export { buildDecisionReport, promotionVerdict } from "./decision-report.js";
+export type { PromotionVerdict, RepresentationDecisionReport } from "./decision-report.js";
