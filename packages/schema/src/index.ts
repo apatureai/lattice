@@ -35,3 +35,11 @@ export type {
   EvidenceRequestPlan,
   RejectedVisualTarget,
 } from "./pipeline/evidence-request.js";
+export {
+  diffJsonSchema,
+  checkVersionBump,
+  readerSupportsMajor,
+  migrateToCurrentMajor,
+  CURRENT_SCHEMA_MAJOR,
+} from "./schema-evolution.js";
+export type { SchemaChange, SchemaChangeKind, VersionBumpVerdict, MigratedSnapshot } from "./schema-evolution.js";
