@@ -1,8 +1,10 @@
 /**
- * Task-focused view renderer (PRD §6.4; #41). The first two consumer views —
- * `focus` (bounded graph neighborhood around refs) and `summary` (regions,
- * shallow hierarchy, major affordances, page-health caveats) — over the
- * fusion/hierarchy/relations pipeline output.
+ * Task-focused view renderer (PRD §6.4; #41). The six consumer views —
+ * `focus` (bounded graph neighborhood around refs), `summary` (regions,
+ * shallow hierarchy, major affordances, page-health caveats), `actionMap`,
+ * `patchContext`, `violations` and `diff` — rendered either over the
+ * fusion/hierarchy/relations pipeline output or, through `queryUiGraph`, over a
+ * sealed snapshot.
  *
  * §6.4's own requirements are load-bearing here: every view reports
  * truncation, omitted counts, a token estimate, and the policy/version that
@@ -11,30 +13,45 @@
  * the same graph always yields a byte-identical view (`canonicalize` on the
  * selected sub-graph) — and fail-closed: refs that resolve to nothing render
  * an explicit empty view carrying the unresolved refs, never a guess.
+ *
+ * ## views@2 — the view text is a PROMPT projection, not a graph dump
+ *
+ * A view is what enters a model prompt, so it carries only facts a model can act
+ * on: ref, kind, role, name, text, a normalized rect, visibility, retained
+ * conflict markers, flags. Provenance — the full `evidence[]` chain, raw source
+ * ids, frame rects, coordinate-space ids, per-fact confidences — stays in the
+ * sealed snapshot, addressable by the very same ref the view emits. Under
+ * views@1 the renderers canonicalized whole `FusedNode`s and the resulting
+ * "compressed" view was consistently LARGER than the raw capture it summarized;
+ * that was the projection being wrong, not the design. Auditability is
+ * unchanged: every ref in a view resolves to a node whose evidence is intact.
  */
 
 import { canonicalize } from "../canonical.js";
-import { assertNoSensitiveTextSurvives, delimitUntrusted, sanitizeNodeText } from "./untrusted.js";
-import type { LocatorHint, Rect, SensitivityLabel, UIDNAMatch, UIDNAProjection, UIGraphEdge, UIGraphNode, UIRegion, Viewport } from "../types.js";
+import { assertNoSensitiveTextSurvives, delimitUntrusted, sanitizeUntrustedText } from "./untrusted.js";
+import type { LocatorHint, Rect, SensitivityLabel, UIDNAMatch, UIDNAProjection, UIGraphNode, UIRegion, Viewport } from "../types.js";
 import { normalizeCssLength } from "./css.js";
 import { addedTargetIds, matchNodes, type MatchOptions } from "./lineage.js";
-import type { FusedNode } from "./fuse.js";
-import type { NodeHierarchy } from "./hierarchy.js";
+import type { ViewSourceEdge, ViewSourceHierarchy, ViewSourceNode } from "./view-source.js";
+
+export type { ViewSourceEdge, ViewSourceHierarchy, ViewSourceNode } from "./view-source.js";
 
 /** The version stamp every rendered view carries (bump on policy change). */
-export const VIEW_POLICY_VERSION = "views@1";
+export const VIEW_POLICY_VERSION = "views@2";
 
-/** The pipeline output a view renders from (serializeB4's exact shape). */
+/** The graph a view renders from (`serializeB4`'s shape, and the query path's). */
 export interface GraphView {
-  readonly nodes: readonly FusedNode[];
-  readonly hierarchy: readonly NodeHierarchy[];
+  readonly nodes: readonly ViewSourceNode[];
+  readonly hierarchy: readonly ViewSourceHierarchy[];
   readonly regions: readonly UIRegion[];
-  readonly edges: readonly UIGraphEdge[];
+  readonly edges: readonly ViewSourceEdge[];
 }
 
 export interface ViewBudget {
   /** Max nodes the view may include; beyond it the view truncates (never errors). */
   readonly maxNodes: number;
+  /** Max edges the view may include; beyond it the view truncates (never errors). */
+  readonly maxEdges?: number;
 }
 
 export interface ViewMeta {
@@ -42,11 +59,15 @@ export interface ViewMeta {
   readonly policyVersion: typeof VIEW_POLICY_VERSION;
   /** True when the budget cut anything; the counts say exactly how much. */
   readonly truncated: boolean;
-  readonly omitted: { readonly nodes: number; readonly edges: number };
+  readonly omitted: { readonly nodes: number; readonly edges: number; readonly regions: number };
   /** Chars/4 heuristic — an estimate by contract, never billing truth. */
   readonly tokenEstimate: number;
   readonly refsResolved: readonly string[];
   readonly refsUnresolved: readonly string[];
+  /** Every node ref the rendered text actually carries (the view's real footprint). */
+  readonly includedRefs: readonly string[];
+  /** Every edge id the rendered text actually carries. */
+  readonly includedEdgeIds: readonly string[];
   /** Set only on the fail-closed empty view. */
   readonly emptyReason?: string;
 }
@@ -71,6 +92,134 @@ function tokenEstimate(text: string): number {
 
 function sortedIds(ids: Iterable<string>): string[] {
   return [...ids].sort();
+}
+
+const byString = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+// --- The prompt projection (views@2) -----------------------------------------
+
+/** One node as a prompt sees it. Provenance stays in the snapshot, not here. */
+export interface PromptNode {
+  readonly ref: string;
+  readonly kind: string;
+  /** Containment parent, folded in so structure costs no second array. */
+  readonly parent?: string;
+  readonly depth?: number;
+  readonly role?: string;
+  readonly name?: string;
+  readonly text?: string;
+  /** Normalized [0,1] viewport rect, rounded to 4dp — resolution-independent. */
+  readonly rect?: Rect;
+  readonly visibility?: string;
+  /** Facts where sources disagreed. Conflict retention survives the projection. */
+  readonly conflicts?: readonly string[];
+  readonly flags?: readonly string[];
+}
+
+export interface PromptRegion {
+  readonly regionId: string;
+  readonly kind: string;
+  readonly label?: string;
+  readonly rootRef: string;
+  /** Exact member count, even when `memberRefs` is capped. */
+  readonly memberCount: number;
+  readonly memberRefs: readonly string[];
+  readonly memberRefsTruncated?: boolean;
+  readonly itemCount?: number;
+  readonly visibleItemCount?: number;
+}
+
+export interface PromptEdge {
+  readonly from: string;
+  readonly to: string;
+  readonly kind: string;
+}
+
+const round4 = (n: number): number => Math.round(n * 1e4) / 1e4;
+
+function promptRect(rect: Rect): Rect {
+  return { x: round4(rect.x), y: round4(rect.y), width: round4(rect.width), height: round4(rect.height) };
+}
+
+const CONFLICTABLE = ["role", "name", "text"] as const;
+
+/** Where a node sits in the containment tree, folded into the node itself. */
+export interface NodePlacement {
+  readonly parent?: string;
+  readonly depth: number;
+}
+
+/**
+ * Project one source node onto the lean prompt shape, sanitizing page text.
+ * Structure travels WITH the node: a separate hierarchy array would repeat every
+ * ref a second time for no extra information.
+ */
+export function promptNode(node: ViewSourceNode, placement?: NodePlacement): PromptNode {
+  const conflicts = CONFLICTABLE.filter((fact) => node[fact]?.conflict === true);
+  const flags = [...node.flags].sort();
+  return {
+    ref: node.candidateId,
+    kind: node.kind,
+    ...(placement !== undefined ? { depth: placement.depth } : {}),
+    ...(placement?.parent !== undefined ? { parent: placement.parent } : {}),
+    ...(node.role !== undefined ? { role: node.role.value } : {}),
+    ...(node.name !== undefined ? { name: sanitizeUntrustedText(node.name.value) } : {}),
+    ...(node.text !== undefined ? { text: sanitizeUntrustedText(node.text.value) } : {}),
+    ...(node.geometry !== undefined ? { visibility: node.geometry.visibility } : {}),
+    ...(node.geometry?.normalizedViewportRect !== undefined
+      ? { rect: promptRect(node.geometry.normalizedViewportRect) }
+      : {}),
+    ...(conflicts.length > 0 ? { conflicts } : {}),
+    ...(flags.length > 0 ? { flags } : {}),
+  };
+}
+
+/**
+ * Project a region leanly. `memberCount` is always exact; `memberRefs` is
+ * capped so one 200-row table cannot dominate a page summary, and the cap is
+ * reported rather than silently applied.
+ */
+function promptRegion(region: UIRegion, maxMembers = Number.POSITIVE_INFINITY): PromptRegion {
+  const members = [...region.memberNodeIds].sort(byString);
+  const kept = members.slice(0, maxMembers);
+  return {
+    regionId: region.regionId,
+    kind: region.kind,
+    ...(region.label !== undefined ? { label: sanitizeUntrustedText(region.label) } : {}),
+    rootRef: region.rootNodeId,
+    memberCount: members.length,
+    memberRefs: kept,
+    ...(kept.length < members.length ? { memberRefsTruncated: true } : {}),
+    ...(region.summary.itemCount !== undefined ? { itemCount: region.summary.itemCount } : {}),
+    ...(region.summary.visibleItemCount !== undefined
+      ? { visibleItemCount: region.summary.visibleItemCount }
+      : {}),
+  };
+}
+
+/** Index the containment tree so a node projection can carry its own placement. */
+function placementIndex(hierarchy: readonly ViewSourceHierarchy[]): Map<string, NodePlacement> {
+  return new Map(
+    hierarchy.map((h) => [
+      h.candidateId,
+      { depth: h.depth, ...(h.parentNodeId !== undefined ? { parent: h.parentNodeId } : {}) },
+    ]),
+  );
+}
+
+function promptEdge(edge: ViewSourceEdge): PromptEdge {
+  return { from: edge.fromNodeId, to: edge.toNodeId, kind: edge.kind };
+}
+
+/** Deterministic edge order so an edge budget always cuts the same tail. */
+function sortEdges(edges: readonly ViewSourceEdge[]): ViewSourceEdge[] {
+  return [...edges].sort(
+    (a, b) =>
+      byString(a.fromNodeId, b.fromNodeId) ||
+      byString(a.toNodeId, b.toNodeId) ||
+      byString(a.kind, b.kind) ||
+      byString(a.edgeId, b.edgeId),
+  );
 }
 
 /**
@@ -98,10 +247,12 @@ export function renderFocusView(
         view: "focus",
         policyVersion: VIEW_POLICY_VERSION,
         truncated: false,
-        omitted: { nodes: 0, edges: 0 },
+        omitted: { nodes: 0, edges: 0, regions: 0 },
         tokenEstimate: 0,
         refsResolved: [],
         refsUnresolved,
+        includedRefs: [],
+        includedEdgeIds: [],
         emptyReason: "no ref resolved to a node in this snapshot; refusing to guess a neighborhood",
       },
     };
@@ -144,14 +295,18 @@ export function renderFocusView(
   // #10/#17: fail closed on surviving sensitive text, then serialize page text
   // sanitized and inside the untrusted boundary — data, never instructions.
   assertNoSensitiveTextSurvives(graph.nodes);
-  const nodes = graph.nodes.filter((n) => keptSet.has(n.candidateId)).map(sanitizeNodeText);
   const hierarchy = graph.hierarchy.filter((h) => keptSet.has(h.candidateId));
+  const placement = placementIndex(hierarchy);
+  const nodes = graph.nodes
+    .filter((n) => keptSet.has(n.candidateId))
+    .map((n) => promptNode(n, placement.get(n.candidateId)));
   const edgesAll = graph.edges.filter(
     (e) => keptSet.has(e.fromNodeId) || keptSet.has(e.toNodeId),
   );
-  const edges = edgesAll.filter(
-    (e) => keptSet.has(e.fromNodeId) && keptSet.has(e.toNodeId),
+  const edgesInside = sortEdges(
+    edgesAll.filter((e) => keptSet.has(e.fromNodeId) && keptSet.has(e.toNodeId)),
   );
+  const edges = budget.maxEdges === undefined ? edgesInside : edgesInside.slice(0, budget.maxEdges);
   const regionIds = new Set(hierarchy.flatMap((h) => h.regionIds));
   const regions = graph.regions.filter((r) => regionIds.has(r.regionId));
 
@@ -161,20 +316,22 @@ export function renderFocusView(
     refs: refsResolved,
     radius,
     nodes,
-    hierarchy,
-    regions,
-    edges,
+    regions: regions.map((r) => promptRegion(r)),
+    edges: edges.map(promptEdge),
   }));
+  const omittedEdges = edgesAll.length - edges.length;
   return {
     text,
     meta: {
       view: "focus",
       policyVersion: VIEW_POLICY_VERSION,
-      truncated: omittedNodes > 0,
-      omitted: { nodes: omittedNodes, edges: edgesAll.length - edges.length },
+      truncated: omittedNodes > 0 || edgesInside.length > edges.length,
+      omitted: { nodes: omittedNodes, edges: omittedEdges, regions: 0 },
       tokenEstimate: tokenEstimate(text),
       refsResolved,
       refsUnresolved,
+      includedRefs: nodes.map((n) => n.ref),
+      includedEdgeIds: edges.map((e) => e.edgeId),
     },
   };
 }
@@ -184,9 +341,14 @@ export interface SummaryOptions {
   readonly maxAffordances?: number;
   /** Page-health caveats passed through from capture (§6.4: never dropped). */
   readonly caveats?: readonly string[];
+  /** Caps the shallow outline as well; beyond it the view truncates. */
+  readonly budget?: ViewBudget;
 }
 
 const DEFAULT_MAX_AFFORDANCES = 40;
+
+/** Member refs listed per region in a page summary; the exact count is always kept. */
+const SUMMARY_MAX_REGION_MEMBERS = 24;
 
 /** Roles §6.4 treats as major affordances (perception context, not an action map). */
 const AFFORDANCE_ROLES = new Set([
@@ -213,40 +375,70 @@ export function renderSummaryView(
 ): RenderedView {
   const maxAffordances = options.maxAffordances ?? DEFAULT_MAX_AFFORDANCES;
   const caveats = options.caveats ?? [];
+  const budget = options.budget ?? DEFAULT_BUDGET;
 
-  const shallow = graph.hierarchy.filter((h) => h.depth <= 2);
-  const shallowSet = new Set(shallow.map((h) => h.candidateId));
   assertNoSensitiveTextSurvives(graph.nodes);
-  const outline = graph.nodes.filter((n) => shallowSet.has(n.candidateId)).map(sanitizeNodeText);
 
   const affordancesAll = graph.nodes
     .filter((n) => n.role !== undefined && AFFORDANCE_ROLES.has(n.role.value))
     .map((n) => n.candidateId)
-    .sort();
+    .sort(byString);
   const affordances = affordancesAll.slice(0, maxAffordances);
   const omittedAffordances = affordancesAll.length - affordances.length;
   const affordanceSet = new Set(affordances);
-  const affordanceNodes = graph.nodes.filter((n) => affordanceSet.has(n.candidateId)).map(sanitizeNodeText);
+  const placement = placementIndex(graph.hierarchy);
+  const affordanceNodes = graph.nodes
+    .filter((n) => affordanceSet.has(n.candidateId))
+    .map((n) => promptNode(n, placement.get(n.candidateId)));
+
+  // The outline is the shallow skeleton MINUS anything already listed as an
+  // affordance — a node is described once per view, never twice.
+  const shallowAll = graph.hierarchy
+    .filter((h) => h.depth <= 2)
+    .sort((a, b) => a.depth - b.depth || byString(a.candidateId, b.candidateId));
+  const shallow = shallowAll.slice(0, budget.maxNodes);
+  const omittedOutline = shallowAll.length - shallow.length;
+  const shallowSet = new Set(shallow.map((h) => h.candidateId));
+  const outline = graph.nodes
+    .filter((n) => shallowSet.has(n.candidateId) && !affordanceSet.has(n.candidateId))
+    .map((n) => promptNode(n, placement.get(n.candidateId)));
+
+  const includedRefs = sortedIds(new Set([...outline.map((n) => n.ref), ...affordances]));
+
+  // Regions count against the budget too: a page with 30 `repeated` groups can
+  // otherwise dominate a summary no matter how tightly the nodes are capped.
+  // Named structure (landmarks, forms, lists, tables) outranks repeated groups,
+  // then larger regions, then id — deterministic, so a budget cuts the same tail.
+  const rankedRegions = [...graph.regions].sort(
+    (a, b) =>
+      Number(a.kind === "repeated") - Number(b.kind === "repeated") ||
+      b.memberNodeIds.length - a.memberNodeIds.length ||
+      byString(a.regionId, b.regionId),
+  );
+  const keptRegions = rankedRegions.slice(0, budget.maxNodes);
+  const omittedRegions = rankedRegions.length - keptRegions.length;
 
   const text = delimitUntrusted(canonicalize({
     view: "summary",
     policyVersion: VIEW_POLICY_VERSION,
-    regions: graph.regions,
+    regions: keptRegions.map((r) => promptRegion(r, SUMMARY_MAX_REGION_MEMBERS)),
     outline,
-    hierarchy: shallow,
     affordances: affordanceNodes,
     caveats,
   }));
+  const omittedNodes = omittedAffordances + omittedOutline;
   return {
     text,
     meta: {
       view: "summary",
       policyVersion: VIEW_POLICY_VERSION,
-      truncated: omittedAffordances > 0,
-      omitted: { nodes: omittedAffordances, edges: 0 },
+      truncated: omittedNodes > 0 || omittedRegions > 0,
+      omitted: { nodes: omittedNodes, edges: 0, regions: omittedRegions },
       tokenEstimate: tokenEstimate(text),
       refsResolved: [],
       refsUnresolved: [],
+      includedRefs,
+      includedEdgeIds: [],
     },
   };
 }
@@ -294,6 +486,8 @@ export function renderActionMapView(graph: GraphView, options: ActionMapOptions 
     if (role === undefined || !AFFORDANCE_ROLES.has(role)) continue;
     const geom = n.geometry;
     if (geom === undefined || !ACTIONMAP_VISIBILITIES.has(geom.visibility)) continue; // no rect / off-screen ⇒ omit
+    // No normalized rect ⇒ nothing honest to point at; omitted, never guessed.
+    if (geom.normalizedViewportRect === undefined) continue;
     candidates.push({
       ref: n.candidateId,
       role,
@@ -320,10 +514,12 @@ export function renderActionMapView(graph: GraphView, options: ActionMapOptions 
       view: "actionMap",
       policyVersion: VIEW_POLICY_VERSION,
       truncated: omittedNodes > 0,
-      omitted: { nodes: omittedNodes, edges: 0 },
+      omitted: { nodes: omittedNodes, edges: 0, regions: 0 },
       tokenEstimate: tokenEstimate(text),
       refsResolved: kept.map((e) => e.ref),
       refsUnresolved: [],
+      includedRefs: kept.map((e) => e.ref),
+      includedEdgeIds: [],
     },
   };
 }
@@ -490,10 +686,12 @@ export function renderPatchContextView(
         view: "patchContext",
         policyVersion: VIEW_POLICY_VERSION,
         truncated: false,
-        omitted: { nodes: 0, edges: 0 },
+        omitted: { nodes: 0, edges: 0, regions: 0 },
         tokenEstimate: 0,
         refsResolved: [],
         refsUnresolved,
+        includedRefs: [],
+        includedEdgeIds: [],
         emptyReason: "patchContext requires at least one resolvable ref; refusing to guess repair context",
       },
     };
@@ -517,10 +715,12 @@ export function renderPatchContextView(
       view: "patchContext",
       policyVersion: VIEW_POLICY_VERSION,
       truncated: omittedNodes > 0,
-      omitted: { nodes: omittedNodes, edges: 0 },
+      omitted: { nodes: omittedNodes, edges: 0, regions: 0 },
       tokenEstimate: tokenEstimate(text),
       refsResolved: kept,
       refsUnresolved,
+      includedRefs: kept,
+      includedEdgeIds: [],
     },
   };
 }
@@ -623,10 +823,12 @@ export function renderViolationsView(
         view: "violations",
         policyVersion: VIEW_POLICY_VERSION,
         truncated: false,
-        omitted: { nodes: 0, edges: 0 },
+        omitted: { nodes: 0, edges: 0, regions: 0 },
         tokenEstimate: 0,
         refsResolved: [],
         refsUnresolved: [],
+        includedRefs: [],
+        includedEdgeIds: [],
         emptyReason: "no UI-DNA projected onto this snapshot; refusing to claim drift without an authority",
       },
     };
@@ -677,10 +879,12 @@ export function renderViolationsView(
       view: "violations",
       policyVersion: VIEW_POLICY_VERSION,
       truncated: omittedNodes > 0,
-      omitted: { nodes: omittedNodes, edges: 0 },
+      omitted: { nodes: omittedNodes, edges: 0, regions: 0 },
       tokenEstimate: tokenEstimate(text),
       refsResolved,
       refsUnresolved: [],
+      includedRefs: refsResolved,
+      includedEdgeIds: [],
     },
   };
 }
@@ -782,10 +986,12 @@ export function renderDiffView(
         view: "diff",
         policyVersion: VIEW_POLICY_VERSION,
         truncated: false,
-        omitted: { nodes: 0, edges: 0 },
+        omitted: { nodes: 0, edges: 0, regions: 0 },
         tokenEstimate: 0,
         refsResolved: [],
         refsUnresolved: [],
+        includedRefs: [],
+        includedEdgeIds: [],
         emptyReason: "diff requires a comparison snapshot id and content hash for both sides; refusing to diff an unknown baseline",
       },
     };
@@ -838,10 +1044,12 @@ export function renderDiffView(
       view: "diff",
       policyVersion: VIEW_POLICY_VERSION,
       truncated: omittedNodes > 0,
-      omitted: { nodes: omittedNodes, edges: 0 },
+      omitted: { nodes: omittedNodes, edges: 0, regions: 0 },
       tokenEstimate: tokenEstimate(text),
       refsResolved: sortedIds(keptMatched.map((e) => e.baseRef)),
       refsUnresolved: [],
+      includedRefs: sortedIds(new Set([...keptMatched.flatMap((e) => [e.baseRef, e.targetRef]), ...added, ...removed])),
+      includedEdgeIds: [],
     },
   };
 }

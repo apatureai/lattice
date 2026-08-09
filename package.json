@@ -23,6 +23,7 @@
     "typecheck": "tsc -b",
     "clean": "tsc -b --clean",
     "test": "vitest run",
+    "example": "node examples/quickstart.mjs",
     "lint": "eslint . --max-warnings=0",
     "guard:capability": "node scripts/capability-guard.mjs"
   },

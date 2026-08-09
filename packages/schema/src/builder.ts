@@ -362,6 +362,22 @@ function affordanceForRole(role: string | undefined): UIGraphNode["affordances"]
   }
 }
 
+/**
+ * The normalized viewport rect is a [0,1] contract (TRD §7): it says WHERE in
+ * the viewport an element sits. An element scrolled out of the viewport has no
+ * honest answer, and clamping would assert a position it does not occupy — so
+ * the field is OMITTED (the schema makes it optional) and the exact
+ * `documentRect`/`viewportRect` carry the geometry instead. Without this, any
+ * capture of a page taller than one screen failed to seal.
+ */
+function normalizedIfInViewport(rect: Rect | undefined): Rect | undefined {
+  if (rect === undefined) return undefined;
+  const within = (n: number): boolean => Number.isFinite(n) && n >= 0 && n <= 1;
+  return within(rect.x) && within(rect.y) && within(rect.width) && within(rect.height)
+    ? rect
+    : undefined;
+}
+
 function visibleRect(rect: Rect | undefined, viewport: Rect | undefined): Rect | undefined {
   if (rect === undefined || viewport === undefined) return undefined;
   const x = Math.max(rect.x, viewport.x);
@@ -372,12 +388,45 @@ function visibleRect(rect: Rect | undefined, viewport: Rect | undefined): Rect |
   return { x, y, width: right - x, height: bottom - y };
 }
 
+/**
+ * Durable DOM attributes → cross-capture locator hints, in descending order of
+ * how well each survives a re-render. These are the only hints the lineage
+ * matcher counts as an explicit identity (TRD §6.4): a capture that reports no
+ * attributes yields no explicit-id feature, and cross-snapshot matching can then
+ * only abstain.
+ */
+const ATTRIBUTE_HINTS: ReadonlyArray<{
+  readonly attribute: string;
+  readonly kind: LocatorHint["kind"];
+  readonly scope: LocatorHint["scope"];
+  readonly uniqueness: number;
+  readonly stability: number;
+}> = [
+  { attribute: "data-testid", kind: "explicit_test_id", scope: "cross_capture_candidate", uniqueness: 0.98, stability: 0.95 },
+  { attribute: "id", kind: "stable_dom_id", scope: "cross_capture_candidate", uniqueness: 0.9, stability: 0.85 },
+  { attribute: "href", kind: "href_or_form_name", scope: "route_version", uniqueness: 0.7, stability: 0.8 },
+  { attribute: "name", kind: "href_or_form_name", scope: "route_version", uniqueness: 0.65, stability: 0.8 },
+];
+
 function locatorHints(
   node: FusedNode,
   nodeId: string,
   parentNodeId: string | undefined,
+  dom: CaptureDomLayoutNode | undefined,
 ): LocatorHint[] {
   const hints: LocatorHint[] = [];
+  for (const spec of ATTRIBUTE_HINTS) {
+    const value = dom?.attributes?.[spec.attribute];
+    if (value === undefined || value.length === 0) continue;
+    hints.push({
+      kind: spec.kind,
+      value,
+      scope: spec.scope,
+      uniqueness: spec.uniqueness,
+      stability: spec.stability,
+      confidence: clamp01(node.confidence),
+    });
+  }
   if (node.role?.value !== undefined && node.name?.value !== undefined) {
     hints.push({
       kind: "role_name",
@@ -468,7 +517,8 @@ function createGraphNodes(
       geometry.documentRect = node.geometry.documentRect;
       geometry.viewportRect = node.geometry.viewportRect;
       geometry.visibleRect = visibleRect(node.geometry.viewportRect, viewportBounds);
-      geometry.normalizedViewportRect = node.geometry.normalizedViewportRect;
+      const normalized = normalizedIfInViewport(node.geometry.normalizedViewportRect);
+      if (normalized !== undefined) geometry.normalizedViewportRect = normalized;
     }
     if (dom?.paintOrder !== undefined) geometry.paintOrder = dom.paintOrder;
 
@@ -498,7 +548,7 @@ function createGraphNodes(
       style,
       affordances,
       dnaMatches: [],
-      locatorHints: locatorHints(node, nodeId, parentNodeId),
+      locatorHints: locatorHints(node, nodeId, parentNodeId, dom),
       evidence,
       sensitivity: [redacted ? "redacted" : "tenant_private"],
       confidence: clamp01(node.confidence),

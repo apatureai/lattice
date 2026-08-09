@@ -13,7 +13,7 @@
  * it stays pure and deterministic (no model/network).
  */
 
-import type { FusedNode } from "./fuse.js";
+import type { ViewSourceNode } from "./view-source.js";
 
 export interface SaliencyScore {
   candidateId: string;
@@ -23,7 +23,7 @@ export interface SaliencyScore {
 
 /** Injected attention model. Production wraps a UEyes-style predictor; tests stub it. */
 export interface SaliencyProvider {
-  score(nodes: readonly FusedNode[]): SaliencyScore[];
+  score(nodes: readonly ViewSourceNode[]): SaliencyScore[];
 }
 
 export interface SaliencyViewport {
@@ -41,7 +41,7 @@ function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
 
-function viewportOf(nodes: readonly FusedNode[], provided?: SaliencyViewport): SaliencyViewport {
+function viewportOf(nodes: readonly ViewSourceNode[], provided?: SaliencyViewport): SaliencyViewport {
   if (provided !== undefined) return provided;
   let w = 1;
   let h = 1;
@@ -60,7 +60,7 @@ function viewportOf(nodes: readonly FusedNode[], provided?: SaliencyViewport): S
  * attention-drawing ROLES score higher. A geometry-less node gets a small floor
  * (it exists but can't be spatially weighted).
  */
-export function heuristicSaliency(nodes: readonly FusedNode[], viewport?: SaliencyViewport): SaliencyScore[] {
+export function heuristicSaliency(nodes: readonly ViewSourceNode[], viewport?: SaliencyViewport): SaliencyScore[] {
   const vp = viewportOf(nodes, viewport);
   const vpArea = Math.max(1, vp.width * vp.height);
 

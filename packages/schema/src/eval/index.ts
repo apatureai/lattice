@@ -9,6 +9,8 @@
 
 export * from "./manifest.js";
 export { REPRESENTATION_MANIFEST } from "./fixtures.js";
+export { syntheticCapture, syntheticDna, SYNTHETIC_SCREENSHOT_ARTIFACT_REF } from "./synthetic-page.js";
+export type { SyntheticPageOptions } from "./synthetic-page.js";
 export * from "./stats.js";
 export * from "./benchmark.js";
 export * from "./gates.js";

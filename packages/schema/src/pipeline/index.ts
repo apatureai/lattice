@@ -44,12 +44,20 @@ export {
   renderPatchContextView,
   renderViolationsView,
   renderDiffView,
+  promptNode,
   VIEW_POLICY_VERSION,
 } from "./views.js";
 export { matchNodes, addedTargetIds, LINEAGE_MATCH_VERSION, DEFAULT_LINEAGE_THRESHOLDS } from "./lineage.js";
 export type { LineageThresholds, MatchOptions } from "./lineage.js";
 export type {
   GraphView,
+  ViewSourceNode,
+  ViewSourceEdge,
+  ViewSourceHierarchy,
+  PromptNode,
+  PromptRegion,
+  PromptEdge,
+  NodePlacement,
   RenderedView,
   ViewMeta,
   ViewBudget,

@@ -21,6 +21,7 @@ import type {
   CaptureBundleReadProfile,
 } from "./readprofile.js";
 import { BuildPipelineFailure, executeBuild } from "./builder.js";
+import { executeQuery } from "./query.js";
 import { applyUiGraphDeltaStrict } from "./pipeline/delta.js";
 import { matchNodes } from "./pipeline/lineage.js";
 
@@ -83,7 +84,14 @@ export type UIGraphBuildResult = {
 export type QueryUiGraphRequest = {
   snapshot: UIGraphSnapshot;
   spec: UIGraphViewSpec;
+  /** Required for `kind: "diff"`; its identity must equal the spec's comparison tuple. */
   comparisonSnapshot?: UIGraphSnapshot;
+  /**
+   * Logical artifact ref of the capture's screenshot (`artifact://…`). A sealed
+   * snapshot carries no screenshot pointer — pixels never enter this package —
+   * so evidence requests are planned only when the caller supplies one.
+   */
+  screenshotArtifactRef?: string;
 };
 
 export type UIGraphNodeMatch = {
@@ -103,7 +111,6 @@ export type UIGraphDiff = {
 // --- Typed errors (TRD §16) ---------------------------------------------
 
 export type UIGraphErrorCode =
-  | "not_implemented"
   | "invalid_build_options"
   | "invalid_capture"
   | "invalid_dna"
@@ -129,13 +136,6 @@ export class UIGraphError extends Error {
   }
 }
 
-const NOT_IMPLEMENTED = (entry: string): never => {
-  throw new UIGraphError(
-    "not_implemented",
-    `${entry} is not implemented in this scaffold slice (issue #2).`,
-  );
-};
-
 // --- Public entry points (TRD §1) ---------------------------------------
 
 export async function buildUiGraph(
@@ -151,8 +151,17 @@ export async function buildUiGraph(
   }
 }
 
-export function queryUiGraph(_request: QueryUiGraphRequest): UIGraphView {
-  return NOT_IMPLEMENTED("queryUiGraph");
+/**
+ * Answer one bounded question about a sealed snapshot (TRD §10; PRD §6.4).
+ *
+ * Verifies snapshot identity and every supplied ref, validates the spec,
+ * dispatches to the renderer for `spec.kind`, enforces the node/edge/text-token
+ * budgets by truncating (never by erroring), and returns the schema-shaped
+ * `UIGraphView` envelope. Pure and deterministic: the same (snapshot, spec)
+ * always yields a byte-identical view. See `src/query.ts`.
+ */
+export function queryUiGraph(request: QueryUiGraphRequest): UIGraphView {
+  return executeQuery(request);
 }
 
 /** Cross-snapshot node lineage (#13): deterministic matches with abstention. */

@@ -10,6 +10,7 @@
 export * from "./types.js";
 export * from "./validate.js";
 export * from "./api.js";
+export { graphViewOf, viewSourceNodeOf } from "./query.js";
 export * from "./canonical.js";
 export * from "./readprofile.js";
 export * from "./adapter.js";
@@ -27,8 +28,11 @@ export {
   sensitiveTextDigest,
 } from "./pipeline/untrusted.js";
 export { buildEvidenceRequests } from "./pipeline/evidence-request.js";
+// `PlannedEvidenceRequest` is the planner's internal shape (candidate ids +
+// multiple reasons). The schema-shaped `EvidenceRequest` a `UIGraphView` carries
+// comes from `types.ts`; `queryUiGraph` converts between them.
 export type {
-  EvidenceRequest,
+  EvidenceRequest as PlannedEvidenceRequest,
   EvidenceRequestKind,
   EvidenceRequestReason,
   EvidenceRequestOptions,

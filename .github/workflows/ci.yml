@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    name: lint · typecheck · test · capability-guard
+    name: lint · typecheck · test · capability-guard · example
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -48,3 +48,6 @@ jobs:
 
       - name: Capability guard (no model/browser/network/DB; determinism)
         run: pnpm guard:capability
+
+      - name: Example (the README quickstart, end to end)
+        run: pnpm example

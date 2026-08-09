@@ -62,9 +62,11 @@ not a guarantee. Input size and nesting limits are the host process's job, not
 this library's.
 
 **It does not redact.** The contract assumes redaction already happened
-upstream (see `TRD.md` §12 and `ARCHITECTURE.md` §12): text reaching the graph
-builder is supposed to arrive already-redacted, carrying redaction metadata and
-sensitivity labels. The library will fail closed when rendering a prompt view
+upstream: text reaching the graph builder is supposed to arrive
+already-redacted, carrying redaction metadata and sensitivity labels. The
+`queryUiGraph` view path additionally withholds the name and text of any node
+labelled `pii`, `secret`, `credential` or `redacted`, and flags it
+`withheld:sensitive`. The library will fail closed when rendering a prompt view
 if text labelled `pii`, `secret`, or `credential` would survive into the
 output — but it will happily hash and store whatever you hand it. Feed it raw
 captures of a logged-in production app and secrets end up in snapshots,

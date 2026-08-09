@@ -42,14 +42,15 @@ describe("buildUiGraph public entry point (issue #9)", () => {
   });
 });
 
-describe("remaining API stubs throw a typed not_implemented error", () => {
-  it("queryUiGraph throws not_implemented", () => {
+describe("every public entry point is implemented and fails closed", () => {
+  it("queryUiGraph refuses an unsealed snapshot with a typed invalid_snapshot", () => {
     try {
       queryUiGraph({ snapshot: fakeSnapshot, spec: fakeSpec });
       expect.unreachable("should have thrown");
     } catch (e) {
       expect(e).toBeInstanceOf(UIGraphError);
-      expect((e as UIGraphError).code).toBe("not_implemented");
+      // A stub would have said `not_implemented`; the dispatcher rejects the input.
+      expect((e as UIGraphError).code).toBe("invalid_snapshot");
     }
   });
 
@@ -61,14 +62,15 @@ describe("remaining API stubs throw a typed not_implemented error", () => {
     expect(diff.matches).toEqual([]);
   });
 
-  it("applyUiGraphDelta fails closed on an unbound base (never not_implemented)", () => {
+  it("applyUiGraphDelta fails closed on an unbound base", () => {
     try {
       applyUiGraphDelta(fakeSnapshot, fakeDelta);
       throw new Error("should have thrown");
     } catch (e) {
       expect(e).toBeInstanceOf(UIGraphError);
-      // fakeSnapshot is not identity-valid → invalid_snapshot; a stub would say not_implemented.
-      expect((e as UIGraphError).code).not.toBe("not_implemented");
+      // The empty delta is structurally invalid, so the binding is refused
+      // before any operation is applied — a typed error, never a partial result.
+      expect((e as UIGraphError).code).toBe("invalid_delta");
     }
   });
 });

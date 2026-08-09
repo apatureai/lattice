@@ -26,11 +26,12 @@ Requirements:
   up the right version automatically.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm lint        # eslint --max-warnings=0; warnings fail the build
 pnpm typecheck   # tsc -b across the workspace project references
 pnpm test        # vitest run
 pnpm guard:capability
+pnpm example     # node examples/quickstart.mjs — the end-to-end demo
 ```
 
 `pnpm build` is the same `tsc -b` invocation as `pnpm typecheck`; `pnpm clean`
@@ -45,12 +46,10 @@ Its only runtime dependencies are `ajv` and `ajv-formats`.
 `@apature/ui-graph` is a **deterministic, sandboxed library**. It converts
 versioned capture evidence and an approved UI-DNA projection into an immutable,
 content-addressed scene graph and renders bounded views. It has **no** model,
-browser, sandbox, network, or database capability (`TRD.md` §2, §3.1;
-`ARCHITECTURE.md` §1–§2). The capability guard (`pnpm guard:capability`)
-enforces this mechanically.
+browser, sandbox, network, or database capability. The capability guard
+(`pnpm guard:capability`) enforces this mechanically.
 
-UI Graph deliberately did **not** own — the consuming judgment engine did
-(`ARCHITECTURE.md` §16):
+UI Graph deliberately did **not** own — the consuming judgment engine did:
 
 - browser capture, screenshots, OCR, visual-parser inference, embeddings, model calls;
 - the canonical UI-DNA schema, extraction, approval, or storage;
@@ -66,17 +65,16 @@ UI Graph was a **feature-flagged representation experiment** pending a
 precision/grounding/cost/latency evaluation; it never graduated. Builds carry a
 `useMode` of `offline_eval`, `shadow`, or `production`. Non-production modes
 force every DNA match to `authoritative: false`, and `useMode` participates in
-the content/cache key so shadow and production artifacts can never collide
-(`TRD.md` §4.3, §5.2, §13). The unmet acceptance gates are listed in
-[README.md](README.md).
+the content/cache key so shadow and production artifacts can never collide. The
+unmet acceptance gates are listed in [README.md](README.md).
 
 ## Determinism
 
 Code on the hashed/canonical path (build, serialize, hash, view) must be
 deterministic: no wall-clock, randomness, or locale-dependent formatting. Wall
 time belongs only to `UIGraphBuildResult.diagnostics` and delta `createdAt`,
-never to hashed snapshot fields (`TRD.md` §5.1, §8, §9.2). The capability guard
-fails the build on a violation in those files.
+never to hashed snapshot fields. The capability guard fails the build on a
+violation in those files.
 
 ## Adding a runtime dependency
 

@@ -23,7 +23,7 @@
 import { createHash } from "node:crypto";
 import { canonicalize } from "../canonical.js";
 import type { Rect } from "../types.js";
-import type { FusedNode } from "./fuse.js";
+import type { ViewSourceNode } from "./view-source.js";
 import { heuristicSaliency, type SaliencyScore } from "./saliency.js";
 
 export type EvidenceRequestKind = "crop" | "full_screenshot" | "marked_overlay";
@@ -111,7 +111,7 @@ function requestId(body: unknown): string {
  * REJECTED (their visual claims must not be made), never approximated.
  */
 export function buildEvidenceRequests(
-  nodes: readonly FusedNode[],
+  nodes: readonly ViewSourceNode[],
   options: EvidenceRequestOptions,
 ): EvidenceRequestPlan {
   const padding = options.paddingPx ?? 24;
@@ -128,7 +128,7 @@ export function buildEvidenceRequests(
   );
 
   const rejected: RejectedVisualTarget[] = [];
-  const targets: Array<{ node: FusedNode; rect: Rect; reasons: EvidenceRequestReason[]; saliency: number }> = [];
+  const targets: Array<{ node: ViewSourceNode; rect: Rect; reasons: EvidenceRequestReason[]; saliency: number }> = [];
 
   for (const id of [...new Set(requestedIds)].sort()) {
     const node = byId.get(id);
@@ -149,11 +149,12 @@ export function buildEvidenceRequests(
 
     const reasons: EvidenceRequestReason[] = ["requested_refs"];
     const area = rect.width * rect.height;
+    const evidence = node.evidence ?? [];
     if (area < 32 * 32) reasons.push("small_or_dense_target");
-    if (node.evidence.every((claim) => claim.sourceType === "vision_parser")) {
+    if (evidence.length > 0 && evidence.every((claim) => claim.sourceType === "vision_parser")) {
       reasons.push("parser_only_provenance");
     }
-    if (node.flags.includes("conflict") || node.evidence.length > 1 && node.confidence < 0.6) {
+    if (node.flags.includes("conflict") || evidence.length > 1 && node.confidence < 0.6) {
       reasons.push("source_disagreement");
     }
     const saliency = scores.get(id) ?? 0;

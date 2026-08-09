@@ -30,6 +30,13 @@ export type CaptureDomLayoutNode = {
   frameId: string;
   role?: string;
   tag?: string;
+  /**
+   * Durable DOM attributes, if the capture collected any. UI Graph reads only
+   * the four that survive a re-render — `data-testid`, `id`, `href`, `name` —
+   * and turns them into cross-capture locator hints. Without them the lineage
+   * matcher has no explicit-id feature and can only abstain (TRD §6.4).
+   */
+  attributes?: Record<string, string>;
   bounds?: Rect;
   visible: boolean;
   paintOrder?: number;
