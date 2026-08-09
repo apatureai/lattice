@@ -7,9 +7,9 @@ import type { UIGraphSnapshot } from "./types.js";
  * Consumer view-consumption contract + R2 shadow-build seam (ui-graph#26; PRD §4
  * consumers, §9 R2, ARCHITECTURE §4/§15/§16, TRD §6/§10/§16).
  *
- * The backlog builds snapshots, views, lineage, deltas, and the benchmark, but
- * nothing defined HOW a consumer safely depends on them behind the flag. This
- * closes the loop from "we can build a graph" to "a consumer can depend on it":
+ * The rest of the package builds snapshots, views, lineage, deltas, and the
+ * benchmark; this module defines HOW a consumer safely depends on them while
+ * the representation is still behind a feature flag. It covers:
  *  - which view kind each product surface may request, and what it must NOT
  *    depend on (ownership matrix);
  *  - the R2 shadow contract: views are built + stored in parallel but NEVER

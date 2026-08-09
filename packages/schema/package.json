@@ -1,9 +1,16 @@
 {
   "name": "@apature/ui-graph",
   "version": "0.1.0",
+  "private": true,
   "description": "Deterministic, UI-DNA-aware visual scene graph contract for agents",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "author": "Aditya Prathapa",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apatureai/ui-graph.git",
+    "directory": "packages/schema"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

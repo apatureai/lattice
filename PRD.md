@@ -1,9 +1,13 @@
 # Apature UI Graph — Product Requirements
 
+> **Archived design document.** Written in mid-2026 while Apature was still being built,
+> and preserved as written. It describes intent and plans in the present/future tense;
+> much of it was never implemented. See [README.md](README.md) for what the code actually
+> does and what never shipped.
+
 Created: 2026-06-16
 Revised: 2026-06-18
 Status: build-ready representation-layer specification
-Canonical company context: `apatureai/core`
 Capture, inference, eval execution, and artifact owner: `apatureai/judgment-engine`
 Canonical design-genome owner: `apatureai/ui-dna`
 
@@ -300,6 +304,6 @@ As of 2026-06-18:
 
 - Judgment Engine’s checked-in `@engine/types` capture contract exposes images, selector geometry, and coarse page health. It does not yet expose the DOM/layout, AX, style, transform, redaction, and logical artifact-ref profile required by UI Graph.
 - UI DNA defines the target ownership and projection boundary, but UI Graph integration must wait for a published, versioned `GraphProjection` contract; sibling draft documentation is not a production dependency.
-- `apatureai/core` establishes the rendered-judgment and no-write product boundary but does not own UI Graph wire details.
+- Apature's company-level product boundary (rendered judgment, no-write) is defined outside this repository and does not own UI Graph wire details.
 
 R0 is blocked until cross-repo golden fixtures prove the producer contracts rather than only documenting them.

@@ -1,5 +1,10 @@
 # Apature UI Graph — Architecture
 
+> **Archived design document.** Written in mid-2026 while Apature was still being built,
+> and preserved as written. It describes intent and plans in the present/future tense;
+> much of it was never implemented. See [README.md](README.md) for what the code actually
+> does and what never shipped.
+
 Created: 2026-06-16
 Revised: 2026-06-18
 Status: normative representation-layer architecture
@@ -463,13 +468,12 @@ Every rollout stage retains a full-context fallback until the next stage’s qua
 
 | Repository | Owns | Must not delegate to UI Graph |
 |---|---|---|
-| `apatureai/core` | Company thesis and product sequencing | Representation implementation details |
 | `apatureai/judgment-engine` | Capture, artifact storage, inference, validation, eval execution, feedback, memory, shared security | Canonical graph/schema semantics |
 | `apatureai/ui-dna` | DNA schema, extraction, approval, versioned design genome | Per-capture rendered graph |
 | `apatureai/ui-graph` | Representation schemas, deterministic builder/query/diff rules, refs, representation metrics | Capture, model calls, actions, canonical DNA, product delivery |
 | `apatureai/gate` | GitHub orchestration and delivery | Shared graph internals |
 | `apatureai/mcp-review` | Agent-facing review/recheck tools | Graph construction or browser action |
-| `apatureai/pointer` | Live overlay/session UX | Canonical refs or capture/model substrate |
+| Pointer (live overlay/session surface) | Live overlay/session UX | Canonical refs or capture/model substrate |
 
 ### 16.1 Integration readiness as of 2026-06-18
 

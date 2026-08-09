@@ -18,12 +18,14 @@
  *    Judgment Engine substitutes model-native counters (TRD §15.1 "model-native
  *    accounting"). Every report records which profile produced its numbers, and
  *    text and image tokens are never summed into one figure across families.
- *  - B4 (canonical full graph) is currently serialized from the composite of
- *    the shipped pipeline stages (validate → normalize → fuse → hierarchy →
- *    relations) because the sealed-snapshot assembler (TRD §8.8) is not yet
- *    implemented end-to-end. Its measurements are marked `diagnosticOnly` and
- *    the promotion gate refuses them for PRD §7.1 until the assembler lands.
- *  - B5 (task-focused view) has no renderer yet (PRD §6.4); it reports
+ *  - B4 (canonical full graph) is still serialized from the composite of the
+ *    pipeline stages (validate → normalize → fuse → hierarchy → relations)
+ *    rather than from the sealed snapshot the assembler in `builder.ts` now
+ *    produces. Until that is rewired, its measurements stay marked
+ *    `diagnosticOnly` and the promotion gate refuses them for PRD §7.1 — so
+ *    the token-reduction gate cannot pass as this repo stands.
+ *  - B5 (task-focused view) renders through `renderFocusView` over the top-3
+ *    heuristically-salient nodes; when a view comes back empty it reports
  *    `available: false` rather than a guessed number. The gate fails closed.
  *
  * Determinism: no wall-clock, randomness (outside the seeded bootstrap), or

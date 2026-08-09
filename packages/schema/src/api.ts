@@ -39,7 +39,7 @@ export type UIGraphBuildOptions = {
   dnaProjectionVersion: string;
   redactionPolicyVersion: string;
   /**
-   * Build/use mode. Per core #103 DECISION 4, UI Graph is a feature-flagged
+   * Build/use mode. Per PRD §9, UI Graph is a feature-flagged
    * representation experiment: production builds reject non-approved DNA and may
    * emit authoritative matches; `shadow`/`offline_eval` builds force every DNA
    * match non-authoritative (TRD §4.3, §8.7, §16). The mode participates in the

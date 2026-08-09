@@ -20,7 +20,7 @@ const golden = JSON.parse(
   readFileSync(fileURLToPath(new URL("./fixtures/golden-capability-descriptor.json", import.meta.url)), "utf8"),
 ) as Record<string, unknown>;
 
-describe("UI Graph capability descriptor (#25, core #105)", () => {
+describe("UI Graph capability descriptor (#25)", () => {
   it("matches the pinned descriptor shape (golden; additive only)", () => {
     expect(buildUiGraphCapabilityDescriptor()).toEqual(golden);
   });
@@ -74,7 +74,7 @@ describe("perception-only boundary (TRD §10.2, #16; ARCHITECTURE §16)", () => 
   });
 });
 
-describe("descriptor is foldable + pinnable (core #105 §2/§3)", () => {
+describe("descriptor is foldable + pinnable", () => {
   it("canonical serialization is deterministic and digest is sha256-prefixed", () => {
     const d = buildUiGraphCapabilityDescriptor();
     expect(serializeCapabilityDescriptor(d)).toBe(serializeCapabilityDescriptor(buildUiGraphCapabilityDescriptor()));

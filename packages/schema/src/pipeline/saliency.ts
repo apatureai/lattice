@@ -1,5 +1,5 @@
 /**
- * Advisory visual-saliency prior (TRD §8.5 saliency ranking; core #136).
+ * Advisory visual-saliency prior (TRD §8.5 saliency ranking).
  *
  * A token-budgeted view must decide which nodes matter most; a saliency prior —
  * "where is a human's attention likely to land?" — is a better input to that

@@ -1,5 +1,5 @@
 /**
- * The R1-exit decision report (#24; PRD §9 R2→R3, core#103 DECISION 4,
+ * The R1-exit decision report (#24; PRD §9 R2→R3,
  * ARCHITECTURE §15 promotion diamond).
  *
  * `evaluatePromotion` (gates.ts) computes per-gate pass/fail/insufficient;

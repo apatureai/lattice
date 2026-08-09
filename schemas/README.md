@@ -21,7 +21,7 @@ Readers validate the exact supported schema ID. They do not silently ignore unkn
 
 ## Reference loading
 
-The delta schema references definitions in the snapshot schema by canonical `$id`. Validators must register both schemas in the same local schema store; validation must not depend on fetching `schemas.apature.ai` over the network.
+The delta schema references definitions in the snapshot schema by canonical `$id`. Validators must register both schemas in the same local schema store; validation must not depend on fetching `schemas.apature.ai` over the network. (That host is not served; `$id` values are identifiers only.)
 
 ## Integrity
 

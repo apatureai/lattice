@@ -1,5 +1,10 @@
 # Apature UI Graph — Technical Requirements
 
+> **Archived design document.** Written in mid-2026 while Apature was still being built,
+> and preserved as written. It describes intent and plans in the present/future tense;
+> much of it was never implemented. See [README.md](README.md) for what the code actually
+> does and what never shipped.
+
 Created: 2026-06-16
 Revised: 2026-06-18
 Status: build-ready technical specification

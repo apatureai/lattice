@@ -1,5 +1,9 @@
 # Apature UI Graph — Research and Design Synthesis
 
+> **Archived research document.** A literature review written in mid-2026, preserved as
+> written. Its links and claims are current as of the stated access dates and have not been
+> revisited since. See [README.md](README.md) for what was actually built.
+
 Created: 2026-06-16
 Revised: 2026-06-18
 Status: source-backed architecture recommendation

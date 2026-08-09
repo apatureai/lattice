@@ -3,13 +3,13 @@ import { SUPPORTED_CAPTURE_MAJORS, SUPPORTED_DNA_PROJECTION_MAJORS } from "./rea
 import { SCHEMA_VERSION, type UIGraphViewSpec } from "./types.js";
 
 /**
- * UI Graph capability descriptor (#25; core #105 / INTEROP.md §2).
+ * UI Graph capability descriptor (#25).
  *
  * UI Graph is NOT a network surface — it is a deterministic representation
  * library inside Judgment Engine (ARCHITECTURE ADR-002). So it does NOT publish
  * a signed `ApatureAgentCardV1` (signing, the static registry, OAuth2.1
- * token-exchange identity/tenancy, and OTel tracing all live in core/JE per core
- * #105 decisions 2–6). What UI Graph OWNS is the truthful, machine-readable
+ * token-exchange identity/tenancy, and OTel tracing all live in Judgment
+ * Engine). What UI Graph OWNS is the truthful, machine-readable
  * description of the representation capabilities it offers, so Judgment Engine
  * can fold them into the card IT signs and publishes — and consumers can
  * negotiate versions without reading prose.

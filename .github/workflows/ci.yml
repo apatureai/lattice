@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - agent/build
+  workflow_dispatch:
 
 # Least privilege: the package is a deterministic library; CI only reads the repo.
 permissions:

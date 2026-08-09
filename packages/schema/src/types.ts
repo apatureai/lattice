@@ -44,7 +44,7 @@ export type Viewport = {
 // --- Use mode (feature-flag / experiment framing, TRD §4.3, §5.2) --------
 
 /**
- * Build/use mode. Per core #103 DECISION 4 and PRD §9, UI Graph is a
+ * Build/use mode. Per PRD §9, UI Graph is a
  * feature-flagged representation experiment: it runs in `offline_eval` or
  * `shadow` until its eval proves value, and only then in `production`.
  * Non-production modes force every DNA match to `authoritative: false`.

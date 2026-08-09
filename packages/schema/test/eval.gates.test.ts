@@ -1,5 +1,5 @@
 /**
- * Promotion-gate evaluator tests (issue #24; PRD §7, TRD §15.3, core #103 D4).
+ * Promotion-gate evaluator tests (issue #24; PRD §7, TRD §15.3).
  *
  * Fixtures-only. The evidence objects are synthetic literals — the point under
  * test is the DECISION PROCEDURE: pre-registered thresholds, fail-closed on

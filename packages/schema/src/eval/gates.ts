@@ -1,7 +1,7 @@
 /**
- * Promotion-gate evaluator (issue #24; PRD §7, TRD §15.3; core #103 DECISION 4).
+ * Promotion-gate evaluator (issue #24; PRD §7, TRD §15.3).
  *
- * Core #103 keeps UI Graph a feature-flagged experiment "until it proves
+ * UI Graph stays a feature-flagged experiment "until it proves
  * precision, grounding, fix-rate, cost, or latency value." This module turns
  * that sentence into a machine-checkable decision procedure with the PRD §7
  * numbers PRE-REGISTERED as constants — the pass/fail rule is frozen before any
@@ -368,8 +368,8 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
   const failing = results.filter((r) => r.status === "fail").length;
   const missing = results.filter((r) => r.status === "insufficient_evidence").length;
   const summary = promote
-    ? `PROMOTE: all ${results.length} pre-registered gates pass (PRD §7; core #103 DECISION 4 satisfied)`
-    : `DO NOT PROMOTE: ${failing} failing, ${missing} with insufficient evidence, of ${results.length} gates — UI Graph stays feature-flagged (core #103 DECISION 4)`;
+    ? `PROMOTE: all ${results.length} pre-registered gates pass (PRD §7)`
+    : `DO NOT PROMOTE: ${failing} failing, ${missing} with insufficient evidence, of ${results.length} gates — UI Graph stays feature-flagged`;
 
   return groundingMcNemar !== undefined
     ? { promote, results, summary, groundingMcNemar }
