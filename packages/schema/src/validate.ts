@@ -3,9 +3,10 @@
  *
  * The three normative schemas are registered in one local Ajv instance so the
  * delta schema can `$ref` the snapshot schema by canonical `$id` without any
- * network fetch (schemas/README.md "Reference loading"). All schemas are closed
- * (`additionalProperties: false`); unknown top-level or nested fields are
- * rejected.
+ * network fetch (schemas/README.md "Reference loading"). The `$id` values are
+ * URNs, not URLs, precisely so nothing can mistake them for a fetchable
+ * location. All schemas are closed (`additionalProperties: false`); unknown
+ * top-level or nested fields are rejected.
  *
  * No network, model, browser, or DB access occurs here, only in-process JSON
  * validation (TRD §3.1).
@@ -33,9 +34,9 @@ const snapshotSchema = require("../schemas/ui-graph-snapshot.schema.json") as ob
 const viewSchema = require("../schemas/ui-graph-view.schema.json") as object;
 const deltaSchema = require("../schemas/ui-graph-delta.schema.json") as object;
 
-export const SNAPSHOT_SCHEMA_ID = "https://schemas.apature.ai/ui-graph/snapshot/1.0.0";
-export const VIEW_SCHEMA_ID = "https://schemas.apature.ai/ui-graph/view/1.0.0";
-export const DELTA_SCHEMA_ID = "https://schemas.apature.ai/ui-graph/delta/1.0.0";
+export const SNAPSHOT_SCHEMA_ID = "urn:apatureai:ui-graph:snapshot:1.0.0";
+export const VIEW_SCHEMA_ID = "urn:apatureai:ui-graph:view:1.0.0";
+export const DELTA_SCHEMA_ID = "urn:apatureai:ui-graph:delta:1.0.0";
 
 function buildAjv(): Ajv {
   // Ajv's `strict` mode lints schema *authoring* (e.g. flagging `if/then`

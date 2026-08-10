@@ -2,12 +2,12 @@
  * Frozen representation fixture manifests (issue #19; PRD §8.1, TRD §15,
  * ARCHITECTURE §16.1).
  *
- * UI Graph owns the representation manifests + labels; Judgment Engine RUNS the
- * evaluation (PRD §5.2, §8). This module defines the manifest FORMAT and the
- * frozen, content-addressed manifest DATA for the six internal eval sets, plus
- * the freeze/verify helpers the benchmark (#20) and promotion gate (#24) build
- * on. It never runs the company-wide eval and never calls a model, browser, or
- * network; it is pure metadata over MOCK captures.
+ * UI Graph owns the representation manifests + labels; the consuming critique
+ * pipeline RUNS the evaluation (PRD §5.2, §8). This module defines the manifest
+ * FORMAT and the frozen, content-addressed manifest DATA for the six internal
+ * eval sets, plus the freeze/verify helpers the benchmark (#20) and promotion
+ * gate (#24) build on. It never runs the wider eval and never calls a model,
+ * browser, or network; it is pure metadata over MOCK captures.
  *
  * Freezing model: each fixture entry is content-addressed by the RFC 8785 hash
  * of its own semantic body (its `contentHash` field is excluded from that hash,

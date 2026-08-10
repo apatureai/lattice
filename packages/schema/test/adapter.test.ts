@@ -20,7 +20,10 @@ const manifest = load<{ files: Record<string, string> }>("MANIFEST.json");
 
 const minimalCapture = () =>
   load<CaptureBundleReadProfile>("capture/minimal.json");
-const judgmentEngineCapture = () =>
+// Named for the consumer whose capture step produced its shape: the sibling
+// repo apatureai/judgment-engine (https://github.com/apatureai/judgment-engine).
+// Nothing in this package depends on that repo; the fixture is plain JSON.
+const consumerShapedCapture = () =>
   load<CaptureBundleReadProfile>("capture/judgment-engine.golden.json");
 const multiFrameCapture = () =>
   load<CaptureBundleReadProfile>("capture/multi-frame.json");
@@ -39,8 +42,8 @@ describe("golden fixtures are frozen (TRD M0)", () => {
 });
 
 describe("capture read profile (TRD §4.1)", () => {
-  it("accepts minimal, Judgment Engine, multi-frame, and derived-observation fixtures", () => {
-    for (const cap of [minimalCapture(), judgmentEngineCapture(), multiFrameCapture(), derivedCapture()]) {
+  it("accepts minimal, consumer-shaped, multi-frame, and derived-observation fixtures", () => {
+    for (const cap of [minimalCapture(), consumerShapedCapture(), multiFrameCapture(), derivedCapture()]) {
       const r = validateCaptureBundle(cap);
       expect(r.ok, r.ok ? "" : JSON.stringify(r.issues)).toBe(true);
     }

@@ -65,14 +65,14 @@ $ node examples/quickstart.mjs
    canonical JSON     60637 bytes (15158 est. tokens)
 
 2. buildUiGraph — fuse, hierarchy, relations, DNA projection, seal
-   snapshotId         ugs_1_67401d2a3b0e3dbd1d34def5ba0e79d0dec33c1ff365c37c415161bbb0ce0d48
-   contentHash        sha256:67401d2a3b0e3dbd1d34def5ba0e79d0dec33c1ff365c37c415161bbb0ce0d48
+   snapshotId         ugs_1_b12a4c602d4a0071e387206fb6f939c51b4e1b2ed1a22c4669bf6e3d978105a6
+   contentHash        sha256:b12a4c602d4a0071e387206fb6f939c51b4e1b2ed1a22c4669bf6e3d978105a6
    nodes / edges      130 / 400
    regions            35
    retained conflicts 1   (DOM said "link", accessibility said "button" — both kept)
    canonical JSON     444253 bytes
 
-3. queryUiGraph — five views of the same snapshot (focus/patchContext on ug:07ee97e8:2)
+3. queryUiGraph — five views of the same snapshot (focus/patchContext on ug:65bc9d34:2)
    view             bytes  est.tok  nodes  vs capture  truncation
    summary          31428     7857    118       48.2%  none
    actionMap         3394      849     14       94.4%  none
@@ -89,15 +89,15 @@ $ node examples/quickstart.mjs
    reason             region_budget: 32 regions omitted
 
 5. actionMap — 14 perceivable affordances (perception only; never an action API)
-   ug:07ee97e8:10  link      Settings                  @ 0.53,0.03 (visible)
-   ug:07ee97e8:2   button    New review                @ 0.88,0.02 (visible)
-   ug:07ee97e8:20  link      Open production           @ 0.03,0.30 (visible)
-   ug:07ee97e8:21  link      Open staging              @ 0.19,0.30 (visible)
-   ug:07ee97e8:22  link      Open preview              @ 0.34,0.30 (visible)
+   ug:65bc9d34:10  link      Settings                  @ 0.53,0.03 (visible)
+   ug:65bc9d34:2   button    New review                @ 0.88,0.02 (visible)
+   ug:65bc9d34:20  link      Open production           @ 0.03,0.30 (visible)
+   ug:65bc9d34:21  link      Open staging              @ 0.19,0.30 (visible)
+   ug:65bc9d34:22  link      Open preview              @ 0.34,0.30 (visible)
    … 9 more
 
 6. Compression with receipts — the view is lean, the provenance is not lost
-   ug:07ee97e8:2 resolves in this snapshot: true
+   ug:65bc9d34:2 resolves in this snapshot: true
    evidence claims on that node: 4
      dom             conf 0.9   role=link, tag=a
      accessibility   conf 0.85   role=button, name=New review
@@ -107,12 +107,12 @@ $ node examples/quickstart.mjs
    a ref from another snapshot is refused: stale_or_foreign_ref
 
 7. patchContext requested 1 crop(s) — recommendations the caller may decline
-   crop of artifact://apature/synthetic-dashboard/root.png
-     rect 1240,0 200x78  refs ug:07ee97e8:2  because requested_refs,source_disagreement
+   crop of artifact://example/synthetic-dashboard/root.png
+     rect 1240,0 200x78  refs ug:65bc9d34:2  because requested_refs,source_disagreement
 
 8. Wrote out/capture.json, out/snapshot.json and 5 out/view-*.json files.
 
-OK — built snapshot ugs_1_67401d2a3b0e3d… and rendered 5 schema-valid views.
+OK — built snapshot ugs_1_b12a4c602d4a00… and rendered 5 schema-valid views.
 ```
 
 **Success criterion:** the last line reads `OK — built snapshot … and rendered 5 schema-valid views.`, and `out/` contains seven JSON files (`capture.json`, `snapshot.json`, and `view-summary.json`, `view-actionMap.json`, `view-violations.json`, `view-focus.json`, `view-patchContext.json`). The snapshot id is content-addressed, so it will be byte-for-byte the one printed above. If yours differs, something is wrong.
@@ -166,7 +166,7 @@ const view = queryUiGraph({
   snapshot,
   spec: {
     kind: "focus",                    // summary | focus | actionMap | patchContext | violations | diff
-    refs: ["ug:07ee97e8:2"],          // required for focus and patchContext
+    refs: ["ug:65bc9d34:2"],          // required for focus and patchContext
     maxTextTokens: 4000,
     maxNodes: 400,
     maxEdges: 400,
@@ -208,6 +208,8 @@ The claim is that this representation is cheaper to put in a prompt than raw str
 | `test/fixtures/capture/with-derived.json` | 3 | 1676 | 642 | 62% |
 | `test/fixtures/capture/judgment-engine.golden.json` | 2 | 1758 | 647 | 63% |
 | `syntheticCapture()` (the quickstart page) | 130 | 60637 | 31428 | 48% |
+
+`judgment-engine.golden.json` is named for the consumer whose capture step produced its shape, the sibling repo [apatureai/judgment-engine](https://github.com/apatureai/judgment-engine). It is frozen JSON like the other three; nothing in this package depends on that repo.
 
 A page summary describes the whole page, so halving it is about the ceiling. The bounded views are where the design pays off, on the same synthetic page against the same 60637-byte baseline, with no token budget applied:
 
@@ -319,7 +321,9 @@ examples/quickstart.mjs     the runnable end-to-end example above
 scripts/capability-guard.mjs the CI gate: dependency allowlist + determinism check
 ```
 
-The JSON Schemas are the normative contract; the TypeScript types explain the same thing, and a mirror test fails if the two drift.
+The JSON Schemas are the normative contract; the TypeScript types explain the same thing, and a mirror test fails if the two drift. Each schema is identified by a URN (`urn:apatureai:ui-graph:snapshot:1.0.0` and its view/delta siblings) rather than a URL, so nothing implies a fetchable endpoint and validation is provably offline. See [`schemas/README.md`](schemas/README.md).
+
+The source calls its caller **the consumer**: whatever critique pipeline links this library in and owns the parts it deliberately does not, which is capture, inference, storage, delivery, and redaction. The reference consumer is the sibling repo [apatureai/judgment-engine](https://github.com/apatureai/judgment-engine), a grounded vision-language design reviewer. This package neither depends on it nor requires it; any pipeline that supplies the documented read profiles is a consumer.
 
 Some source comments cite section numbers (`TRD §8.1`, `PRD §6.4`, `ARCHITECTURE §7`) from earlier design documents that are not part of this repository. They are left in place as provenance for where a rule came from.
 

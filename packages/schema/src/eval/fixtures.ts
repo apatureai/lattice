@@ -1,7 +1,7 @@
 /**
  * Frozen representation fixture DATA for the six internal eval sets (issue #19,
- * PRD §8.1). This is the source-of-truth manifest content the Judgment Engine
- * eval harness (#20) and the promotion gate (#24) measure against.
+ * PRD §8.1). This is the source-of-truth manifest content a consumer's eval
+ * harness (#20) and the promotion gate (#24) measure against.
  *
  * Everything here is MOCK: synthetic captures fabricated for deterministic
  * evaluation, never a real model/browser/network artifact. `captureRef` values

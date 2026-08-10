@@ -1,7 +1,7 @@
 {
   "descriptorVersion": "ui-graph-capability/1",
   "surface": "ui-graph",
-  "exposure": "library_in_judgment_engine",
+  "exposure": "embedded_library",
   "capabilityClass": "representation",
   "operations": ["buildUiGraph", "queryUiGraph", "diffUiGraphs", "applyUiGraphDelta"],
   "viewKinds": ["summary", "violations", "focus", "actionMap", "patchContext", "diff"],

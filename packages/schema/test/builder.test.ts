@@ -20,6 +20,8 @@ const fixture = <T>(relativePath: string): T => JSON.parse(
   ),
 ) as T;
 
+// A capture in the shape the sibling consumer apatureai/judgment-engine emits
+// (https://github.com/apatureai/judgment-engine). Frozen JSON, no dependency.
 const capture = (): CaptureBundleReadProfile =>
   fixture("capture/judgment-engine.golden.json");
 const approvedDna = (): AnyUIDNAReadProfile => fixture("dna/approved.json");
@@ -48,7 +50,7 @@ const request = (overrides: Partial<BuildUiGraphRequest> = {}): BuildUiGraphRequ
 });
 
 describe("buildUiGraph deterministic pipeline (issue #9)", () => {
-  it("builds the Judgment Engine-shaped golden into a valid, identity-consistent snapshot", async () => {
+  it("builds the consumer-shaped golden into a valid, identity-consistent snapshot", async () => {
     const result = await buildUiGraph(request());
     const { snapshot, diagnostics } = result;
 

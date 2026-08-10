@@ -51,8 +51,11 @@ export interface SyntheticPageOptions {
   readonly screenshot?: boolean;
 }
 
-/** The screenshot artifact ref the generated capture points at. */
-export const SYNTHETIC_SCREENSHOT_ARTIFACT_REF = "artifact://apature/synthetic-dashboard/root.png";
+/**
+ * The screenshot artifact ref the generated capture points at. A placeholder
+ * namespace on purpose: no bytes exist behind it and nothing resolves it.
+ */
+export const SYNTHETIC_SCREENSHOT_ARTIFACT_REF = "artifact://example/synthetic-dashboard/root.png";
 
 const rect = (x: number, y: number, width: number, height: number): Rect => ({ x, y, width, height });
 
@@ -127,8 +130,9 @@ export function syntheticCapture(options: SyntheticPageOptions = {}): CaptureBun
     visible: true,
     paintOrder: 2,
   });
-  addAx(b, { sourceId: "ax_brand", frameId: "root", role: "link", name: "Apature", ignored: false, backendDomSourceId: brand });
-  addText(b, "txt_brand", brand, "Apature", rect(24, 26, 92, 20));
+  // Placeholder brand for the fixture page; it names no real product.
+  addAx(b, { sourceId: "ax_brand", frameId: "root", role: "link", name: "Example", ignored: false, backendDomSourceId: brand });
+  addText(b, "txt_brand", brand, "Example", rect(24, 26, 92, 20));
 
   const nav = addDom(b, {
     sourceId: "dom_nav",

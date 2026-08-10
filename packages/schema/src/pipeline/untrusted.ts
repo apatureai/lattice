@@ -5,10 +5,13 @@
  * Everything a view serializes that originated on the page (names, text runs,
  * labels) is DATA, never instructions. Two graph-level controls compose here:
  *
- *  1. Fail-closed sensitivity: upstream redaction (Judgment Engine) must have
- *     already replaced pii/secret/credential text. If a node labeled sensitive
- *     still carries page text when a view renders, the redaction contract was
- *     violated, and the whole view fails closed rather than serializing the leak.
+ *  1. Fail-closed sensitivity: this package does NOT redact. Redaction happens
+ *     upstream, in the consuming critique pipeline that owns capture, and it
+ *     must already have replaced pii/secret/credential text before a capture
+ *     reaches `buildUiGraph`. If a node labeled sensitive still carries page
+ *     text when a view renders, that upstream contract was violated, and the
+ *     whole view fails closed rather than serializing the leak. Fail-closed is
+ *     a backstop against a broken producer, not a substitute for one.
  *  2. Delimited serialization: the rendered payload is wrapped in
  *     `UNTRUSTED_UI_CONTENT` boundary markers, and any occurrence of the
  *     markers *inside* page-derived text is neutralized first, so page content

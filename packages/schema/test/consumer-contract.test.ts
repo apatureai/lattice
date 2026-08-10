@@ -170,7 +170,7 @@ describe("honest-reference seam — exact snapshot membership (#56, TRD §6/§16
     ).toBe(true);
   });
 
-  it("golden membership fixture replays byte-for-byte (Pointer / Judgment Engine mirror source)", () => {
+  it("golden membership fixture replays byte-for-byte (the copy consumer adapters mirror)", () => {
     const golden = JSON.parse(
       readFileSync(fileURLToPath(new URL("./fixtures/element-ref-membership.golden.json", import.meta.url)), "utf8"),
     ) as {

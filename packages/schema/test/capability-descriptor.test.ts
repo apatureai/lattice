@@ -47,7 +47,7 @@ describe("perception-only boundary (TRD §10.2, #16; ARCHITECTURE §16)", () => 
   it("advertises representation only and excludes every action/model/browser/capture/delivery capability", () => {
     const d = buildUiGraphCapabilityDescriptor();
     expect(d.capabilityClass).toBe("representation");
-    expect(d.exposure).toBe("library_in_judgment_engine");
+    expect(d.exposure).toBe("embedded_library");
     for (const cap of EXCLUDED_CAPABILITIES) expect(d.excludes).toContain(cap);
     expect(d.excludes).toContain("action_execution");
   });

@@ -20,12 +20,21 @@ import type { UIGraphSnapshot } from "./types.js";
  *    treats a ref as a selector or browser handle;
  *  - typed failure + recovery for stale refs and corrupt deltas.
  *
- * Contract-only: orchestration, storage, and inference stay in Judgment Engine.
+ * Contract-only: orchestration, storage, and inference stay in the consuming
+ * critique pipeline (see the "consumer" note at the top of `api.ts`).
  */
 
 export const CONSUMER_CONTRACT_VERSION = "ui-graph-consumer/1" as const;
 
-/** The product surfaces that consume UI Graph through Judgment Engine (PRD §4). */
+/**
+ * The product surfaces that consume UI Graph through that pipeline (PRD §4).
+ *
+ * `gate` and `mcp_review` are the sibling repos apatureai/gate and
+ * apatureai/mcp-review. `pointer` and `interactive_review` are surface names
+ * from the same product design that have no public repository; they are here
+ * because the contract table below has to enumerate every consumer it
+ * constrains, not because this package can reach any of them.
+ */
 export type ConsumerSurface = "gate" | "mcp_review" | "pointer" | "interactive_review";
 
 export interface ConsumerViewContract {

@@ -1,5 +1,5 @@
 {
-  "description": "Canonical element-ref membership vectors (ui-graph#56). Pointer and Judgment Engine adapters mirror this file BYTE-IDENTICALLY and replay it against their resolveElementRefInSnapshot binding when their integration owners (#6/#10, JE adapter) land. The snapshot under test is test/examples/minimal-snapshot.json; regenerate only in ui-graph.",
+  "description": "Canonical element-ref membership vectors (ui-graph#56). Any consumer that binds resolveElementRefInSnapshot copies this file BYTE-IDENTICALLY and replays it against its own binding, so a ref accepted here is accepted there and nowhere else. The snapshot under test is test/examples/minimal-snapshot.json; ui-graph is the only place it is regenerated.",
   "snapshotFile": "../examples/minimal-snapshot.json",
   "claimed": {
     "snapshotId": "ugs_1_d7c4d35428a785194bb3932dafd0e533503450cf87cd384bd9b05ebd503e6696",

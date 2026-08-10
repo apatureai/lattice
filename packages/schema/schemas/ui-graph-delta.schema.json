@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.apature.ai/ui-graph/delta/1.0.0",
+  "$id": "urn:apatureai:ui-graph:delta:1.0.0",
   "title": "Apature UIGraphDelta",
   "type": "object",
   "required": [
@@ -90,16 +90,16 @@
               "const": "replace_header"
             },
             "build": {
-              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/buildMetadata"
+              "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/buildMetadata"
             },
             "source": {
-              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/sourceMetadata"
+              "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/sourceMetadata"
             },
             "coordinateSpaces": {
               "type": "array",
               "minItems": 1,
               "items": {
-                "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/coordinateSpace"
+                "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/coordinateSpace"
               }
             }
           },
@@ -116,7 +116,7 @@
               "const": "upsert_node"
             },
             "node": {
-              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/node"
+              "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/node"
             }
           },
           "additionalProperties": false
@@ -149,7 +149,7 @@
               "const": "upsert_edge"
             },
             "edge": {
-              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/edge"
+              "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/edge"
             }
           },
           "additionalProperties": false
@@ -182,7 +182,7 @@
               "const": "upsert_region"
             },
             "region": {
-              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/region"
+              "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/region"
             }
           },
           "additionalProperties": false
@@ -217,7 +217,7 @@
             "dnaProjection": {
               "oneOf": [
                 {
-                  "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/dnaProjection"
+                  "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/dnaProjection"
                 },
                 {
                   "type": "null"
@@ -238,7 +238,7 @@
               "const": "replace_metrics"
             },
             "metrics": {
-              "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/metrics"
+              "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/metrics"
             }
           },
           "additionalProperties": false
@@ -256,7 +256,7 @@
             "warnings": {
               "type": "array",
               "items": {
-                "$ref": "https://schemas.apature.ai/ui-graph/snapshot/1.0.0#/$defs/warning"
+                "$ref": "urn:apatureai:ui-graph:snapshot:1.0.0#/$defs/warning"
               }
             }
           },

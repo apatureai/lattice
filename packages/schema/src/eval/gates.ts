@@ -22,8 +22,8 @@
  *    hidden cohort regression do not promote.
  *
  * Model-dependent evidence (grounding, finding quality, latency, security
- * fixtures) is produced by Judgment Engine's eval runs and supplied here as
- * data. This module never invents a measurement.
+ * fixtures) is produced by the consuming critique pipeline's eval runs and
+ * supplied here as data. This module never invents a measurement.
  */
 
 import type { EvalCohort } from "./manifest.js";
@@ -60,7 +60,7 @@ export const PROMOTION_GATES = {
 // --- Evidence contract -------------------------------------------------------
 
 export interface GroundingEvidence {
-  /** Recall@1 of the UI Graph view representation, from Judgment Engine runs. */
+  /** Recall@1 of the UI Graph view representation, from a consumer's model runs. */
   readonly viewRecallAt1: number;
   /** Recall@1 of the best competing baseline on the same paired items. */
   readonly bestBaselineRecallAt1: number;

@@ -6,13 +6,20 @@ import { SCHEMA_VERSION, type UIGraphViewSpec } from "./types.js";
  * UI Graph capability descriptor (#25).
  *
  * UI Graph is NOT a network surface; it is a deterministic representation
- * library inside Judgment Engine (ARCHITECTURE ADR-002). So it does NOT publish
- * a signed `ApatureAgentCardV1` (signing, the static registry, OAuth2.1
- * token-exchange identity/tenancy, and OTel tracing all live in Judgment
- * Engine). What UI Graph OWNS is the truthful, machine-readable
- * description of the representation capabilities it offers, so Judgment Engine
- * can fold them into the card IT signs and publishes, and consumers can
- * negotiate versions without reading prose.
+ * library linked into a consuming critique pipeline (ARCHITECTURE ADR-002). So
+ * it does NOT publish a signed agent card of its own: signing, the static
+ * registry, OAuth 2.1 token-exchange identity/tenancy, and OTel tracing all
+ * belong to that consumer. What UI Graph OWNS is the truthful, machine-readable
+ * description of the representation capabilities it offers, so the consumer can
+ * fold them into the card IT signs and publishes, and callers can negotiate
+ * versions without reading prose.
+ *
+ * `exposure` was previously the wire value `library_in_judgment_engine`, which
+ * named a product a reader of this repo had no way to look up. It is now
+ * `embedded_library`, which says the same thing about the deployment shape
+ * without the private reference. Same descriptorVersion, since nothing about
+ * the boundary itself moved; a consumer pinning the descriptor digest re-pins
+ * once.
  *
  * The descriptor advertises a PERCEPTION/REPRESENTATION capability only: no
  * model calls, browser actions, capture, or delivery (PRD §12, README). In
@@ -40,8 +47,8 @@ export interface SchemaMajorSupport {
 export interface UiGraphCapabilityDescriptor {
   descriptorVersion: typeof UI_GRAPH_CAPABILITY_DESCRIPTOR_VERSION;
   surface: "ui-graph";
-  /** How the capability is reached: a library folded into Judgment Engine, not a network listener. */
-  exposure: "library_in_judgment_engine";
+  /** How the capability is reached: a library linked into the consumer's process, not a network listener. */
+  exposure: "embedded_library";
   /** Perception/representation only, never action/browser/model/capture/delivery. */
   capabilityClass: "representation";
   operations: readonly UiGraphOperation[];
@@ -108,7 +115,7 @@ export function buildUiGraphCapabilityDescriptor(): UiGraphCapabilityDescriptor 
   return {
     descriptorVersion: UI_GRAPH_CAPABILITY_DESCRIPTOR_VERSION,
     surface: "ui-graph",
-    exposure: "library_in_judgment_engine",
+    exposure: "embedded_library",
     capabilityClass: "representation",
     operations: OPERATIONS,
     viewKinds: VIEW_KINDS,
@@ -137,7 +144,7 @@ export interface DescriptorValidation {
 export function validateCapabilityDescriptor(d: UiGraphCapabilityDescriptor): DescriptorValidation {
   const errors: string[] = [];
   if (d.capabilityClass !== "representation") errors.push("capabilityClass must be 'representation'");
-  if (d.exposure !== "library_in_judgment_engine") errors.push("UI Graph is a library, not a network surface");
+  if (d.exposure !== "embedded_library") errors.push("UI Graph is a library, not a network surface");
   if (d.actionMapIsPerceptionOnly !== true) errors.push("actionMap must be declared perception-only");
   for (const cap of EXCLUDED_CAPABILITIES) {
     if (!d.excludes.includes(cap)) errors.push(`excludes must name '${cap}' (ownership matrix)`);
@@ -165,7 +172,7 @@ export function assertRepresentationOnly(d: UiGraphCapabilityDescriptor): UiGrap
   return d;
 }
 
-/** Canonical serialization (reusing the repo's RFC 8785 canonicalizer) so JE can fold + pin the descriptor. */
+/** Canonical serialization (reusing the repo's RFC 8785 canonicalizer) so a consumer can fold + pin the descriptor. */
 export function serializeCapabilityDescriptor(d: UiGraphCapabilityDescriptor): string {
   return canonicalize(d);
 }

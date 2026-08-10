@@ -1,8 +1,9 @@
 /**
  * Representation evaluation surface (PRD §8, TRD §15).
  *
- * UI Graph owns the frozen fixture manifests + labels; Judgment Engine runs the
- * eval. This barrel exposes the manifest format (issue #19), the frozen
+ * UI Graph owns the frozen fixture manifests + labels; the consuming critique
+ * pipeline runs the eval, because running it needs a model and this package has
+ * none. This barrel exposes the manifest format (issue #19), the frozen
  * manifest data, the offline benchmark runner (#20) with its deterministic
  * statistics, and the pre-registered promotion-gate evaluator (#24).
  */

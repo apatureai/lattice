@@ -1,8 +1,16 @@
 /**
  * Public API surface for `@apature/ui-graph` (TRD §1).
  *
- * These are the four entry points Judgment Engine calls. `buildUiGraph` composes
- * the deterministic pipeline; query/diff/delta remain independently staged.
+ * These are the four entry points a consumer calls. `buildUiGraph` composes the
+ * deterministic pipeline; query/diff/delta remain independently staged.
+ *
+ * "The consumer" throughout this package means whatever critique pipeline links
+ * this library in and owns the parts it deliberately does not: capture,
+ * inference, storage, delivery, and redaction. The reference consumer is the
+ * sibling repo apatureai/judgment-engine
+ * (https://github.com/apatureai/judgment-engine), a grounded vision-language
+ * design reviewer. Nothing here depends on it, and any pipeline that supplies
+ * the documented read profiles works the same way.
  *
  * The package is a deterministic library: no DB, model, browser, or network
  * capability crosses this boundary (TRD §2, §3.1).

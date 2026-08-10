@@ -1,7 +1,7 @@
 /**
  * Crop/overlay evidence requests (#15; PRD §6.5, TRD §7/§10/§11,
  * ARCHITECTURE §11; PRD §18.29). Selective pixel escalation: a view
- * RECOMMENDS crops/overlays and Judgment Engine decides whether to fetch.
+ * RECOMMENDS crops/overlays and the consumer decides whether to fetch.
  * UI Graph never produces pixels, never holds artifact bytes, and a request
  * is not an authorization (§18.38: capability-scoped, not execution
  * authority).

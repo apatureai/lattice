@@ -12,10 +12,11 @@
  *
  * Honesty rules, enforced structurally:
  *  - No model-dependent number is ever fabricated here. Grounding Recall@1,
- *    finding precision/recall, and latency come from Judgment Engine's model
- *    runs and enter the promotion decision (#24) as external evidence.
- *  - Token counters are PORTS. The defaults are clearly-labeled ESTIMATORS;
- *    Judgment Engine substitutes model-native counters (TRD §15.1 "model-native
+ *    finding precision/recall, and latency come from the consuming critique
+ *    pipeline's model runs and enter the promotion decision (#24) as external
+ *    evidence. This package never runs a model, so it cannot produce them.
+ *  - Token counters are PORTS. The defaults are clearly-labeled ESTIMATORS; a
+ *    consumer substitutes model-native counters (TRD §15.1 "model-native
  *    accounting"). Every report records which profile produced its numbers, and
  *    text and image tokens are never summed into one figure across families.
  *  - B4 (canonical full graph) is still serialized from the composite of the
@@ -102,7 +103,7 @@ export interface CostProfile {
 /**
  * Default text estimator: ⌈UTF-16 length / 4⌉. A deliberately crude, clearly
  * labeled estimate for offline comparison; model-native counters replace it in
- * Judgment Engine runs.
+ * a consumer's runs.
  */
 export const charEstimateTokenCounter: TextTokenCounter = {
   id: "char-quarter-estimate@1",
@@ -114,7 +115,7 @@ export const charEstimateTokenCounter: TextTokenCounter = {
  * Patch-grid visual estimators. `patch16` matches a Qwen3-VL-style patch-16
  * budget; `patch28` matches a Claude-style ⌈w/28⌉×⌈h/28⌉ grid (core PRD §16 /
  * §4.2). Both are estimates parameterized purely by image dimensions; real
- * accounting is model-native and injected by Judgment Engine.
+ * accounting is model-native and injected by the consumer.
  */
 export function patchGridVisualCounter(patchPx: number, id: string): VisualTokenCounter {
   return {
@@ -450,7 +451,7 @@ export function runRepresentationBenchmark(
     comparisons,
     notes: [
       "token counts are per the recorded profiles; text and image tokens are never summed across model families (TRD §15.1)",
-      "model-dependent metrics (grounding, finding quality, latency) are external evidence supplied by Judgment Engine, never computed here",
+      "model-dependent metrics (grounding, finding quality, latency) are external evidence supplied by the consuming critique pipeline, never computed here",
       B4_DIAGNOSTIC_NOTE,
     ],
   };
