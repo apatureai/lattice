@@ -7,8 +7,8 @@
  * "The consumer" throughout this package means whatever critique pipeline links
  * this library in and owns the parts it deliberately does not: capture,
  * inference, storage, delivery, and redaction. The reference consumer is the
- * sibling repo apatureai/judgment-engine
- * (https://github.com/apatureai/judgment-engine), a grounded vision-language
+ * sibling repo apatureai/verdict
+ * (https://github.com/apatureai/verdict), a grounded vision-language
  * design reviewer. Nothing here depends on it, and any pipeline that supplies
  * the documented read profiles works the same way.
  *

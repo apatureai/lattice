@@ -2,7 +2,7 @@
   "_comment": "Frozen golden read-profile fixtures (issue #3, TRD M0). The SHA-256 of each file's raw bytes is checked in test/adapter.test.ts so a fixture cannot drift silently. Regenerate intentionally only when the contract changes.",
   "files": {
     "capture/minimal.json": "94f6ea8d71e3cf99c1626c8c8d34765d3926504b2298be9f93bf66a392e885e4",
-    "capture/judgment-engine.golden.json": "472ee9678856c286425b81d2d12ffd0593a8757175400c3be4b7f9f45cf4df91",
+    "capture/verdict.golden.json": "472ee9678856c286425b81d2d12ffd0593a8757175400c3be4b7f9f45cf4df91",
     "capture/multi-frame.json": "c6722ed97d94f5f3d8560d0df81a8c1824ffc4ad05991b401d996917004f0dad",
     "capture/with-derived.json": "093057cdd6a7dce35646847adaffcd9f33ec7eb7e435d876e4007a057e4de671",
     "dna/approved.json": "f396faf23a6def786bbf03f8fdb55667faa4e8a6d9802d99529e3af3e89d0e63",

@@ -20,10 +20,10 @@ const fixture = <T>(relativePath: string): T => JSON.parse(
   ),
 ) as T;
 
-// A capture in the shape the sibling consumer apatureai/judgment-engine emits
-// (https://github.com/apatureai/judgment-engine). Frozen JSON, no dependency.
+// A capture in the shape the sibling consumer apatureai/verdict emits
+// (https://github.com/apatureai/verdict). Frozen JSON, no dependency.
 const capture = (): CaptureBundleReadProfile =>
-  fixture("capture/judgment-engine.golden.json");
+  fixture("capture/verdict.golden.json");
 const approvedDna = (): AnyUIDNAReadProfile => fixture("dna/approved.json");
 const draftDna = (): AnyUIDNAReadProfile => fixture("dna/experimental-draft.json");
 

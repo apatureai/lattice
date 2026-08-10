@@ -4,7 +4,7 @@ import type { UiGraphViewKind } from "./capability-descriptor.js";
 import type { UIGraphSnapshot } from "./types.js";
 
 /**
- * Consumer view-consumption contract + R2 shadow-build seam (ui-graph#26; PRD §4
+ * Consumer view-consumption contract + R2 shadow-build seam (lattice#26; PRD §4
  * consumers, §9 R2, ARCHITECTURE §4/§15/§16, TRD §6/§10/§16).
  *
  * The rest of the package builds snapshots, views, lineage, deltas, and the
@@ -30,7 +30,9 @@ export const CONSUMER_CONTRACT_VERSION = "ui-graph-consumer/1" as const;
  * The product surfaces that consume UI Graph through that pipeline (PRD §4).
  *
  * `gate` and `mcp_review` are the sibling repos apatureai/gate and
- * apatureai/mcp-review. `pointer` and `interactive_review` are surface names
+ * apatureai/bastion (renamed from `mcp-review`; the wire value `mcp_review`
+ * stays as it is, because it is a pinned surface identifier, not a repo name).
+ * `pointer` and `interactive_review` are surface names
  * from the same product design that have no public repository; they are here
  * because the contract table below has to enumerate every consumer it
  * constrains, not because this package can reach any of them.

@@ -1,4 +1,4 @@
-# Contributing to ui-graph
+# Contributing to lattice
 
 Contributions are welcome. Issues and pull requests are read and reviewed.
 
@@ -12,8 +12,8 @@ Requirements:
 - pnpm 9.15.0, declared via `packageManager`, so `corepack enable` picks up the right version automatically.
 
 ```sh
-git clone https://github.com/apatureai/ui-graph.git
-cd ui-graph
+git clone https://github.com/apatureai/lattice.git
+cd lattice
 pnpm install --frozen-lockfile
 pnpm lint             # eslint --max-warnings=0; warnings fail the build
 pnpm typecheck        # tsc -b across the workspace project references

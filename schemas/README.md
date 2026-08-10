@@ -29,7 +29,7 @@ Each schema is identified by a URN, not a URL:
 | view | `urn:apatureai:ui-graph:view:1.0.0` |
 | delta | `urn:apatureai:ui-graph:delta:1.0.0` |
 
-A URN is deliberate: these are names, not locations, and nothing about them suggests a fetchable endpoint. The bytes they name live in this directory and are vendored byte-for-byte into `packages/schema/schemas/`, which is what the shipped validator loads. The `apatureai` namespace is the GitHub organization that owns them (<https://github.com/apatureai/ui-graph>).
+A URN is deliberate: these are names, not locations, and nothing about them suggests a fetchable endpoint. The bytes they name live in this directory and are vendored byte-for-byte into `packages/schema/schemas/`, which is what the shipped validator loads. The `apatureai` namespace is the GitHub organization that owns them (<https://github.com/apatureai/lattice>).
 
 Earlier revisions used `https://schemas.apature.ai/ui-graph/...` `$id` values. That host was never served, so the URLs implied a resolvable location that did not exist; the URNs replace them one for one. The identifier is the only thing that changed. No accepted instance shape moved, which is why the schema version stays at 1.0.0 and the evolution gate in `packages/schema/test/schema-evolution.test.ts` classifies the change as `none`.
 

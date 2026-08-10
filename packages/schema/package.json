@@ -8,7 +8,7 @@
   "author": "Aditya Prathapa",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/apatureai/ui-graph.git",
+    "url": "git+https://github.com/apatureai/lattice.git",
     "directory": "packages/schema"
   },
   "exports": {

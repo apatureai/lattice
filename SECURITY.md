@@ -13,7 +13,7 @@ The project is pre-1.0 and there is a single supported line: the latest `main`. 
 
 Please report privately, not in a public issue.
 
-- GitHub private vulnerability reporting: <https://github.com/apatureai/ui-graph/security/advisories/new>
+- GitHub private vulnerability reporting: <https://github.com/apatureai/lattice/security/advisories/new>
 
 Include what you need to reproduce it: the input that triggers it, the version or commit, and what you believe the impact is. A minimal capture bundle or view spec is ideal, since this library is deterministic and JSON in, JSON out.
 

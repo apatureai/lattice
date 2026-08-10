@@ -8,11 +8,11 @@
   "author": "Aditya Prathapa",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/apatureai/ui-graph.git"
+    "url": "git+https://github.com/apatureai/lattice.git"
   },
-  "homepage": "https://github.com/apatureai/ui-graph#readme",
+  "homepage": "https://github.com/apatureai/lattice#readme",
   "bugs": {
-    "url": "https://github.com/apatureai/ui-graph/issues"
+    "url": "https://github.com/apatureai/lattice/issues"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

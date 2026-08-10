@@ -1,8 +1,8 @@
-# ui-graph
+# lattice
 
 **A scene graph for browser agents that keeps its sources honest.** It fuses DOM/layout, accessibility, computed style and text-run capture evidence into one immutable, content-addressed graph, then renders small budgeted text views of it for a model prompt.
 
-The point of difference: when DOM says `link` and the accessibility tree says `button`, ui-graph does not pick a winner. It keeps both claims on the node, flags `conflict:role`, lowers confidence, and lets you decide whether to escalate to pixels. Every fact in a rendered view stays traceable to the source that produced it, through the same short ref the model was given.
+The point of difference: when DOM says `link` and the accessibility tree says `button`, lattice does not pick a winner. It keeps both claims on the node, flags `conflict:role`, lowers confidence, and lets you decide whether to escalate to pixels. Every fact in a rendered view stays traceable to the source that produced it, through the same short ref the model was given.
 
 It is a pure TypeScript library. JSON in, JSON out. No browser, no screenshots, no OCR, no model calls, no network, no database.
 
@@ -13,7 +13,7 @@ It is a pure TypeScript library. JSON in, JSON out. No browser, no screenshots, 
 - You need the model's prompt to be **small and bounded**, and you need to know exactly what got dropped to make it fit.
 - You need a claim the model makes about "that button" to resolve back to real evidence later, for a review comment, an assertion, or a human check.
 
-If you want a turnkey "point it at a URL" tool, this is not that. ui-graph consumes capture evidence; producing it is your job today (see [Roadmap](#roadmap), item 1).
+If you want a turnkey "point it at a URL" tool, this is not that. lattice consumes capture evidence; producing it is your job today (see [Roadmap](#roadmap), item 1).
 
 ## Why it is interesting
 
@@ -125,6 +125,8 @@ If it exits with `ERR_MODULE_NOT_FOUND` and `Cannot find module '.../packages/sc
 
 Four entry points, all synchronous except the builder.
 
+The repository is `lattice`; it was renamed from `ui-graph`. The package identifier `@apature/ui-graph`, the schema URNs (`urn:apatureai:ui-graph:...`) and the on-disk schema filenames deliberately keep the old spelling, because those are pinned identity for anything that consumes this library, and renaming them would be a breaking change with no reader benefit.
+
 The package is not on npm yet (see [Roadmap](#roadmap), item 4). Inside this repo, tests import it as `@apature/ui-graph` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
 
 ```js
@@ -206,10 +208,10 @@ The claim is that this representation is cheaper to put in a prompt than raw str
 | `test/fixtures/capture/minimal.json` | 1 | 738 | 403 | 45% |
 | `test/fixtures/capture/multi-frame.json` | 4 | 1537 | 801 | 48% |
 | `test/fixtures/capture/with-derived.json` | 3 | 1676 | 642 | 62% |
-| `test/fixtures/capture/judgment-engine.golden.json` | 2 | 1758 | 647 | 63% |
+| `test/fixtures/capture/verdict.golden.json` | 2 | 1758 | 647 | 63% |
 | `syntheticCapture()` (the quickstart page) | 130 | 60637 | 31428 | 48% |
 
-`judgment-engine.golden.json` is named for the consumer whose capture step produced its shape, the sibling repo [apatureai/judgment-engine](https://github.com/apatureai/judgment-engine). It is frozen JSON like the other three; nothing in this package depends on that repo.
+`verdict.golden.json` is named for the consumer whose capture step produced its shape, the sibling repo [apatureai/verdict](https://github.com/apatureai/verdict). It is frozen JSON like the other three; nothing in this package depends on that repo.
 
 A page summary describes the whole page, so halving it is about the ceiling. The bounded views are where the design pays off, on the same synthetic page against the same 60637-byte baseline, with no token budget applied:
 
@@ -323,7 +325,7 @@ scripts/capability-guard.mjs the CI gate: dependency allowlist + determinism che
 
 The JSON Schemas are the normative contract; the TypeScript types explain the same thing, and a mirror test fails if the two drift. Each schema is identified by a URN (`urn:apatureai:ui-graph:snapshot:1.0.0` and its view/delta siblings) rather than a URL, so nothing implies a fetchable endpoint and validation is provably offline. See [`schemas/README.md`](schemas/README.md).
 
-The source calls its caller **the consumer**: whatever critique pipeline links this library in and owns the parts it deliberately does not, which is capture, inference, storage, delivery, and redaction. The reference consumer is the sibling repo [apatureai/judgment-engine](https://github.com/apatureai/judgment-engine), a grounded vision-language design reviewer. This package neither depends on it nor requires it; any pipeline that supplies the documented read profiles is a consumer.
+The source calls its caller **the consumer**: whatever critique pipeline links this library in and owns the parts it deliberately does not, which is capture, inference, storage, delivery, and redaction. The reference consumer is the sibling repo [apatureai/verdict](https://github.com/apatureai/verdict), a grounded vision-language design reviewer. This package neither depends on it nor requires it; any pipeline that supplies the documented read profiles is a consumer.
 
 Some source comments cite section numbers (`TRD §8.1`, `PRD §6.4`, `ARCHITECTURE §7`) from earlier design documents that are not part of this repository. They are left in place as provenance for where a rule came from.
 
@@ -352,7 +354,7 @@ Two things to be clear about, because they change how you should read every numb
 
 These are the concrete, pickup-able items. Each names the file you would touch. Issues and pull requests are welcome for any of them.
 
-**1. A built-in capture adapter (the big one).** ui-graph consumes capture evidence; producing it is up to you today. This is the single biggest thing standing between the library and a five-minute first run, so it is the most valuable contribution available.
+**1. A built-in capture adapter (the big one).** lattice consumes capture evidence; producing it is up to you today. This is the single biggest thing standing between the library and a five-minute first run, so it is the most valuable contribution available.
 
 The target shape is `CaptureBundleReadProfile` in `packages/schema/src/readprofile.ts`. An adapter has to fill roughly this:
 

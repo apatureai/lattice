@@ -21,10 +21,10 @@ const manifest = load<{ files: Record<string, string> }>("MANIFEST.json");
 const minimalCapture = () =>
   load<CaptureBundleReadProfile>("capture/minimal.json");
 // Named for the consumer whose capture step produced its shape: the sibling
-// repo apatureai/judgment-engine (https://github.com/apatureai/judgment-engine).
+// repo apatureai/verdict (https://github.com/apatureai/verdict).
 // Nothing in this package depends on that repo; the fixture is plain JSON.
 const consumerShapedCapture = () =>
-  load<CaptureBundleReadProfile>("capture/judgment-engine.golden.json");
+  load<CaptureBundleReadProfile>("capture/verdict.golden.json");
 const multiFrameCapture = () =>
   load<CaptureBundleReadProfile>("capture/multi-frame.json");
 const derivedCapture = () =>

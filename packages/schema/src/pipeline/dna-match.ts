@@ -4,11 +4,11 @@
  *
  * Projects a SUPPLIED, approved UI-DNA read profile onto graph nodes without
  * taking ownership of UI DNA: extraction/approval/canonical storage stay in
- * `apatureai/ui-dna`; this slice only CONSUMES the approved projection. It emits
+ * `apatureai/canon`; this slice only CONSUMES the approved projection. It emits
  * `UIDNAMatch` facts for the token surface (colors) and numeric scales (spacing,
  * radii, type): exact normalized equality → numeric tolerance → approved
  * exceptions before drift. Component/structural and embedding matching are a
- * follow-on (they need the projection's `componentFamilies`, which ui-dna types).
+ * follow-on (they need the projection's `componentFamilies`, which canon types).
  *
  * Load-bearing invariants (TRD §4.3, §8.7, §16):
  *   - Only deterministic matches against APPROVED DNA in a PRODUCTION build may
