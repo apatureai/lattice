@@ -75,7 +75,7 @@ $ pnpm capture https://example.com
    redaction          applied=false  0 source id(s)
    canonical JSON     7080 bytes (1770 est. tokens)
 
-2. buildUiGraph — fuse, hierarchy, relations, seal
+2. buildUiGraph: fuse, hierarchy, relations, seal
    snapshotId         ugs_1_67992a572090dd60f90c4dd3d867b25d19eabd99fb3a4dc720fd5d7be82f116a
    contentHash        sha256:67992a572090dd60f90c4dd3d867b25d19eabd99fb3a4dc720fd5d7be82f116a
    nodes / edges      8 / 23
@@ -83,7 +83,7 @@ $ pnpm capture https://example.com
    retained conflicts 0   (sources that disagreed; both claims kept)
    canonical JSON     24386 bytes
 
-3. queryUiGraph — 4 views of the same snapshot (focus/patchContext on ug:69ef0b08:6)
+3. queryUiGraph: 4 views of the same snapshot (focus/patchContext on ug:69ef0b08:6)
    view             bytes  est.tok  nodes  vs capture  truncation
    summary           1691      423      8       76.1%  none
    actionMap          367       92      1       94.8%  none
@@ -91,12 +91,12 @@ $ pnpm capture https://example.com
    patchContext      1421      356      1       79.9%  none
    ("vs capture" is the reduction against the canonical capture JSON above.)
 
-4. actionMap — 1 perceivable affordances (perception only; never an action API)
+4. actionMap: 1 perceivable affordances (perception only; never an action API)
    ug:69ef0b08:6   link      Learn more                @ 0.20,0.24 (visible)
 
 5. Wrote out/capture.json, out/snapshot.json and 4 out/view-*.json files.
 
-OK — captured https://example.com and built snapshot ugs_1_67992a572090dd… with 4 schema-valid views.
+OK, captured https://example.com and built snapshot ugs_1_67992a572090dd… with 4 schema-valid views.
 ```
 
 `example.com` is seven elements, which is the point: it fits on the page. Swap it for any `http(s)://` or `file://` URL. The repository ships a denser fixture page with landmarks, a table, a form, an iframe and two deliberate source disagreements:
@@ -113,7 +113,7 @@ $ pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --route /d
    redaction          applied=false  0 source id(s)
    canonical JSON     74916 bytes (18729 est. tokens)
 
-2. buildUiGraph — fuse, hierarchy, relations, seal
+2. buildUiGraph: fuse, hierarchy, relations, seal
    snapshotId         ugs_1_caed6c46470205c27effb5dd00fa83cb1d95228d72fdc8ef111bac01231d9cd1
    contentHash        sha256:caed6c46470205c27effb5dd00fa83cb1d95228d72fdc8ef111bac01231d9cd1
    nodes / edges      79 / 217
@@ -121,7 +121,7 @@ $ pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --route /d
    retained conflicts 2   (sources that disagreed; both claims kept)
    canonical JSON     259538 bytes
 
-3. queryUiGraph — 4 views of the same snapshot (focus/patchContext on ug:2f17bbf9:21)
+3. queryUiGraph: 4 views of the same snapshot (focus/patchContext on ug:2f17bbf9:21)
    view             bytes  est.tok  nodes  vs capture  truncation
    summary           9756     2437     36       87.0%  none
    actionMap         2735      684     11       96.3%  none
@@ -129,7 +129,7 @@ $ pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --route /d
    patchContext      1516      379      1       98.0%  none
    ("vs capture" is the reduction against the canonical capture JSON above.)
 
-4. actionMap — 11 perceivable affordances (perception only; never an action API)
+4. actionMap: 11 perceivable affordances (perception only; never an action API)
    ug:2f17bbf9:21  link      Open production           @ 0.03,0.31 (visible)
    ug:2f17bbf9:22  link      Open preview              @ 0.36,0.31 (visible)
    ug:2f17bbf9:23  link      Open staging              @ 0.19,0.33 (visible)
@@ -139,10 +139,10 @@ $ pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --route /d
 
 5. Wrote out/capture.json, out/snapshot.json and 4 out/view-*.json files.
 
-OK — captured file:///home/you/lattice/packages/capture/test/fixtures/page.html and built snapshot ugs_1_caed6c46470205… with 4 schema-valid views.
+OK, captured file:///home/you/lattice/packages/capture/test/fixtures/page.html and built snapshot ugs_1_caed6c46470205… with 4 schema-valid views.
 ```
 
-**Success criterion:** the last line reads `OK — captured <your url> and built snapshot … with N schema-valid views.`, and `out/` contains `capture.json`, `snapshot.json` and one `view-*.json` per view. Open `out/view-actionMap.json` to see what a model would be told about the page, and `out/capture.json` to see the evidence it was told from.
+**Success criterion:** the last line reads `OK, captured <your url> and built snapshot … with N schema-valid views.`, and `out/` contains `capture.json`, `snapshot.json` and one `view-*.json` per view. Open `out/view-actionMap.json` to see what a model would be told about the page, and `out/capture.json` to see the evidence it was told from.
 
 Two things worth noticing in that output, because they are what this repository is actually about.
 

@@ -223,7 +223,7 @@ async function main(): Promise<number> {
   reportCapture(capture, captureJson);
 
   if (args.captureOnly) {
-    console.log(`OK — wrote ${join(args.out, "capture.json")}. Feed it to buildUiGraph when you are ready.`);
+    console.log(`OK, wrote ${join(args.out, "capture.json")}. Feed it to buildUiGraph when you are ready.`);
     return 0;
   }
 
@@ -250,7 +250,7 @@ async function main(): Promise<number> {
     },
   });
 
-  console.log("2. buildUiGraph — fuse, hierarchy, relations, seal");
+  console.log("2. buildUiGraph: fuse, hierarchy, relations, seal");
   console.log(`   snapshotId         ${snapshot.snapshotId}`);
   console.log(`   contentHash        ${snapshot.contentHash}`);
   console.log(`   nodes / edges      ${snapshot.metrics.graph.nodes} / ${snapshot.metrics.graph.edges}`);
@@ -277,7 +277,7 @@ async function main(): Promise<number> {
   }
 
   console.log(
-    `3. queryUiGraph — ${queries.length} views of the same snapshot` +
+    `3. queryUiGraph: ${queries.length} views of the same snapshot` +
       (firstRef === undefined ? " (no affordance found, so no focus/patchContext)" : ` (focus/patchContext on ${firstRef})`),
   );
   console.log(`   ${pad("view", 14)}${padLeft("bytes", 8)}${padLeft("est.tok", 9)}${padLeft("nodes", 7)}${padLeft("vs capture", 12)}  truncation`);
@@ -301,7 +301,7 @@ async function main(): Promise<number> {
   console.log('   ("vs capture" is the reduction against the canonical capture JSON above.)');
   console.log("");
 
-  console.log(`4. actionMap — ${affordances.length} perceivable affordances (perception only; never an action API)`);
+  console.log(`4. actionMap: ${affordances.length} perceivable affordances (perception only; never an action API)`);
   for (const entry of affordances.slice(0, 5)) {
     const box = `${entry.rect.x.toFixed(2)},${entry.rect.y.toFixed(2)}`;
     console.log(`   ${pad(entry.ref, 16)}${pad(entry.role, 10)}${pad((entry.name ?? "").slice(0, 24), 26)}@ ${box} (${entry.state.visibility})`);
@@ -316,7 +316,7 @@ async function main(): Promise<number> {
 
   console.log(`5. Wrote ${args.out}/capture.json, ${args.out}/snapshot.json and ${views.size} ${args.out}/view-*.json files.`);
   console.log("");
-  console.log(`OK — captured ${args.url} and built snapshot ${snapshot.snapshotId.slice(0, 20)}… with ${views.size} schema-valid views.`);
+  console.log(`OK, captured ${args.url} and built snapshot ${snapshot.snapshotId.slice(0, 20)}… with ${views.size} schema-valid views.`);
   return 0;
 }
 
