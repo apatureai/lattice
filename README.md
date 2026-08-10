@@ -1,7 +1,5 @@
 # ui-graph
 
-**Archived. Provided as-is, no updates expected.** Issues and pull requests are not monitored. Last verified working 2026-08-09 on macOS 15.6.1 + Node 24.14.0 + pnpm 9.15.0.
-
 A pure TypeScript library that fuses browser capture evidence (DOM/layout, accessibility tree, computed styles, text runs) into one immutable, content-addressed scene graph, and renders small budgeted text views of it for a vision-language model's prompt.
 
 ## Why this exists
