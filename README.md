@@ -1,5 +1,7 @@
 # lattice
 
+[![CI](https://img.shields.io/github/actions/workflow/status/apatureai/lattice/ci.yml?branch=main&label=CI)](https://github.com/apatureai/lattice/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/github/license/apatureai/lattice)](LICENSE) [![Node](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](.node-version)
+
 **A scene graph for browser agents that keeps its sources honest.** It fuses DOM/layout, accessibility, computed style and text-run capture evidence into one immutable, content-addressed graph, then renders small budgeted text views of it for a model prompt.
 
 The point of difference: when DOM says `link` and the accessibility tree says `button`, lattice does not pick a winner. It keeps both claims on the node, flags `conflict:role`, lowers confidence, and lets you decide whether to escalate to pixels. Every fact in a rendered view stays traceable to the source that produced it, through the same short ref the model was given.
