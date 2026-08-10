@@ -355,7 +355,7 @@ export function syntheticCapture(options: SyntheticPageOptions = {}): CaptureBun
     paintOrder: 5000,
   });
   addAx(b, { sourceId: "ax_footer", frameId: "root", role: "contentinfo", name: "Footer", ignored: false, backendDomSourceId: footer });
-  addText(b, "txt_footer", footer, "Apature — archived", rect(24, height - 40, 240, 20));
+  addText(b, "txt_footer", footer, "UI Graph demo page", rect(24, height - 40, 240, 20));
 
   const redactedSourceIds =
     redactPaymentField && b.dom.some((n) => n.sourceId === paymentFieldSourceId) ? [paymentFieldSourceId] : [];

@@ -8,10 +8,10 @@
  * adapter validates this explicit read profile, while the UI Graph snapshot
  * schema itself stays closed (TRD §4.1 final paragraph).
  *
- * Contract status (TRD §4, 2026-06-18): the producer-owned `CaptureBundle` and
- * UI-DNA `GraphProjection` schemas are an R0 prerequisite not yet published in
- * this shape. UI Graph owns these target consumer profiles plus golden fixtures
- * that prove the contract (issue #3, PRD §13, ARCHITECTURE §16.1).
+ * `CaptureBundleReadProfile` below is the shape a capture adapter has to
+ * produce. No adapter ships in this repository yet; writing one is roadmap
+ * item 1 in the README, and the golden fixtures under `test/fixtures/capture/`
+ * plus `syntheticCapture()` are what an adapter can be checked against.
  */
 
 import type { Rect, Viewport } from "./types.js";

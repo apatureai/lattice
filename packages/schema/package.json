@@ -2,7 +2,7 @@
   "name": "@apature/ui-graph",
   "version": "0.1.0",
   "private": true,
-  "description": "Deterministic, UI-DNA-aware visual scene graph contract for agents",
+  "description": "Deterministic scene graph for browser agents: fuse DOM, accessibility, style and text capture into one content-addressed snapshot, then render budgeted views for a model prompt",
   "type": "module",
   "license": "MIT",
   "author": "Aditya Prathapa",

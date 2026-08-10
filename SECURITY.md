@@ -1,77 +1,49 @@
 # Security Policy
 
-## Status: archived and unmaintained
-
-This repository is a public archive of a wound-down product. It is **not
-maintained and receives no security support**.
+## Supported versions
 
 | Version | Supported |
 | ------- | --------- |
-| all     | No        |
+| 0.1.x (`main`) | Yes |
+| older commits | No |
 
-There is no maintained release line, no patch stream, and no advisory process.
-Dependencies are frozen at their mid-2026 versions.
+The project is pre-1.0 and there is a single supported line: the latest `main`. Fixes land there. If you are pinned to an older commit, the upgrade path is to move to `main`.
 
 ## Reporting a vulnerability
 
-You can still report one, and it is appreciated. Just calibrate expectations.
+Please report privately, not in a public issue.
 
-Use GitHub private vulnerability reporting rather than a public issue:
+- GitHub private vulnerability reporting: <https://github.com/apatureai/ui-graph/security/advisories/new>
 
-- <https://github.com/apatureai/ui-graph/security/advisories/new>
+Include what you need to reproduce it: the input that triggers it, the version or commit, and what you believe the impact is. A minimal capture bundle or view spec is ideal, since this library is deterministic and JSON in, JSON out.
 
-Please do not open a public issue for anything exploitable, and please do not
-email. There is **no bug bounty and no reward program**.
+What you can expect:
 
-What you can expect: no response SLA, no commitment to investigate, no
-commitment to ship a fix, and no commitment to publish an advisory. A report
-that identifies something serious may result in a note added to the README so
-that people who fork the code are warned. That is the realistic ceiling.
+- An acknowledgement within 5 business days.
+- An initial assessment, whether it is accepted, needs more information, or is out of scope, within 10 business days.
+- If accepted, a fix on `main` and a published GitHub Security Advisory crediting you, unless you ask to stay anonymous.
+- Please give 90 days before public disclosure, or less by agreement if a fix ships sooner.
 
-## If you are going to run this code
+There is no bug bounty or reward program. Reports are still appreciated.
 
-Read this section before pointing the library at anything real.
+## Scope
 
-**Treat it as unreviewed third-party code.** It was written for one internal
-consumer (Apature's judgment engine) and stopped being maintained in 2026. It
-has never had an external security review. Do not run it against production
-secrets, production credentials, or customer data without reviewing it
-yourself first.
+In scope: anything in this repository that can be triggered by the inputs the library accepts, which are a capture bundle, a UI-DNA projection, a view spec, and a delta. Concretely that includes bypasses of the untrusted-content boundary, sensitive-text leaks into a rendered view, hash or canonicalization flaws that let two different snapshots collide or the same snapshot hash differently, delta application that produces partial state, and denial of service from a pathological but schema-valid input.
 
-**Dependencies are stale.** `pnpm-lock.yaml` pins versions from 2026 that
-likely have known CVEs by the time you read this. Run your own `pnpm audit`
-and update before use. The lockfile is preserved for reproducibility of the
-archive, not because it is safe.
+Out of scope: vulnerabilities in the consumer's browser, capture layer, artifact store, or model. This library has no network, browser, model-inference, or database capability, so classes of issue that require one of those are not reachable from here.
 
-**Capability posture: real, but only as strong as the guard.** By design this
-package has no network, browser, model-inference, or database capability. That
-is enforced mechanically by `scripts/capability-guard.mjs` (run in CI as
-`pnpm guard:capability`), which allowlists runtime dependencies and rejects
-network/HTTP clients, browser/CDP drivers, inference SDKs, and DB clients. If
-your fork removes or loosens that guard, you lose the property it protects.
+## Security properties, and their limits
 
-**It parses untrusted input.** Capture evidence (DOM text, accessibility
-names, OCR output, parser labels) is attacker-influenceable page content. The
-library validates instances against the JSON Schemas in
-`packages/schema/schemas/` using `ajv`, and
-`packages/schema/src/pipeline/untrusted.ts` implements the prompt-injection
-defenses: page-derived text is wrapped in an explicit untrusted-content
-boundary, boundary-marker forgery is neutralized, and control characters are
-stripped. These are defense-in-depth measures against a specific threat model,
-not a guarantee. Input size and nesting limits are the host process's job, not
-this library's.
+Read this before pointing the library at real page content.
 
-**It does not redact.** The contract assumes redaction already happened
-upstream: text reaching the graph builder is supposed to arrive
-already-redacted, carrying redaction metadata and sensitivity labels. The
-`queryUiGraph` view path additionally withholds the name and text of any node
-labelled `pii`, `secret`, `credential` or `redacted`, and flags it
-`withheld:sensitive`. The library will fail closed when rendering a prompt view
-if text labelled `pii`, `secret`, or `credential` would survive into the
-output, but it will happily hash and store whatever you hand it. Feed it raw
-captures of a logged-in production app and secrets end up in snapshots,
-content hashes, and any artifact store you wire behind it.
+**Capability posture is enforced, not asserted.** By design this package has no network, browser, model-inference, or database capability. `scripts/capability-guard.mjs` runs in CI as `pnpm guard:capability`, allowlists runtime dependencies, and rejects network and HTTP clients, browser and CDP drivers, inference SDKs, and DB clients. If you fork and loosen that guard, you lose the property it protects.
 
-**Nothing here handles auth or multi-tenancy.** Tenant isolation, artifact
-storage, retention, and access control were the consumer's responsibility and
-are not implemented in this repo.
+**It parses untrusted input.** Capture evidence (DOM text, accessibility names, OCR output, parser labels) is attacker-influenceable page content. The library validates instances against the JSON Schemas in `packages/schema/schemas/` using `ajv`, and `packages/schema/src/pipeline/untrusted.ts` implements the prompt-injection defenses: page-derived text is wrapped in an explicit untrusted-content boundary, boundary-marker forgery is neutralized, and control characters are stripped. These are defense-in-depth measures against a specific threat model, not a guarantee. Input size and nesting limits are the host process's job, not this library's.
+
+**It does not redact; it withholds.** The contract assumes redaction already happened upstream: text reaching the graph builder is expected to arrive already-redacted, carrying redaction metadata and sensitivity labels. The `queryUiGraph` view path additionally withholds the name and text of any node labelled `pii`, `secret`, `credential` or `redacted`, flags it `withheld:sensitive`, and fails closed if such text would survive into a rendered prompt view. But the builder will hash and store whatever you hand it. Feed it raw captures of a logged-in production app and secrets end up in snapshots, content hashes, and any artifact store you wire behind it. Redact at capture time.
+
+**Nothing here handles auth or multi-tenancy.** Tenant isolation, artifact storage, retention, and access control belong to the consuming application and are not implemented in this repository.
+
+**Dependencies.** The runtime dependency surface is two packages, `ajv` and `ajv-formats`. `pnpm-lock.yaml` is committed so builds are reproducible. Run `pnpm audit` in your own environment as part of adopting this, the same as you would for any dependency.
+
+**No external security review.** This code has not had a third-party security audit. If you are putting it in a path that handles sensitive page content, review it yourself first. Findings from that review are exactly the kind of report this policy is for.

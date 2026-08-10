@@ -1,10 +1,13 @@
 /**
  * @apature/ui-graph: deterministic, UI-DNA-aware visual scene graph contract.
  *
- * UI Graph is a feature-flagged representation
- * EXPERIMENT until its precision/grounding/cost/latency eval proves value. This
- * package is the contract + deterministic representation library consumed by
- * Judgment Engine; it never calls a model, browser, sandbox, or network.
+ * UI Graph fuses capture evidence (DOM/layout, accessibility, computed style,
+ * text runs) into an immutable content-addressed snapshot and renders bounded
+ * views of it for a model prompt. Builds carry a `useMode` so offline-eval,
+ * shadow and production artifacts can never collide, and the precision,
+ * grounding, cost and latency gates in `eval/` stay fail-closed until a
+ * consumer supplies real model runs. It never calls a model, browser, sandbox,
+ * or network.
  */
 
 export * from "./types.js";

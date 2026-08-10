@@ -1,6 +1,6 @@
 # UI Graph Schemas
 
-Status: normative draft contracts for R0
+Status: normative contracts at schema version 1.0.0. These are the source of truth; the TypeScript types in `packages/schema/src/types.ts` mirror them, and a test fails if the two drift.
 
 ## Contracts
 
