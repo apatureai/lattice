@@ -1,0 +1,50 @@
+{
+  "name": "@apature/ui-graph-capture",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright/CDP capture adapter for lattice: turn a real URL into a CaptureBundleReadProfile the scene-graph builder can consume",
+  "type": "module",
+  "license": "MIT",
+  "author": "Aditya Prathapa",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apatureai/lattice.git",
+    "directory": "packages/capture"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./transform": {
+      "types": "./dist/transform.d.ts",
+      "import": "./dist/transform.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "lattice-capture": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@apature/ui-graph": "workspace:*"
+  },
+  "peerDependencies": {
+    "playwright-core": ">=1.55.0 <2"
+  },
+  "peerDependenciesMeta": {
+    "playwright-core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "playwright-core": "1.62.1"
+  }
+}

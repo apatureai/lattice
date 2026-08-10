@@ -49,5 +49,40 @@ jobs:
       - name: Capability guard (no model/browser/network/DB; determinism)
         run: pnpm guard:capability
 
-      - name: Example (the README quickstart, end to end)
+      - name: Example (the no-browser quickstart, end to end)
         run: pnpm example
+
+  capture:
+    name: live capture (real Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # The browser binary is a separate, explicit install. The library never
+      # downloads one on its own, and nothing in the `build` job needs it.
+      - name: Install Chromium
+        run: pnpm browser:install
+
+      - name: Live capture suite (a real page in, a real scene graph out)
+        run: pnpm test:browser
+
+      - name: Capture the fixture page through the documented CLI
+        run: pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --out out --repo apatureai/lattice

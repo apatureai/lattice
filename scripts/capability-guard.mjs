@@ -5,14 +5,25 @@
  * The single most load-bearing invariant of this repo is that `@apature/ui-graph`
  * is a deterministic, sandboxed library with NO model, browser, network, or DB
  * capability (PRD §12, TRD §2/§3.1, ARCHITECTURE §1/§2). This script makes that
- * boundary a failing CI gate instead of prose. It checks two things:
+ * boundary a failing CI gate instead of prose. It checks four things:
  *
  *  1. Dependency boundary: every runtime dependency of the published package
  *     must be on the allowlist. New runtime deps require an explicit, justified
  *     allowlist entry visible in review. Names that look like a network/HTTP
  *     client, browser/CDP driver, model/inference SDK, or DB client are denied.
  *
- *  2. Determinism: hashed/canonical code paths (build/serialize/hash/view) must
+ *  2. Import boundary: no file in the core package may import a browser, network
+ *     or model module, including Node's own networking built-ins, and none may
+ *     import the capture adapter. The dependency check alone cannot see this,
+ *     because a workspace sibling would resolve without a manifest entry.
+ *
+ *  3. Adapter placement: `@apature/ui-graph-capture` exists precisely so the
+ *     capture producer can drive a browser without the core gaining that
+ *     capability. Its browser dependency must stay optional (a peer), so
+ *     installing the core never pulls a browser in, and it must be a strictly
+ *     one-way dependency: the adapter reads the core, never the reverse.
+ *
+ *  4. Determinism: hashed/canonical code paths (build/serialize/hash/view) must
  *     not read wall-clock, randomness, or locale-dependent formatting (TRD §8,
  *     §9). Wall-clock belongs only to diagnostics / delta `createdAt`, never to
  *     hashed snapshot fields (TRD §5.1, §9.2).
@@ -77,7 +88,96 @@ for (const dep of runtimeDeps) {
   }
 }
 
-// --- 2. Determinism guard -----------------------------------------------
+// --- 2. Import boundary in the core package ------------------------------
+
+/**
+ * Module specifiers the core library may never import. A workspace sibling
+ * resolves without appearing in `dependencies`, so the manifest check above
+ * cannot see it; this reads the source.
+ */
+const FORBIDDEN_IMPORTS = [
+  { re: /^playwright(-core)?$/, why: "browser driver" },
+  { re: /^puppeteer(-core)?$/, why: "browser driver" },
+  { re: /^chrome-remote-interface$/, why: "CDP client" },
+  { re: /^selenium-webdriver$/, why: "browser driver" },
+  { re: /^node:(http|https|net|tls|dgram|dns|http2)$/, why: "Node networking built-in" },
+  { re: /^(http|https|net|tls|dgram|dns|http2)$/, why: "Node networking built-in" },
+  { re: /^undici$/, why: "HTTP client" },
+  { re: /^@apature\/ui-graph-capture$/, why: "the capture adapter, which drives a browser" },
+];
+
+const IMPORT_RE = /(?:^|\n)\s*(?:import|export)[\s\S]*?from\s*["']([^"']+)["']|\bimport\(\s*["']([^"']+)["']\s*\)|\brequire\(\s*["']([^"']+)["']\s*\)/g;
+
+function importedSpecifiers(text) {
+  const found = new Set();
+  for (const match of text.matchAll(IMPORT_RE)) {
+    const specifier = match[1] ?? match[2] ?? match[3];
+    if (specifier !== undefined) found.add(specifier);
+  }
+  return found;
+}
+
+const coreSources = collectTs(join(pkgRoot, "src"));
+for (const file of coreSources) {
+  const text = readFileSync(file, "utf8");
+  for (const specifier of importedSpecifiers(text)) {
+    for (const { re, why } of FORBIDDEN_IMPORTS) {
+      if (re.test(specifier)) {
+        fail(
+          `${relative(repoRoot, file)} imports "${specifier}" (${why}). The core library ` +
+            `has no browser/network/model capability; capture belongs in ` +
+            `packages/capture, outside this boundary (TRD §3.1).`,
+        );
+      }
+    }
+  }
+}
+
+// --- 3. The capture adapter stays outside the boundary -------------------
+
+const capturePkgPath = join(repoRoot, "packages", "capture", "package.json");
+let capturePkg;
+try {
+  capturePkg = JSON.parse(readFileSync(capturePkgPath, "utf8"));
+} catch {
+  fail(
+    "packages/capture/package.json is missing. The capture adapter is what keeps " +
+      "browser capability out of the core; if it moved, this guard must move with it.",
+  );
+}
+
+if (capturePkg !== undefined) {
+  const captureRuntimeDeps = Object.keys(capturePkg.dependencies ?? {});
+  for (const dep of captureRuntimeDeps) {
+    const lower = dep.toLowerCase();
+    for (const pattern of FORBIDDEN_DEP_PATTERNS) {
+      if (lower === pattern || lower.includes(pattern)) {
+        fail(
+          `packages/capture declares "${dep}" as a hard runtime dependency. A browser ` +
+            `library must stay an OPTIONAL peer dependency, so that consuming the ` +
+            `adapter's pure transform never installs a browser.`,
+        );
+      }
+    }
+  }
+
+  const peers = capturePkg.peerDependencies ?? {};
+  const peerMeta = capturePkg.peerDependenciesMeta ?? {};
+  if (!("playwright-core" in peers)) {
+    fail("packages/capture must declare playwright-core as a peer dependency, not a hard one.");
+  } else if (peerMeta["playwright-core"]?.optional !== true) {
+    fail("packages/capture must mark the playwright-core peer dependency optional.");
+  }
+
+  if (Object.keys(pkgJson.dependencies ?? {}).includes(capturePkg.name)) {
+    fail(
+      `The core package depends on "${capturePkg.name}". The dependency is one-way by ` +
+        `design: the adapter reads the core, never the reverse.`,
+    );
+  }
+}
+
+// --- 4. Determinism guard -----------------------------------------------
 
 /** Source files whose output participates in the content hash / canonical form. */
 const HASHED_PATH_FILES = ["canonical.ts"];

@@ -6,16 +6,20 @@
 
 The point of difference: when DOM says `link` and the accessibility tree says `button`, lattice does not pick a winner. It keeps both claims on the node, flags `conflict:role`, lowers confidence, and lets you decide whether to escalate to pixels. Every fact in a rendered view stays traceable to the source that produced it, through the same short ref the model was given.
 
-It is a pure TypeScript library. JSON in, JSON out. No browser, no screenshots, no OCR, no model calls, no network, no database.
+Point it at a URL:
+
+```sh
+pnpm capture https://example.com
+```
+
+Two packages, one boundary. **`@apature/ui-graph`** is the graph itself: a pure TypeScript library, JSON in, JSON out, with no browser, no screenshots, no OCR, no model calls, no network and no database. **`@apature/ui-graph-capture`** is the producer that feeds it: a Playwright/CDP adapter that turns a real page into the capture evidence the graph consumes. The browser lives in the adapter and nowhere else, and [`scripts/capability-guard.mjs`](scripts/capability-guard.mjs) fails CI if that ever stops being true.
 
 ## Who this is for
 
-- You are building a **browser agent or computer-use agent** and you already have a capture layer (CDP, Playwright, an extension, your own harness).
+- You are building a **browser agent or computer-use agent**. Bring your own capture layer (CDP, Playwright, an extension, your own harness) or use the one in this repo.
 - Flat accessibility-tree serialization is not working for you: it is too big, it loses geometry, and it silently drops the disagreements that are the interesting part.
 - You need the model's prompt to be **small and bounded**, and you need to know exactly what got dropped to make it fit.
 - You need a claim the model makes about "that button" to resolve back to real evidence later, for a review comment, an assertion, or a human check.
-
-If you want a turnkey "point it at a URL" tool, this is not that. lattice consumes capture evidence; producing it is your job today (see [Roadmap](#roadmap), item 1).
 
 ## Why it is interesting
 
@@ -31,16 +35,19 @@ Four ideas carry the design.
 
 ## Requirements
 
-| Tool | Floor | Check |
-|---|---|---|
-| Node | v24 | `node -v  # need v24.x` |
-| pnpm | 9.15.0 | `pnpm -v  # need 9.15.0` |
+| Tool | Floor | Check | Needed for |
+|---|---|---|---|
+| Node | v24 | `node -v  # need v24.x` | everything |
+| pnpm | 9.15.0 | `pnpm -v  # need 9.15.0` | everything |
+| Chromium | the build `playwright-core` pins | `pnpm browser:install` | capturing a real page |
 
 ```sh
 corepack enable          # installs the pnpm version pinned in package.json
 ```
 
-Verified on macOS 15.6.1 and on `ubuntu-latest` in CI. Windows has not been tried. No command in this README requires credentials, API keys or network access, and none of them accepts any. Dependencies are pinned and `pnpm-lock.yaml` is committed, so `--frozen-lockfile` reproduces the verified tree exactly.
+Verified on macOS 15.6.1 and on `ubuntu-latest` in CI. Windows has not been tried. No command in this README requires credentials or API keys, and none of them accepts any. Dependencies are pinned and `pnpm-lock.yaml` is committed, so `--frozen-lockfile` reproduces the verified tree exactly.
+
+Network is needed exactly twice: to install dependencies, and to fetch the Chromium binary once. After that, only the page you point the capture at is fetched. The graph library itself never opens a socket.
 
 ## Install
 
@@ -49,13 +56,133 @@ From a clean clone, at the repo root:
 ```sh
 pnpm install --frozen-lockfile
 pnpm build
+pnpm browser:install      # one-time Chromium download; skip it if you only want the library
 ```
 
-`pnpm build` is `tsc -b` across the workspace project references. The quickstart imports the compiled output, so it needs this step; the test suite runs against `src` through a Vitest alias and does not.
+`pnpm build` is `tsc -b` across the workspace project references. The CLI and the examples import the compiled output, so they need this step; the test suite runs against `src` through a Vitest alias and does not. `pnpm browser:install` is `playwright-core install chromium` scoped to the capture package; nothing downloads a browser implicitly.
 
-## Quickstart
+## Quickstart: a URL in, a scene graph out
 
-One command, no credentials, no browser. It generates a deterministic synthetic page capture (130 DOM nodes, 130 accessibility nodes, 93 text runs), builds a sealed snapshot, asks it five bounded questions, and shows what a tight token budget does to one of them.
+```
+$ pnpm capture https://example.com
+1. Capture (headless Chromium, DOMSnapshot + full accessibility tree over CDP)
+   route              /  @ 1440x900 css px, dsf 1
+   frames             1
+   dom/layout nodes   7
+   accessibility      8  (7 joined to a DOM node by backend id)
+   text runs          3
+   page health        stable=true partial=false
+   redaction          applied=false  0 source id(s)
+   canonical JSON     7080 bytes (1770 est. tokens)
+
+2. buildUiGraph — fuse, hierarchy, relations, seal
+   snapshotId         ugs_1_67992a572090dd60f90c4dd3d867b25d19eabd99fb3a4dc720fd5d7be82f116a
+   contentHash        sha256:67992a572090dd60f90c4dd3d867b25d19eabd99fb3a4dc720fd5d7be82f116a
+   nodes / edges      8 / 23
+   regions            0
+   retained conflicts 0   (sources that disagreed; both claims kept)
+   canonical JSON     24386 bytes
+
+3. queryUiGraph — 4 views of the same snapshot (focus/patchContext on ug:69ef0b08:6)
+   view             bytes  est.tok  nodes  vs capture  truncation
+   summary           1691      423      8       76.1%  none
+   actionMap          367       92      1       94.8%  none
+   focus             2929      733      7       58.6%  none
+   patchContext      1421      356      1       79.9%  none
+   ("vs capture" is the reduction against the canonical capture JSON above.)
+
+4. actionMap — 1 perceivable affordances (perception only; never an action API)
+   ug:69ef0b08:6   link      Learn more                @ 0.20,0.24 (visible)
+
+5. Wrote out/capture.json, out/snapshot.json and 4 out/view-*.json files.
+
+OK — captured https://example.com and built snapshot ugs_1_67992a572090dd… with 4 schema-valid views.
+```
+
+`example.com` is seven elements, which is the point: it fits on the page. Swap it for any `http(s)://` or `file://` URL. The repository ships a denser fixture page with landmarks, a table, a form, an iframe and two deliberate source disagreements:
+
+```
+$ pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --route /deployments
+1. Capture (headless Chromium, DOMSnapshot + full accessibility tree over CDP)
+   route              /deployments  @ 1440x900 css px, dsf 1
+   frames             2
+   dom/layout nodes   74
+   accessibility      79  (74 joined to a DOM node by backend id)
+   text runs          47
+   page health        stable=true partial=false
+   redaction          applied=false  0 source id(s)
+   canonical JSON     74916 bytes (18729 est. tokens)
+
+2. buildUiGraph — fuse, hierarchy, relations, seal
+   snapshotId         ugs_1_caed6c46470205c27effb5dd00fa83cb1d95228d72fdc8ef111bac01231d9cd1
+   contentHash        sha256:caed6c46470205c27effb5dd00fa83cb1d95228d72fdc8ef111bac01231d9cd1
+   nodes / edges      79 / 217
+   regions            12
+   retained conflicts 2   (sources that disagreed; both claims kept)
+   canonical JSON     259538 bytes
+
+3. queryUiGraph — 4 views of the same snapshot (focus/patchContext on ug:2f17bbf9:21)
+   view             bytes  est.tok  nodes  vs capture  truncation
+   summary           9756     2437     36       87.0%  none
+   actionMap         2735      684     11       96.3%  none
+   focus             4143     1036      6       94.5%  none
+   patchContext      1516      379      1       98.0%  none
+   ("vs capture" is the reduction against the canonical capture JSON above.)
+
+4. actionMap — 11 perceivable affordances (perception only; never an action API)
+   ug:2f17bbf9:21  link      Open production           @ 0.03,0.31 (visible)
+   ug:2f17bbf9:22  link      Open preview              @ 0.36,0.31 (visible)
+   ug:2f17bbf9:23  link      Open staging              @ 0.19,0.33 (visible)
+   ug:2f17bbf9:3   button    New review                @ 0.90,0.02 (visible)
+   ug:2f17bbf9:5   link      Apature                   @ 0.02,0.03 (visible)
+   … 6 more
+
+5. Wrote out/capture.json, out/snapshot.json and 4 out/view-*.json files.
+
+OK — captured file:///home/you/lattice/packages/capture/test/fixtures/page.html and built snapshot ugs_1_caed6c46470205… with 4 schema-valid views.
+```
+
+**Success criterion:** the last line reads `OK — captured <your url> and built snapshot … with N schema-valid views.`, and `out/` contains `capture.json`, `snapshot.json` and one `view-*.json` per view. Open `out/view-actionMap.json` to see what a model would be told about the page, and `out/capture.json` to see the evidence it was told from.
+
+Two things worth noticing in that output, because they are what this repository is actually about.
+
+**"74 joined to a DOM node by backend id."** The adapter reads `DOMSnapshot.captureSnapshot` and `Accessibility.getFullAXTree`, both keyed by the same backend node id, so fusion joins the two trees by explicit id rather than guessing from overlapping rectangles. That is what makes "retained conflicts 2" meaningful: on the fixture page a detached `<li>` and a `<summary>` disclosure widget are places where the DOM's implicit role and the accessibility tree genuinely disagree, and both claims survive onto one node instead of one of them quietly winning.
+
+**The same page seals to the same `contentHash`.** Chromium's frame ids, backend node ids and accessibility node ids are per-session values that change on every launch. If they reached the bundle, an unchanged page would produce a new `snapshotId` every capture, which is the exact property content addressing exists to provide. The adapter replaces them with capture-local ordinals, so two separate browser launches over the same page produce a byte-identical capture. A live test asserts precisely that. The id does still move across platforms, because text metrics do; treat it as stable for a given page, browser build and machine, not as a universal fingerprint.
+
+### Capture options
+
+```
+$ pnpm capture --help
+lattice-capture <url> [options]
+
+  --out <dir>           where to write artifacts (default ./out)
+  --viewport <WxH>      viewport in CSS pixels (default 1440x900)
+  --dsf <n>             device scale factor (default 1)
+  --wait-for <selector> wait for this selector before capturing
+  --settle <ms>         quiet time after load and fonts (default 300)
+  --scroll-to <X,Y>     scroll to this offset before capturing
+  --redact <selector>   redact this subtree at the producer; repeatable
+  --repo <owner/name>   repository recorded on the capture
+  --route <path>        route recorded on the capture (default the URL path)
+  --max-nodes <n>       DOM node cap; exceeding it marks the capture partial (default 4000)
+  --dna <file>          a UI-DNA graph projection to match against, enabling the violations view
+  --screenshot          also save a viewport screenshot and reference it
+  --dark                emulate prefers-color-scheme: dark
+  --headed              run with a visible browser window
+  --capture-only        stop after the capture bundle; do not build a graph
+  --json                print the capture bundle to stdout and write nothing
+  -h, --help            show this message
+
+Needs a browser once:  pnpm browser:install
+                       (that is: pnpm exec playwright-core install chromium)
+```
+
+`--redact` is worth calling out. It resolves the selector through the protocol, replaces the matched subtree's text with a mask **in the capture bundle itself**, and lists every affected source id, so the sensitive text never enters the graph at all and lattice additionally flags those nodes and withholds them at render time. Form field values (`<input value>`, `<textarea>` contents) are never captured under any setting.
+
+## Quickstart without a browser
+
+One command, no credentials, no browser, nothing installed beyond Node. It generates a deterministic synthetic page capture (130 DOM nodes, 130 accessibility nodes, 93 text runs), builds a sealed snapshot, asks it five bounded questions, and shows what a tight token budget does to one of them.
 
 ```
 $ node examples/quickstart.mjs
@@ -125,15 +252,52 @@ If it exits with `ERR_MODULE_NOT_FOUND` and `Cannot find module '.../packages/sc
 
 ## Usage
 
-Four entry points, all synchronous except the builder.
+Four graph entry points, all synchronous except the builder, plus three capture entry points.
 
 The repository is `lattice`; it was renamed from `ui-graph`. The package identifier `@apature/ui-graph`, the schema URNs (`urn:apatureai:ui-graph:...`) and the on-disk schema filenames deliberately keep the old spelling, because those are pinned identity for anything that consumes this library, and renaming them would be a breaking change with no reader benefit.
 
-The package is not on npm yet (see [Roadmap](#roadmap), item 4). Inside this repo, tests import it as `@apature/ui-graph` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
+The package is not on npm yet (see [Roadmap](#roadmap), item 5). Inside this repo, tests import it as `@apature/ui-graph` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
 
 ```js
 import { buildUiGraph, queryUiGraph } from "./packages/schema/dist/index.js";
 ```
+
+### Capture: `captureUrl`, `captureFromPage`, `captureBundleFromCdp`
+
+Three layers, each usable on its own, in `@apature/ui-graph-capture`.
+
+```ts
+import { captureUrl } from "@apature/ui-graph-capture";
+
+const capture = await captureUrl("https://example.com/deployments", {
+  viewport: { width: 1440, height: 900, deviceScaleFactor: 2 },
+  waitForSelector: "[data-testid='deployments-table']",
+  redactSelectors: ["[data-sensitive]"],
+  screenshotPath: "out/shot.png",
+  repository: { owner: "acme", name: "console" },
+});
+// -> CaptureBundleReadProfile, ready for buildUiGraph
+```
+
+`captureFromPage(page, options)` does the same from a Playwright `Page` you already own, which is the one you want for an authenticated session or a page halfway through a flow. It is typed structurally, so this package never imports Playwright's types and never appears in your dependency graph as a browser.
+
+`captureBundleFromCdp({ domSnapshot, axNodes, page, options })` is the whole adapter as a **pure function**: the two protocol payloads in, the read profile out, no browser, no clock, no randomness. That is what makes the adapter testable without a browser, and it is the seam to reuse if you drive CDP yourself (puppeteer, a raw WebSocket, a recorded session).
+
+What the adapter does, and what it deliberately does not:
+
+| | |
+|---|---|
+| Joins accessibility to DOM by `backendNodeId` | So fusion uses explicit ids, not geometric guessing |
+| Reads every frame's accessibility tree, not just the main one | `getFullAXTree` returns one document at a time |
+| Recombines a wrapped paragraph's line boxes into one text run | Otherwise ordinary wrapping reads as a text conflict |
+| Collects `data-testid`, `id`, `href`, `name` | The four durable attributes the lineage matcher needs |
+| Probes layout twice and reports `pageHealth.stable` | A moving page is reported, never silently captured |
+| Replaces per-session protocol ids with capture-local ordinals | So an unchanged page seals to the same `contentHash` |
+| Never captures form field values | `<input value>` and `<textarea>` content never enter the bundle |
+| Never captures `display:none` subtrees by default | `includeNonRendered` opts in |
+| Never sends bytes of a screenshot into the graph | Screenshots are referenced by path, as evidence |
+
+Known limits, none of them hidden: `--redact` selectors resolve in the main frame only; a child frame's `transformToParent` is the iframe's border box, which is off by any border or padding on the iframe element; the DOM-side role mapping is a documented subset of HTML-AAM that abstains where a role is contextual (`<header>`, an unnamed `<section>`); and a cross-process iframe whose accessibility tree the protocol refuses is reported as a page-health reason rather than retried.
 
 ### `buildUiGraph(request) → { snapshot, diagnostics }`
 
@@ -205,6 +369,25 @@ Deltas are ID-keyed typed operations bound to both `(snapshotId, contentHash)` t
 
 The claim is that this representation is cheaper to put in a prompt than raw structured context. Here is the measurement, with the baseline being canonical JSON bytes of the whole capture bundle.
 
+### Real captures
+
+Three pages captured through `pnpm capture`, on 2026-08-10, at 1440x900. The two live sites move; re-run the command and you will get different numbers, which is why the reproducible fixture page is in the middle row.
+
+| Page | DOM nodes | Capture bytes | `summary` | `actionMap` | `focus` | `patchContext` |
+|---|---|---|---|---|---|---|
+| `https://example.com` | 7 | 7080 | 1691 (76.1%) | 367 (94.8%) | 2929 (58.6%) | 1421 (79.9%) |
+| the bundled fixture page | 74 | 74916 | 9756 (87.0%) | 2735 (96.3%) | 4143 (94.5%) | 1516 (98.0%) |
+| `https://news.ycombinator.com` | 806 | 745445 | 61098 (91.8%) | 53942 (92.8%) | 8355 (98.9%) | 1467 (99.8%) |
+
+Read these more carefully than the headline percentages invite.
+
+- **The baseline is a verbose capture.** The adapter records 23 computed style properties per node, because the point of the graph is to keep evidence rather than pre-decide what matters. That inflates the denominator and therefore every reduction figure. Against a leaner capture, the same view would look less impressive; the honest comparison is the *view* against whatever structured context you would otherwise have pasted into the prompt.
+- **A bounded view scales, a page summary does not.** `patchContext` about one element costs roughly the same 1.5 KB whether the page has 7 nodes or 806. `summary` grows with the page, which is why the smallest page shows the worst summary ratio and the largest shows the best.
+- **`focus` on `example.com` is worse than its summary.** With eight nodes on the page, describing one node plus its neighbourhood is most of the page, plus per-view fixed overhead. Bounded views pay off on pages that have something to bound.
+- **The `violations` view is missing from that table, and running it exposed a real problem.** It needs a design-system projection, so it only appears with `--dna`. Pointing the fixture page at the synthetic projection in `packages/schema/test/fixtures/dna/approved.json` (a projection that describes a different design system, so almost everything is a finding) produced a 91909-byte view against a 74916-byte capture: **larger than its own input**, and truncated at the node budget. The library has a test asserting every view is smaller than its capture, but that test runs on synthetic fixtures where the projection matches. It does not hold here. See roadmap item 2.
+
+### Synthetic fixtures
+
 | Capture | Nodes | Capture bytes | Summary view | Reduction |
 |---|---|---|---|---|
 | `test/fixtures/capture/minimal.json` | 1 | 738 | 403 | 45% |
@@ -234,7 +417,7 @@ The second table is exactly what `node examples/quickstart.mjs` prints; the firs
 
 ## Configuration
 
-None. No environment variable is read anywhere in this repository; `grep -rn "process.env" packages scripts examples` returns nothing. Everything is a function argument.
+None. No environment variable is read anywhere in this repository; `grep -rn "process.env" packages scripts examples` returns nothing. Everything is a function argument, or a `pnpm capture` flag.
 
 ## How it works
 
@@ -272,8 +455,8 @@ Two smaller pieces worth a look. **Selective pixel escalation** (`pipeline/evide
 
 ### Boundaries
 
-- No browser, no screenshots, no OCR, no model calls, no network, no database. This is enforced in CI by `scripts/capability-guard.mjs`, not by convention.
-- It never edits code and never drives a UI. `actionMap` is a *perception* view of observed affordances; it is not an action API.
+- **The graph library has no browser, no screenshots, no OCR, no model calls, no network and no database.** The capture adapter is a separate package for exactly that reason. `scripts/capability-guard.mjs` enforces the split in CI, not by convention: it denies browser/network/model/DB dependencies in the core, greps the core's source for imports of them (including Node's own `node:http` and friends, and the capture package itself), and requires the adapter's browser dependency to stay an optional peer so that consuming the core never installs one.
+- **Even the adapter never edits code and never drives a UI.** It navigates, waits, scrolls to a requested offset and observes. It does not click, type, or submit. `actionMap` is a *perception* view of observed affordances; it is not an action API.
 - It does not own a design system. It consumes an approved projection and matches against it.
 
 ### Degradation
@@ -319,10 +502,22 @@ packages/schema/            @apature/ui-graph, the whole library
   schemas/                  mirrored normative JSON Schemas shipped with the package
   schemas-baseline/         previous-version schemas, for the evolution/compat suite
   test/                     33 vitest files incl. property tests over the geometry kernel
+packages/capture/           @apature/ui-graph-capture, the producer: a real page in
+  src/
+    cli.ts                  `lattice-capture` / `pnpm capture`: the quickstart above
+    browser.ts              the only module that knows Playwright exists; loads it lazily
+    capture.ts              the CDP driver: two calls, a stability probe, per-frame a11y
+    transform.ts            the whole adapter as a pure function, protocol payload in
+    roles.ts                the DOM-side implicit ARIA role subset, documented as a subset
+    cdp-types.ts            the exact protocol surface read, as structural types
+    style.ts                the computed-style properties requested, and their fact names
+  scripts/record-fixture.mjs re-record the frozen protocol payload the golden test uses
+  test/                     the adapter against that frozen payload; no browser needed
+  test-browser/             the live suite: real Chromium, real page, `pnpm test:browser`
 schemas/                    normative JSON Schemas (snapshot, view, delta) + examples
                             (see schemas/README.md for versioning and reference loading)
-examples/quickstart.mjs     the runnable end-to-end example above
-scripts/capability-guard.mjs the CI gate: dependency allowlist + determinism check
+examples/quickstart.mjs     the no-browser example above
+scripts/capability-guard.mjs the CI gate: dependency + import boundary, determinism check
 ```
 
 The JSON Schemas are the normative contract; the TypeScript types explain the same thing, and a mirror test fails if the two drift. Each schema is identified by a URN (`urn:apatureai:ui-graph:snapshot:1.0.0` and its view/delta siblings) rather than a URL, so nothing implies a fetchable endpoint and validation is provably offline. See [`schemas/README.md`](schemas/README.md).
@@ -343,91 +538,79 @@ Version 0.1.0. The core is working and covered by tests; the edges are honest ab
 | Typed deltas | Working | Hash-verified, fail-closed |
 | Canonical JSON + sealing | Working | RFC 8785, property-tested geometry kernel |
 | Design-system projection | Partial | Token and numeric-scale matching only; component-family and embedding matching are not implemented |
-| Capture producer | **Not implemented** | Bring your own adapter. See roadmap item 1 |
-| npm publish | Not done | The package is `private: true`. See roadmap item 4 |
-| Model-dependent evaluation | Not run | Grounding recall, finding precision/recall and latency need a model consumer. See roadmap item 5 |
+| `violations` view size | Known defect | On a real capture with a poorly matching projection it exceeds its own input. See roadmap item 2 |
+| Capture producer (`captureUrl`) | Working | Playwright/CDP adapter in `packages/capture`; covered by a frozen-payload suite and a live-browser suite |
+| Capture: cross-process iframes | Partial | An OOPIF whose accessibility tree CDP refuses is reported in `pageHealth.reasons`, not retried |
+| npm publish | Not done | Both packages are `private: true`. See roadmap item 5 |
+| Model-dependent evaluation | Not run | Grounding recall, finding precision/recall and latency need a model consumer; the gates below stay fail-closed until one supplies runs |
 
-Two things to be clear about, because they change how you should read every number above:
+Three things to be clear about, because they change how you should read every number above:
 
-- **Everything here was measured against synthetic fixtures.** No real browser capture, no real page, no real design system. `syntheticCapture()` was written to be adversarially realistic (130 nodes, a deliberate DOM/accessibility disagreement, a redacted field, content below the fold) but it is still synthetic. First contact with a real page is the most valuable contribution anyone could make right now.
+- **The fusion heuristics were still tuned against a generator.** `pipeline/fuse.ts` was written against `syntheticCapture()`, and the capture adapter is new. Real pages now go through it (the table above was measured on three), and the first two things a real page exposed were both adapter bugs, not library bugs: a wrapped paragraph read as a text conflict, and the accessibility tree's `StaticText` leaves entered the graph as geometry-less duplicates. Both are fixed and pinned by tests. Assume there are more; reporting one is the most valuable contribution available.
+- **No real design system has been through this.** Every `violations` number in this README is from a synthetic UI-DNA projection. `--dna` accepts a real one, and nobody has supplied one yet.
 - **The pre-registered promotion gates have not been met.** `src/eval/` contains the machinery: frozen fixture sets, a deterministic benchmark runner, paired bootstrap confidence intervals, exact McNemar, and the numeric thresholds as constants (at least 70% token reduction, at least 99.5% valid refs, at least 98% cross-snapshot match precision, at most 2pp finding-recall loss). The gate is fail-closed, so as the repo stands the verdict is "insufficient evidence", not "promote". That is the gate working, not a bug.
 
 ## Roadmap
 
 These are the concrete, pickup-able items. Each names the file you would touch. Issues and pull requests are welcome for any of them.
 
-**1. A built-in capture adapter (the big one).** lattice consumes capture evidence; producing it is up to you today. This is the single biggest thing standing between the library and a five-minute first run, so it is the most valuable contribution available.
+**1. Harden the capture adapter against real pages.** It works (`packages/capture/src/transform.ts`) and it has known edges, each of which is a self-contained pull request:
 
-The target shape is `CaptureBundleReadProfile` in `packages/schema/src/readprofile.ts`. An adapter has to fill roughly this:
+- **Cross-process iframes.** `Accessibility.getFullAXTree` refuses an OOPIF from the parent session; today that becomes a `pageHealth` reason. The fix is a CDP session per target, via `Target.attachToTarget`.
+- **Iframe offsets ignore the iframe's own border and padding.** `transformToParent` is the border box of the `<iframe>` element, so a framed document's geometry is off by whatever border and padding that element carries. The numbers to add are already in `styleFacts`.
+- **The DOM-side role mapping is a subset** (`packages/capture/src/roles.ts`), and it abstains where a role is contextual: `<header>`, `<footer>`, an unnamed `<section>`, cells in a grid rather than a table. Resolving those needs the ancestor chain, which the flat pass has.
+- **Shadow DOM and `<canvas>`.** `captureSnapshot` is called without `pierce`, so a closed shadow root's contents are not captured, and canvas contents never are by design (`derivedObservations` is where a vision parser's reading of a canvas belongs).
+- **Scroll containers.** A capture is one scroll position. Stitching several into one snapshot, with the geometry to prove it, is unimplemented.
 
-```ts
-type CaptureBundleReadProfile = {
-  schemaVersion: "1.0.0";
-  captureId: string;
-  captureVersion: string;                    // e.g. "playwright-capture@1"
-  repository: { owner: string; name: string };
-  route: string;
-  viewport: Viewport;                        // css px + deviceScaleFactor + scroll offsets
-  documents: Array<{
-    frameId: string;
-    parentFrameId?: string;
-    url?: string;
-    transformToParent?: [number, number, number, number, number, number];
-    domLayoutNodes: CaptureDomLayoutNode[];  // sourceId, parent, tag/role, bounds, visible,
-                                             // paintOrder, styleFacts, durable attributes
-    accessibilityNodes: CaptureAccessibilityNode[];  // role, name, state, backendDomSourceId
-    textRuns?: CaptureTextRun[];
-  }>;
-  screenshotEvidence?: ScreenshotEvidenceRef[];      // by reference; no bytes enter this library
-  pageHealth: { stable: boolean; partial: boolean; reasons: string[] };
-  redaction: { policyVersion: string; applied: boolean; redactedSourceIds: string[] };
-  derivedObservations?: DerivedObservation[];        // vision parser, OCR, embeddings, learned relations
-};
-```
+**2. The `violations` renderer does not stay under its own input.** On a real capture with a design-system projection that matches poorly, it emits more bytes than the capture it summarizes (see the note under Token efficiency: 91909 bytes of view from a 74916-byte capture). Every other view holds the invariant. The per-node conformance detail in `pipeline/views.ts` needs the same budgeting discipline the rest of the renderer already has, and `test/eval.synthetic-page.test.ts` needs a case where the projection deliberately does not match.
 
-A Playwright or CDP adapter maps `DOMSnapshot.captureSnapshot` plus `Accessibility.getFullAXTree` onto that. Two details that matter more than they look:
+**3. Component-family and embedding matching in the design-system projection.** `pipeline/dna-match.ts` matches design tokens and numeric scales today. Component families need the producer's `componentFamilies` shape in `readprofile.ts`, which is currently typed `unknown[]`. Embeddings would stay advisory by design: they retrieve candidates, they never make an authoritative match.
 
-- **Set `backendDomSourceId` on accessibility nodes wherever the protocol gives it to you.** That is what lets fusion join by explicit id instead of falling back to geometric overlap, and it is what makes a role conflict a *retained conflict* rather than two unrelated nodes.
-- **Collect the durable attributes** (`data-testid`, `id`, `href`, `name`) into `attributes`. Without them the lineage matcher has no explicit-id feature and can only abstain, as documented under `diffUiGraphs`.
+**4. Real model-native tokenizers.** Token counts are `⌈chars/4⌉` estimates, labelled `kind: "estimate"` in the code. The tokenizer profile is already a spec field (`tokenizerProfile: "char-quarter-estimate@1"`) and participates in `specHash`, so adding a real counter is a matter of registering a new profile, not reworking the renderer.
 
-To test an adapter without a browser, compare its output against `syntheticCapture()` in `packages/schema/src/eval/synthetic-page.ts`, and run it through `validateCapture` from the public API. The adapter belongs in a new workspace package, not in `packages/schema`: the capability guard denies browser and CDP drivers as runtime dependencies of the core library, and that boundary should hold.
+**5. Publish to npm.** Both packages are `private: true` and consumed by workspace path. Getting them published means deciding the public export surface (`src/index.ts` currently exports the pipeline internals that the tests reach for) and wiring a release workflow.
 
-**2. Component-family and embedding matching in the design-system projection.** `pipeline/dna-match.ts` matches design tokens and numeric scales today. Component families need the producer's `componentFamilies` shape in `readprofile.ts`, which is currently typed `unknown[]`. Embeddings would stay advisory by design: they retrieve candidates, they never make an authoritative match.
+**6. Close the `b4_full_graph` benchmark row.** It serializes a pre-assembler composite rather than a sealed snapshot, so it is marked `diagnosticOnly` and the promotion gate refuses to score it. Fixing it means routing that row through the real builder in `src/eval/`.
 
-**3. Real model-native tokenizers.** Token counts are `⌈chars/4⌉` estimates, labelled `kind: "estimate"` in the code. The tokenizer profile is already a spec field (`tokenizerProfile: "char-quarter-estimate@1"`) and participates in `specHash`, so adding a real counter is a matter of registering a new profile, not reworking the renderer.
-
-**4. Publish to npm.** The package is `private: true` and consumed by relative path. Getting it published means deciding the public export surface (`src/index.ts` currently exports the pipeline internals that the tests reach for) and wiring a release workflow.
-
-**5. Close the `b4_full_graph` benchmark row.** It serializes a pre-assembler composite rather than a sealed snapshot, so it is marked `diagnosticOnly` and the promotion gate refuses to score it. Fixing it means routing that row through the real builder in `src/eval/`.
-
-**6. First contact with a real page.** Run items 1 and 3 against an actual site, and report what the fusion layer gets wrong. Every fusion heuristic in `pipeline/fuse.ts` was tuned against a generator, which is exactly as circular as it sounds.
+**7. Report what fusion gets wrong on your pages.** `pnpm capture <your url>` and read `out/snapshot.json`. Every fusion heuristic in `pipeline/fuse.ts` was tuned against a generator, which is exactly as circular as it sounds; the adapter is what makes that checkable, and two rounds of checking it have already produced two fixes.
 
 ## Development
 
 ```
 $ pnpm test
- Test Files  33 passed (33)
-      Tests  332 passed (332)
+ Test Files  35 passed (35)
+      Tests  369 passed (369)
+
+$ pnpm test:browser
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
 ```
 
 ```sh
 pnpm lint              # eslint, warnings fail
 pnpm typecheck         # same tsc -b as pnpm build
-pnpm guard:capability  # no model/browser/network/DB dependency; determinism on hashed paths
+pnpm test              # hermetic: no browser, no network
+pnpm guard:capability  # dependency + import boundary; determinism on hashed paths
 pnpm example           # node examples/quickstart.mjs
+pnpm browser:install   # one-time Chromium download, needed only for the next two
+pnpm test:browser      # the live suite: real Chromium, real page
+pnpm capture <url>     # the documented quickstart
 ```
 
-Those are exactly what `.github/workflows/ci.yml` runs. One file at a time:
+`pnpm test` never needs a browser: the capture adapter is tested against a frozen protocol payload in `packages/capture/test/fixtures/cdp-recording.json`, re-recordable with `node packages/capture/scripts/record-fixture.mjs`. The live suite is separate rather than conditionally skipped, so a green `pnpm test` never quietly means "the browser tests did not run". `.github/workflows/ci.yml` runs both, in two jobs.
+
+One file at a time:
 
 ```sh
 npx vitest run packages/schema/test/query.test.ts
+npx vitest run packages/capture/test/transform.test.ts
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the conventions that matter, especially the determinism rules on the hashed path and the capability boundary.
 
 ## Security
 
-No credentials are accepted anywhere in this package, and it opens no sockets. [`SECURITY.md`](SECURITY.md) covers what matters if you point this at real page content: the untrusted-content boundary, the fail-closed sensitivity handling, what upstream redaction is assumed to have done already, and how to report a vulnerability privately.
+No credentials are accepted anywhere in either package. The graph library opens no sockets; the capture adapter opens exactly the ones the page you named opens, in a browser it launches and closes, with no persisted cookies or storage state. [`SECURITY.md`](SECURITY.md) covers what matters if you point this at real page content: the untrusted-content boundary, the fail-closed sensitivity handling, what `--redact` does and does not cover, and how to report a vulnerability privately.
 
 ## License
 

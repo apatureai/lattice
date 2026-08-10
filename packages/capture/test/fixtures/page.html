@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Deployments</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #0b1021;
+        background: #ffffff;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 16px 24px;
+        background: #0b1021;
+        color: #c7d2fe;
+      }
+      header a { color: #c7d2fe; font-size: 14px; text-decoration: none; }
+      .cta {
+        margin-left: auto;
+        background: #3b5bdb;
+        color: #ffffff;
+        border-radius: 7px;
+        padding: 13px 18px;
+        font-size: 15px;
+        text-decoration: none;
+      }
+      main { padding: 24px; }
+      h1 { font-size: 32px; line-height: 40px; margin: 0 0 16px; }
+      .cards { display: flex; gap: 16px; margin-bottom: 24px; }
+      .card {
+        background: #f6f7fb;
+        border-radius: 8px;
+        padding: 16px;
+        width: 220px;
+      }
+      .card a { color: #1b6ef3; font-size: 14px; }
+      table { border-collapse: collapse; width: 100%; font-size: 13px; margin-bottom: 24px; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e6e8f0; }
+      form { display: grid; gap: 12px; max-width: 420px; }
+      label { font-size: 13px; }
+      input {
+        background: #ffffff;
+        border: 1px solid #d6d9e6;
+        border-radius: 6px;
+        padding: 12px;
+        font-size: 15px;
+        width: 100%;
+      }
+      button[type="submit"] {
+        background: #1b6ef3;
+        color: #ffffff;
+        border: 0;
+        border-radius: 6px;
+        padding: 16px;
+        font-size: 15px;
+      }
+      /* A list item outside a list: the DOM implicit role and the accessibility
+         tree genuinely disagree here, which is what a retained conflict is for. */
+      li.loose { list-style: none; padding: 8px 0; font-size: 14px; }
+      iframe { width: 100%; height: 120px; border: 1px solid #e6e8f0; border-radius: 8px; }
+      footer { padding: 24px; color: #6b7280; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/" id="brand">Apature</a>
+      <nav aria-label="Primary">
+        <a href="/deployments" data-testid="nav-deployments">Deployments</a>
+        <a href="/reviews" data-testid="nav-reviews">Reviews</a>
+        <a href="/settings" data-testid="nav-settings">Settings</a>
+      </nav>
+      <a class="cta" href="/reviews/new" data-testid="new-review" role="button">New review</a>
+    </header>
+
+    <main>
+      <h1>Deployments</h1>
+
+      <section aria-label="Environments" class="cards">
+        <div class="card" data-testid="card-production">
+          <h2>Production</h2>
+          <p>Healthy, 4 minutes ago</p>
+          <a href="https://example.invalid/production">Open production</a>
+        </div>
+        <div class="card" data-testid="card-staging">
+          <h2>Staging</h2>
+          <p>Degraded, 21 minutes ago</p>
+          <a href="https://example.invalid/staging">Open staging</a>
+        </div>
+        <div class="card" data-testid="card-preview">
+          <h2>Preview</h2>
+          <p>Building, just now</p>
+          <a href="https://example.invalid/preview">Open preview</a>
+        </div>
+      </section>
+
+      <li class="loose" data-testid="loose-item">Detached list item, on purpose</li>
+
+      <table data-testid="deployments-table">
+        <thead>
+          <tr><th>Commit</th><th>Environment</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>a1b2c3d</td><td>production</td><td>passed</td></tr>
+          <tr><td>d4e5f6a</td><td>staging</td><td>failed</td></tr>
+          <tr><td>b7c8d9e</td><td>preview</td><td>passed</td></tr>
+          <tr><td>f0a1b2c</td><td>preview</td><td>passed</td></tr>
+          <tr><td>c3d4e5f</td><td>production</td><td>passed</td></tr>
+          <tr><td>e6f7a8b</td><td>staging</td><td>passed</td></tr>
+        </tbody>
+      </table>
+
+      <details data-testid="advanced">
+        <summary>Advanced options</summary>
+        <p>Rebuild from a clean cache before deploying.</p>
+      </details>
+
+      <p data-testid="billing-contact">Billing contact: billing@example.invalid, +1 555 0134</p>
+
+      <form aria-label="Billing">
+        <label for="team">Team name</label>
+        <input id="team" name="team" type="text" value="Platform" />
+        <label for="email">Billing email</label>
+        <input id="email" name="email" type="email" value="billing@example.invalid" />
+        <label for="card">Card number</label>
+        <input id="card" name="card" type="text" data-testid="card-number" value="4111 1111 1111 1111" />
+        <button type="submit">Save billing details</button>
+      </form>
+
+      <iframe
+        title="Build log"
+        srcdoc="<!doctype html><html><body style='margin:0;font:13px system-ui;padding:8px'><h3 style='margin:0 0 4px'>Build log</h3><p id='log-line'>Compiled 218 modules in 4.1s</p></body></html>"
+      ></iframe>
+    </main>
+
+    <footer>Apature, a design reviewer that judges rendered UI.</footer>
+  </body>
+</html>

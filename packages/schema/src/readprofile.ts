@@ -9,9 +9,13 @@
  * schema itself stays closed (TRD §4.1 final paragraph).
  *
  * `CaptureBundleReadProfile` below is the shape a capture adapter has to
- * produce. No adapter ships in this repository yet; writing one is roadmap
- * item 1 in the README, and the golden fixtures under `test/fixtures/capture/`
- * plus `syntheticCapture()` are what an adapter can be checked against.
+ * produce. One ships in this repository, in `packages/capture`
+ * (`@apature/ui-graph-capture`): a Playwright/CDP adapter that fills this exact
+ * shape from a real page. It deliberately lives OUTSIDE this package, because
+ * the core library has no browser capability and the capability guard enforces
+ * that. Any other adapter that fills this shape is equally a producer; the
+ * golden fixtures under `test/fixtures/capture/` plus `syntheticCapture()` are
+ * what one can be checked against without a browser.
  */
 
 import type { Rect, Viewport } from "./types.js";

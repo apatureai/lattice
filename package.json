@@ -23,7 +23,10 @@
     "typecheck": "tsc -b",
     "clean": "tsc -b --clean",
     "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "capture": "node packages/capture/dist/cli.js",
     "example": "node examples/quickstart.mjs",
+    "browser:install": "pnpm --filter @apature/ui-graph-capture exec playwright-core install chromium",
     "lint": "eslint . --max-warnings=0",
     "guard:capability": "node scripts/capability-guard.mjs"
   },

@@ -32,12 +32,22 @@ npx vitest run packages/schema/test/query.test.ts
 
 The test suite imports the library as `@apature/ui-graph`, aliased to `packages/schema/src` in `vitest.config.ts`, so tests run without a build step. `examples/quickstart.mjs` imports `packages/schema/dist/index.js` and does need `pnpm build` first.
 
+`pnpm test` is hermetic: no browser, no network. The tests that need a real Chromium live under `packages/capture/test-browser/` and run separately:
+
+```sh
+pnpm build
+pnpm browser:install    # one-time Chromium download
+pnpm test:browser
+```
+
+They are a separate suite rather than conditionally skipped tests, so a green `pnpm test` never quietly means the browser tests did not run. If you change the capture adapter, run both, and re-record the frozen protocol payload with `node packages/capture/scripts/record-fixture.mjs` if the fixture page changed.
+
 ## What contributions are wanted
 
 In rough order of value:
 
-1. **A capture adapter** (Playwright, CDP, an extension). See roadmap item 1 in the README for the target shape and the two details that matter most. This belongs in a new workspace package, not in `packages/schema`, because the capability guard denies browser and CDP drivers as runtime dependencies of the core library.
-2. **Reports from real pages.** Every fusion heuristic in `pipeline/fuse.ts` was tuned against a synthetic generator. If you run this against a real site and fusion joins two things it should not have, or splits one thing it should not have, that is a valuable issue even without a fix attached. Include the capture bundle if you can share it.
+1. **Reports from real pages.** Every fusion heuristic in `pipeline/fuse.ts` was tuned against a synthetic generator. Run `pnpm capture <your url>` and read `out/snapshot.json`: if fusion joins two things it should not have, or splits one thing it should not have, that is a valuable issue even without a fix attached. Include the capture bundle if you can share it.
+2. **Hardening the capture adapter** (`packages/capture`). Its known edges are listed as roadmap item 1 in the README, each self-contained. Anything that drives a browser belongs in that package and never in `packages/schema`: the capability guard denies browser and CDP drivers as dependencies of the core library, and greps its source for imports of them.
 3. **Roadmap items 2 through 6**, all listed in the README with the relevant file named.
 4. **Bug fixes with a failing test first.** A test that reproduces the bug and fails on `main` makes review fast.
 5. **Documentation that makes the first hour easier.** If something in the README sent you the wrong way, say so.
@@ -82,12 +92,14 @@ A schema change needs the version bump the evolution rules call for, plus compat
 
 ### Adding a runtime dependency
 
-Runtime dependencies of the published package are allowlisted in `scripts/capability-guard.mjs`. A new dependency requires an explicit entry with a justification. Network and HTTP clients, browser and CDP drivers, model and inference SDKs, and DB clients are denied outright. That denial is the point of the guard, not a formality.
+Runtime dependencies of the core package are allowlisted in `scripts/capability-guard.mjs`. A new dependency requires an explicit entry with a justification. Network and HTTP clients, browser and CDP drivers, model and inference SDKs, and DB clients are denied outright. That denial is the point of the guard, not a formality.
+
+The guard also reads the core's source for imports of anything in those categories, including Node's own networking built-ins and the capture package, because a workspace sibling resolves without ever appearing in a manifest. And it holds the capture package to its side of the line: its browser dependency must stay an optional peer, so that consuming the core, or the adapter's pure transform, never installs a browser.
 
 ## Style
 
 - TypeScript, ESM, explicit `.js` extensions on relative imports (the project uses Node16-style module resolution across project references).
-- The workspace has a single package today, `packages/schema` (`@apature/ui-graph`), whose only runtime dependencies are `ajv` and `ajv-formats`.
+- The workspace has two packages: `packages/schema` (`@apature/ui-graph`), whose only runtime dependencies are `ajv` and `ajv-formats`, and `packages/capture` (`@apature/ui-graph-capture`), which depends on the core and takes `playwright-core` as an optional peer. The dependency is one-way and the guard enforces it.
 - Comments explain why a rule exists, not what the line does. Several cite section numbers from earlier design documents; new code does not need to.
 - No em dashes in prose.
 

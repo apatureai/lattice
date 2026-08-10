@@ -10,7 +10,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     // Node build/CI scripts run on the Node runtime and use its globals.
-    files: ["scripts/**/*.mjs", "examples/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "examples/**/*.mjs", "packages/*/scripts/**/*.mjs"],
     languageOptions: {
       globals: { console: "readonly", process: "readonly", Buffer: "readonly", URL: "readonly" },
     },
