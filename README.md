@@ -118,7 +118,7 @@ OK — built snapshot ugs_1_53c63b1f244c95… and rendered 5 schema-valid views.
 
 Open `out/view-focus.json` to see what actually goes into a prompt, and `out/snapshot.json` to see the provenance that stayed behind.
 
-If the first line is `Cannot find module '.../packages/schema/dist/index.js'`, you skipped `pnpm build`.
+If it exits with `ERR_MODULE_NOT_FOUND` and `Cannot find module '.../packages/schema/dist/index.js'`, you skipped `pnpm build`.
 
 ## Usage
 
@@ -198,7 +198,7 @@ Deltas are ID-keyed typed operations bound to both `(snapshotId, contentHash)` t
 
 ## Token efficiency
 
-The original claim was that this representation is cheaper than pasting raw context into a prompt. Until this release, the only measurement in the repo contradicted it: on all four golden fixtures a rendered summary view was **larger** than the capture it summarized (738→923, 1537→4115, 1676→2482, 1758→3513 bytes). The cause was the projection rather than the design: view text canonicalized whole fused nodes, including the entire `evidence[]` provenance chain, frame rects, coordinate-space ids and per-fact confidences.
+The original claim was that this representation is cheaper than pasting raw context into a prompt. Until this release, the only measurement in the repo contradicted it: on all four golden fixtures a rendered summary view was **larger** than the capture it summarized (738→923, 1537→4115, 1676→2482, 1758→3513 bytes). The cause was the projection rather than the design. View text canonicalized whole fused nodes, including the entire `evidence[]` provenance chain, frame rects, coordinate-space ids and per-fact confidences.
 
 `views@2` fixes that. A view carries only what a model can act on (ref, kind, containment, role, name, text, a normalized rect, visibility, retained conflict markers, flags), and provenance stays in the snapshot, addressable by the same ref the view emits. Measured now, with the baseline being canonical JSON bytes of the whole capture bundle:
 
@@ -253,7 +253,7 @@ projection    ──┘                                                         
 
 **No source is authoritative; sources are fused with provenance.** The accessibility tree knows roles and names. The layout tree knows geometry and clipping. Computed style knows typography and color. A visual parser or OCR (supplied from outside; this package never runs one) knows what is inside a `<canvas>`. Each is right about different things. `pipeline/fuse.ts` merges observations by explicit backend/source id where one exists, otherwise by frame + geometric overlap + role/text compatibility. Competence is decided **per fact**, never globally. When two sources disagree it does not pick a winner: it keeps both claims, flags the conflict, lowers confidence, and lets the consumer decide whether to escalate to pixels.
 
-**Content-addressed identity with an acyclic reference scope.** A sealed snapshot is hashed with RFC 8785 (JSON Canonicalization Scheme), hand-written in `canonical.ts`, with locale-independent key ordering, ECMAScript number production, `-0` normalized to `0`, and NaN/Infinity rejected. Nodes carry short `elementRef` strings derived from a *ref-scope digest*: the snapshot hashed with the identity fields and the refs themselves removed, which breaks the obvious cycle (refs are in the content, the content determines the hash, the hash determines the refs). Refs are snapshot-local by construction. Cross-capture identity is a separate, explicitly probabilistic problem, kept apart on purpose: a confidently wrong pointer is more damaging than a missing one.
+**Content-addressed identity with an acyclic reference scope.** A sealed snapshot is hashed with RFC 8785 (JSON Canonicalization Scheme), hand-written in `canonical.ts`, with locale-independent key ordering, ECMAScript number production, `-0` normalized to `0`, and NaN/Infinity rejected. Nodes carry short `elementRef` strings derived from a *ref-scope digest*: the snapshot hashed with the identity fields and the refs themselves removed, which breaks the obvious cycle (refs are in the content, the content determines the hash, the hash determines the refs). Refs are snapshot-local by construction. Cross-capture identity is a separate, explicitly probabilistic problem, kept apart on purpose, because a confidently wrong pointer is more damaging than a missing one.
 
 **A matcher that abstains.** See `diffUiGraphs` above. It is designed to say "I don't know", because the consumer of a wrong match is a review comment pointing at the wrong button.
 
@@ -369,7 +369,7 @@ Beyond that table:
 - **Token counts are estimates.** `⌈chars/4⌉` for text, a 16px-patch grid for images. Both are labelled `kind: "estimate"` in the code and are ports for model-native counters.
 - **Component-family and embedding matching are out of scope.** They need the design system's `componentFamilies`, which the producer repository owned and which is not in this release.
 - **Never ran in production.** The package was gated behind a feature flag with `useMode` defaulting to shadow or offline evaluation, pending the evaluation above.
-- **No cross-repo links.** This was built alongside sibling repositories (a capture/judgment engine, a design-system extractor, a CI gate, an MCP server). Nothing here depends on any of them at build or run time, and not all of them are published, so none are linked from this README rather than risk a dead link.
+- **No cross-repo links.** This was built alongside sibling repositories (a capture/judgment engine, a design-system extractor, a CI gate, an MCP server). Nothing here depends on any of them at build or run time, so none are linked from this README. Everything you need to run what is described above is in this repository.
 
 ## Contributing
 
