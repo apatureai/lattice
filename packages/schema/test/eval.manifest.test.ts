@@ -3,7 +3,7 @@
  *
  * Fixtures-only: the manifest is pure MOCK metadata over the golden capture
  * read-profiles (issue #3). No model, browser, or network is touched. These
- * tests are the acceptance check for #19 — the manifest is frozen +
+ * tests are the acceptance check for #19: the manifest is frozen +
  * content-addressed, references the required metadata, and ug-delta carries
  * canonical target hashes.
  */

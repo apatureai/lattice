@@ -365,7 +365,7 @@ function affordanceForRole(role: string | undefined): UIGraphNode["affordances"]
 /**
  * The normalized viewport rect is a [0,1] contract (TRD §7): it says WHERE in
  * the viewport an element sits. An element scrolled out of the viewport has no
- * honest answer, and clamping would assert a position it does not occupy — so
+ * honest answer, and clamping would assert a position it does not occupy, so
  * the field is OMITTED (the schema makes it optional) and the exact
  * `documentRect`/`viewportRect` carry the geometry instead. Without this, any
  * capture of a page taller than one screen failed to seal.

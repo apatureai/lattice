@@ -1,25 +1,25 @@
 /**
- * Task-focused view renderer (PRD §6.4; #41). The six consumer views —
+ * Task-focused view renderer (PRD §6.4; #41). The six consumer views are
  * `focus` (bounded graph neighborhood around refs), `summary` (regions,
  * shallow hierarchy, major affordances, page-health caveats), `actionMap`,
- * `patchContext`, `violations` and `diff` — rendered either over the
+ * `patchContext`, `violations` and `diff`, rendered either over the
  * fusion/hierarchy/relations pipeline output or, through `queryUiGraph`, over a
  * sealed snapshot.
  *
  * §6.4's own requirements are load-bearing here: every view reports
  * truncation, omitted counts, a token estimate, and the policy/version that
  * produced it (these feed JudgeInputManifestV1's omission records, core
- * ADR-040). Rendering is pure and deterministic over the pipeline output —
+ * ADR-040). Rendering is pure and deterministic over the pipeline output, so
  * the same graph always yields a byte-identical view (`canonicalize` on the
- * selected sub-graph) — and fail-closed: refs that resolve to nothing render
+ * selected sub-graph), and it is fail-closed: refs that resolve to nothing render
  * an explicit empty view carrying the unresolved refs, never a guess.
  *
- * ## views@2 — the view text is a PROMPT projection, not a graph dump
+ * ## views@2: the view text is a PROMPT projection, not a graph dump
  *
  * A view is what enters a model prompt, so it carries only facts a model can act
  * on: ref, kind, role, name, text, a normalized rect, visibility, retained
- * conflict markers, flags. Provenance — the full `evidence[]` chain, raw source
- * ids, frame rects, coordinate-space ids, per-fact confidences — stays in the
+ * conflict markers, flags. Provenance (the full `evidence[]` chain, raw source
+ * ids, frame rects, coordinate-space ids, per-fact confidences) stays in the
  * sealed snapshot, addressable by the very same ref the view emits. Under
  * views@1 the renderers canonicalized whole `FusedNode`s and the resulting
  * "compressed" view was consistently LARGER than the raw capture it summarized;
@@ -60,7 +60,7 @@ export interface ViewMeta {
   /** True when the budget cut anything; the counts say exactly how much. */
   readonly truncated: boolean;
   readonly omitted: { readonly nodes: number; readonly edges: number; readonly regions: number };
-  /** Chars/4 heuristic — an estimate by contract, never billing truth. */
+  /** Chars/4 heuristic: an estimate by contract, never billing truth. */
   readonly tokenEstimate: number;
   readonly refsResolved: readonly string[];
   readonly refsUnresolved: readonly string[];
@@ -108,7 +108,7 @@ export interface PromptNode {
   readonly role?: string;
   readonly name?: string;
   readonly text?: string;
-  /** Normalized [0,1] viewport rect, rounded to 4dp — resolution-independent. */
+  /** Normalized [0,1] viewport rect, rounded to 4dp, so resolution-independent. */
   readonly rect?: Rect;
   readonly visibility?: string;
   /** Facts where sources disagreed. Conflict retention survives the projection. */
@@ -293,7 +293,7 @@ export function renderFocusView(
   const omittedNodes = reachable.length - kept.length;
 
   // #10/#17: fail closed on surviving sensitive text, then serialize page text
-  // sanitized and inside the untrusted boundary — data, never instructions.
+  // sanitized and inside the untrusted boundary: data, never instructions.
   assertNoSensitiveTextSurvives(graph.nodes);
   const hierarchy = graph.hierarchy.filter((h) => keptSet.has(h.candidateId));
   const placement = placementIndex(hierarchy);
@@ -392,7 +392,7 @@ export function renderSummaryView(
     .map((n) => promptNode(n, placement.get(n.candidateId)));
 
   // The outline is the shallow skeleton MINUS anything already listed as an
-  // affordance — a node is described once per view, never twice.
+  // affordance, because a node is described once per view, never twice.
   const shallowAll = graph.hierarchy
     .filter((h) => h.depth <= 2)
     .sort((a, b) => a.depth - b.depth || byString(a.candidateId, b.candidateId));
@@ -408,7 +408,7 @@ export function renderSummaryView(
   // Regions count against the budget too: a page with 30 `repeated` groups can
   // otherwise dominate a summary no matter how tightly the nodes are capped.
   // Named structure (landmarks, forms, lists, tables) outranks repeated groups,
-  // then larger regions, then id — deterministic, so a budget cuts the same tail.
+  // then larger regions, then id. Deterministic, so a budget cuts the same tail.
   const rankedRegions = [...graph.regions].sort(
     (a, b) =>
       Number(a.kind === "repeated") - Number(b.kind === "repeated") ||
@@ -450,13 +450,13 @@ export interface ActionMapOptions {
   readonly snapshotId?: string;
 }
 
-/** An interactive element's perception state — only what capture actually observed. */
+/** An interactive element's perception state: only what capture actually observed. */
 export interface ActionMapEntry {
   /** Snapshot-local candidate id (§6.4): the durable ref, never a raw source id or locator. */
   readonly ref: string;
   readonly role: string;
   readonly name?: string;
-  /** Normalized [0,1] viewport rect — resolution-independent, so refs stay durable. */
+  /** Normalized [0,1] viewport rect, resolution-independent, so refs stay durable. */
   readonly rect: Rect;
   /** Perception-only state: visibility + retained pipeline flags. No action verbs, no handles. */
   readonly state: { readonly visibility: string; readonly clipped: boolean; readonly flags: readonly string[] };
@@ -467,8 +467,8 @@ const ACTIONMAP_VISIBILITIES = new Set(["visible", "clipped"]);
 
 /**
  * Render the `actionMap` view (§6.4, TRD §10.2): visible interactive elements as
- * PERCEPTION CONTEXT ONLY — role, accessible name, normalized rect, and observed
- * state — never action commands (UI Graph is not a browser agent, PRD §5.2/§12).
+ * PERCEPTION CONTEXT ONLY (role, accessible name, normalized rect, and observed
+ * state), never action commands (UI Graph is not a browser agent, PRD §5.2/§12).
  *
  * Fail-closed and durable-ref clean: an element needs an interactive role AND an
  * on-screen rect to appear (no geometry ⇒ nothing to point at, so it is omitted,
@@ -550,7 +550,7 @@ export interface ComponentFamilyCandidate {
   readonly confidence: number;
 }
 
-/** Repair facts for one element ref — observed context only, never a generated change. */
+/** Repair facts for one element ref: observed context only, never a generated change. */
 export interface PatchContextEntry {
   readonly ref: string;
   readonly role?: string;
@@ -657,9 +657,9 @@ export interface PatchContextSource {
 
 /**
  * Render the `patchContext` view (§12, PRD §6.3/§6.4, TRD §10.2): the repair
- * FACTS a coding agent needs to fix an element — ref, route, viewport,
+ * FACTS a coding agent needs to fix an element (ref, route, viewport,
  * component-family candidate, observed style/token facts, durable selector
- * hints, and evidence pointers — for one or more refs.
+ * hints, and evidence pointers) for one or more refs.
  *
  * It NEVER emits a generated source patch or any model-authored content: UI
  * Graph plans/perceives, it does not modify code (PRD §5.2). Requires ≥1 ref to
@@ -747,7 +747,7 @@ export interface ViolationEntry {
   readonly evidenceRequirement: string;
 }
 
-/** A drift suppressed by an approved exception — surfaced, never silently dropped. */
+/** A drift suppressed by an approved exception, surfaced but never silently dropped. */
 export interface SuppressedViolation {
   readonly ref: string;
   readonly category: UIDNAMatch["category"];
@@ -802,7 +802,7 @@ function rankViolations(entries: ViolationEntry[]): ViolationEntry[] {
  * authoritative-capable (approved DNA in a production build) AND the match was
  * deterministic (not an embedding candidate); everything else is advisory.
  *
- * Consumes the `UIDNAMatch` facts `projectDna` (#11) stamps on each node —
+ * Consumes the `UIDNAMatch` facts `projectDna` (#11) stamps on each node:
  * `drift` entries are findings, `excepted` are surfaced as suppressed, `exact`/
  * `within_tolerance` are conformant and omitted. Each finding carries
  * observed/canonical/delta/ref + an evidence requirement, ranked by severity,
@@ -891,7 +891,7 @@ export function renderViolationsView(
 
 // --- diff (cross-snapshot change; capture instability vs product change) ------
 
-/** The two snapshots' identity — a diff refuses to run without matching id + hash. */
+/** The two snapshots' identity. A diff refuses to run without matching id + hash. */
 export interface DiffComparison {
   readonly baseSnapshotId: string;
   readonly baseContentHash: string;
@@ -950,7 +950,7 @@ function classifyChange(a: UIGraphNode, b: UIGraphNode, jitter: number): Matched
     semantic || style || dna || moved > jitter
       ? "product_change"
       : geometry
-        ? "capture_instability" // only a small positional jitter — not a product change
+        ? "capture_instability" // only a small positional jitter, not a product change
         : "unchanged";
   return { semantic, style, geometry, dna, changeKind };
 }
@@ -960,11 +960,11 @@ function classifyChange(a: UIGraphNode, b: UIGraphNode, jitter: number): Matched
  * nodes across two snapshots, with each matched pair's changed facts classified
  * to SEPARATE capture instability (sub-jitter positional noise) from product
  * change (semantics/style/DNA, or a real move). Runs the abstaining lineage
- * matcher (`matchNodes`) internally — a low-confidence pair abstains, never
+ * matcher (`matchNodes`) internally, so a low-confidence pair abstains, never
  * points to the wrong element.
  *
  * Fail-closed: requires a comparison snapshot id AND content hash for both
- * sides (PRD §6.6) — a missing identity renders an explicit empty view, never a
+ * sides (PRD §6.6). A missing identity renders an explicit empty view, never a
  * diff against an unknown baseline. Deterministic and budgeted with truncation.
  */
 export function renderDiffView(
@@ -1015,7 +1015,7 @@ export function renderDiffView(
     } else if (m.status === "ambiguous") {
       ambiguous.push(a.elementRef);
     }
-    // `abstained` is intentionally neither matched nor asserted removed — it is
+    // `abstained` is intentionally neither matched nor asserted removed. It is
     // an explicit non-answer (PRD §6.2), surfaced only in the counts below.
   }
 

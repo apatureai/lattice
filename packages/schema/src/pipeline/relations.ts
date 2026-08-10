@@ -1,5 +1,5 @@
 /**
- * Pipeline stage 5 — bounded relation builder (TRD §5.5, §8.6; ADR-004).
+ * Pipeline stage 5: bounded relation builder (TRD §5.5, §8.6; ADR-004).
  *
  * Builds the deterministic typed edge set over the fused nodes (#6) + hierarchy
  * (#7). Persisted edges stay bounded O(n): candidate generation for the
@@ -107,19 +107,19 @@ export function buildRelations(nodes: readonly FusedNode[], hierarchy: readonly 
     if (!edges.has(e.edgeId)) edges.set(e.edgeId, e);
   };
 
-  // contains (from hierarchy) — protected structural edges.
+  // contains (from hierarchy): protected structural edges.
   for (const h of hierarchy) {
     if (h.parentNodeId !== undefined) add(mkEdge("contains", h.parentNodeId, h.candidateId, true, WEIGHT.contains, {}, []));
   }
 
-  // reading_next — siblings under a parent, source order corrected by geometry.
+  // reading_next: siblings under a parent, source order corrected by geometry.
   const byParent = new Map<string, FusedNode[]>();
   for (const n of withGeom) {
     const p = hierById.get(n.candidateId)?.parentNodeId ?? "__root__";
     // Append into the existing sibling array (same reason as SpatialGrid.insert):
     // the prior spread-copy was O(siblings²) when many nodes share one parent.
-    // `withGeom` is already sorted, so append order — and thus every downstream
-    // sort/edge — is byte-identical to before.
+    // `withGeom` is already sorted, so append order (and thus every downstream
+    // sort/edge) is byte-identical to before.
     let siblings = byParent.get(p);
     if (siblings === undefined) {
       siblings = [];
@@ -170,7 +170,7 @@ export function buildRelations(nodes: readonly FusedNode[], hierarchy: readonly 
       if (Math.abs(g.x + g.width - (cg.x + cg.width)) <= tol) add(mkEdge("aligned_end", lo, hi, false, WEIGHT.aligned, {}, []));
     }
 
-    // near — k nearest by centroid among spatial candidates.
+    // near: k nearest by centroid among spatial candidates.
     const [nx, ny] = centroid(g);
     const nearest = cands
       .map((c) => {

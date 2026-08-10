@@ -1,13 +1,13 @@
 /**
  * Advisory visual-saliency prior (TRD §8.5 saliency ranking).
  *
- * A token-budgeted view must decide which nodes matter most; a saliency prior —
- * "where is a human's attention likely to land?" — is a better input to that
+ * A token-budgeted view must decide which nodes matter most, and a saliency
+ * prior ("where is a human's attention likely to land?") is a better input to that
  * ranking than raw size. This is the deployable, no-neuroimaging realization of
  * that idea: a `SaliencyProvider` PORT that a UEyes-style attention model drops
  * into in production, with a deterministic heuristic baseline here.
  *
- * Saliency is strictly ADVISORY — a perception prior, never authoritative DNA.
+ * Saliency is strictly ADVISORY: a perception prior, never authoritative DNA.
  * It informs ordering and evidence requests; it never overrides a fact or a
  * grounded standard. The heuristic reads only the normalized geometry + role, so
  * it stays pure and deterministic (no model/network).
@@ -67,7 +67,7 @@ export function heuristicSaliency(nodes: readonly ViewSourceNode[], viewport?: S
   const scores = nodes.map((node): SaliencyScore => {
     const g = node.geometry?.viewportRect;
     // `Object.hasOwn`, not a bare index: `role.value` is untrusted capture data,
-    // and a plain-object lookup walks the prototype chain — a role of
+    // and a plain-object lookup walks the prototype chain, so a role of
     // `constructor`/`__proto__`/`toString` would otherwise resolve to an inherited
     // member (a function/object, which `?? 0.3` does NOT catch), poisoning the
     // score with `NaN`. An unknown role falls through to the 0.3 default.

@@ -1,5 +1,5 @@
 /**
- * Deterministic builder pipeline — stages 1 (validate) and 2 (normalize).
+ * Deterministic builder pipeline: stages 1 (validate) and 2 (normalize).
  *
  * `validateAndNormalize` runs the two together: it fails closed if validation
  * finds any structural error (no partial output), otherwise returns the

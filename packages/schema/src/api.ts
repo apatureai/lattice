@@ -88,7 +88,7 @@ export type QueryUiGraphRequest = {
   comparisonSnapshot?: UIGraphSnapshot;
   /**
    * Logical artifact ref of the capture's screenshot (`artifact://…`). A sealed
-   * snapshot carries no screenshot pointer — pixels never enter this package —
+   * snapshot carries no screenshot pointer (pixels never enter this package),
    * so evidence requests are planned only when the caller supplies one.
    */
   screenshotArtifactRef?: string;
@@ -179,7 +179,7 @@ export function diffUiGraphs(
 /**
  * Hash-verified delta application (#14; TRD §12): verified base binding,
  * ordered ID-keyed ops, explicit incident-edge removal, re-sealed target that
- * must equal the delta's declared identity — or a typed error and NO partial
+ * must equal the delta's declared identity, or a typed error and NO partial
  * result. Deltas are transport artifacts; full snapshots remain canonical.
  */
 export function applyUiGraphDelta(

@@ -68,7 +68,7 @@ function isNonEmptyString(v: unknown): v is string {
 /**
  * Validate a derived observation's provenance. Per TRD §8.1/§16, a derived
  * observation missing provider, providerVersion, or a confidence (on the
- * variants that carry one) is rejected — UI Graph never silently trusts an
+ * variants that carry one) is rejected. UI Graph never silently trusts an
  * unprovenanced parser/OCR/embedding/learned fact.
  */
 function checkDerivedObservation(
@@ -241,7 +241,7 @@ export function validateDnaProfile(
 }
 
 /**
- * True only for an approved DNA profile in a production build — the single case
+ * True only for an approved DNA profile in a production build, the single case
  * where a deterministic match may be `authoritative: true` (TRD §4.3, §8.7).
  */
 export function dnaMatchesMayBeAuthoritative(

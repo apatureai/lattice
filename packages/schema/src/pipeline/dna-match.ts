@@ -3,7 +3,7 @@
  * ADR-006).
  *
  * Projects a SUPPLIED, approved UI-DNA read profile onto graph nodes without
- * taking ownership of UI DNA — extraction/approval/canonical storage stay in
+ * taking ownership of UI DNA: extraction/approval/canonical storage stay in
  * `apatureai/ui-dna`; this slice only CONSUMES the approved projection. It emits
  * `UIDNAMatch` facts for the token surface (colors) and numeric scales (spacing,
  * radii, type): exact normalized equality → numeric tolerance → approved
@@ -54,7 +54,7 @@ export interface DnaProjectionInput {
   /** The supplied read profile. `undefined` ⇒ neutral (no DNA, no matches). */
   readonly dna?: AnyUIDNAReadProfile;
   readonly useMode: UIGraphUseMode;
-  /** The element route (from UIGraphSourceMetadata) — exceptions are route-scoped. */
+  /** The element route (from UIGraphSourceMetadata). Exceptions are route-scoped. */
   readonly route: string;
   readonly exceptions?: readonly DnaExceptionRule[];
   readonly tolerances?: Partial<DnaMatchTolerances>;

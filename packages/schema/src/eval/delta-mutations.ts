@@ -6,13 +6,13 @@
  * Each step transforms a SEALED snapshot into the next sealed snapshot by a
  * named, pure mutation over the ref-free draft (the sealer re-derives refs,
  * hash, and id). The canonical target hash recorded in the manifest for a
- * step is the sealed `contentHash` after applying the chain up to that step —
+ * step is the sealed `contentHash` after applying the chain up to that step,
  * so the manifest values are REAL, regenerable, and bound to the #14
  * encode/apply transport by the reconstruction test.
  *
  * Two properties the chains deliberately expose:
  *  - a pure sibling reorder is HASH-NEUTRAL (canonical collection ordering is
- *    part of snapshot identity — reordering is not a change);
+ *    part of snapshot identity, so reordering is not a change);
  *  - every other mutation produces a distinct, reproducible hash.
  */
 

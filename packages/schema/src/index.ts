@@ -1,5 +1,5 @@
 /**
- * @apature/ui-graph — deterministic, UI-DNA-aware visual scene graph contract.
+ * @apature/ui-graph: deterministic, UI-DNA-aware visual scene graph contract.
  *
  * UI Graph is a feature-flagged representation
  * EXPERIMENT until its precision/grounding/cost/latency eval proves value. This

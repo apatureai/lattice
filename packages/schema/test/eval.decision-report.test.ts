@@ -1,6 +1,6 @@
 /**
  * #24's decision artifact: explicit three-way verdict over the gate results
- * and a content-addressed, provenance-stamped report — the citable
+ * and a content-addressed, provenance-stamped report: the citable
  * precondition for leaving shadow.
  */
 import { describe, expect, it } from "vitest";

@@ -41,9 +41,9 @@ type JsonValue =
  * Serialize a value to RFC 8785 (JSON Canonicalization Scheme) form.
  *
  * Object keys are sorted by UTF-16 code unit (the JCS requirement, which is what
- * `String.prototype.localeCompare` is NOT — we use `<`/`>` on the raw strings to
+ * `String.prototype.localeCompare` is NOT; we use `<`/`>` on the raw strings to
  * stay locale-independent). `undefined` properties are dropped (optional fields
- * are omitted, not emitted as nulls — TRD §9.1). NaN/Infinity throw.
+ * are omitted, not emitted as nulls, per TRD §9.1). NaN/Infinity throw.
  */
 export function canonicalize(value: unknown): string {
   const out: string[] = [];

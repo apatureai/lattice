@@ -14,7 +14,7 @@ Dependencies are frozen at their mid-2026 versions.
 
 ## Reporting a vulnerability
 
-You can still report one, and it is appreciated — just calibrate expectations.
+You can still report one, and it is appreciated. Just calibrate expectations.
 
 Use GitHub private vulnerability reporting rather than a public issue:
 
@@ -43,15 +43,15 @@ likely have known CVEs by the time you read this. Run your own `pnpm audit`
 and update before use. The lockfile is preserved for reproducibility of the
 archive, not because it is safe.
 
-**Capability posture — real, but only as strong as the guard.** By design this
+**Capability posture: real, but only as strong as the guard.** By design this
 package has no network, browser, model-inference, or database capability. That
 is enforced mechanically by `scripts/capability-guard.mjs` (run in CI as
 `pnpm guard:capability`), which allowlists runtime dependencies and rejects
 network/HTTP clients, browser/CDP drivers, inference SDKs, and DB clients. If
 your fork removes or loosens that guard, you lose the property it protects.
 
-**It parses untrusted input.** Capture evidence — DOM text, accessibility
-names, OCR output, parser labels — is attacker-influenceable page content. The
+**It parses untrusted input.** Capture evidence (DOM text, accessibility
+names, OCR output, parser labels) is attacker-influenceable page content. The
 library validates instances against the JSON Schemas in
 `packages/schema/schemas/` using `ajv`, and
 `packages/schema/src/pipeline/untrusted.ts` implements the prompt-injection
@@ -68,7 +68,7 @@ already-redacted, carrying redaction metadata and sensitivity labels. The
 labelled `pii`, `secret`, `credential` or `redacted`, and flags it
 `withheld:sensitive`. The library will fail closed when rendering a prompt view
 if text labelled `pii`, `secret`, or `credential` would survive into the
-output — but it will happily hash and store whatever you hand it. Feed it raw
+output, but it will happily hash and store whatever you hand it. Feed it raw
 captures of a logged-in production app and secrets end up in snapshots,
 content hashes, and any artifact store you wire behind it.
 

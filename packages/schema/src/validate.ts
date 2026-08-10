@@ -7,7 +7,7 @@
  * (`additionalProperties: false`); unknown top-level or nested fields are
  * rejected.
  *
- * No network, model, browser, or DB access occurs here — only in-process JSON
+ * No network, model, browser, or DB access occurs here, only in-process JSON
  * validation (TRD §3.1).
  */
 
@@ -42,7 +42,7 @@ function buildAjv(): Ajv {
   // conditional subschemas that omit a redundant `type`/`required` echo). The
   // normative schemas use those valid JSON Schema 2020-12 constructs, so we
   // disable the authoring lint rather than mutate the normative artifact.
-  // Instance-level strictness — rejection of unknown fields — comes from the
+  // Instance-level strictness (rejection of unknown fields) comes from the
   // schemas' own `additionalProperties: false` and is fully enforced regardless.
   const ajv = new Ajv2020({ strict: false, allErrors: true });
   addFormats(ajv);

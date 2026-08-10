@@ -5,10 +5,10 @@
  * versioned; this module makes the evolution RULES executable:
  *
  *  - `diffJsonSchema` classifies a schema change: breaking (major), additive
- *    (minor — new optional standard fields and enum additions both require a
+ *    (minor: new optional standard fields and enum additions both require a
  *    minor bump plus consumer fallback), or none (patch: constraint
  *    clarifications that change no accepted instance shape).
- *  - `checkVersionBump` gates a change against the declared version delta —
+ *  - `checkVersionBump` gates a change against the declared version delta;
  *    the CI baseline test (schema-evolution.test.ts) applies it to the pinned
  *    baselines, so a normative schema cannot drift without the right bump.
  *  - Reader support window: current major and one prior, nothing else.
@@ -20,7 +20,7 @@
  *
  * Vendor/experimental data policy (enforced on introduction): such data may
  * only ever appear under a namespaced top-level `extensions` object added via
- * a minor bump — never as loose standard fields (the strict validators reject
+ * a minor bump, never as loose standard fields (the strict validators reject
  * unknown standard fields today, which is itself a tested invariant).
  */
 
@@ -185,7 +185,7 @@ export interface MigratedSnapshot<T> {
 /**
  * Migrate a stored snapshot blob to the current major. Never mutates the
  * input; records source provenance. With only major 1 in existence this is
- * the (deep-copied) identity migration — the first real major bump must add
+ * the (deep-copied) identity migration. The first real major bump must add
  * its transform here, and the baseline gate makes that impossible to forget.
  */
 export function migrateToCurrentMajor<T extends { schemaVersion: string }>(blob: T): MigratedSnapshot<T> {

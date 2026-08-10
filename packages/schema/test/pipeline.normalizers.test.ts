@@ -60,7 +60,7 @@ describe("normalizeCssLength", () => {
   });
   it("treats a prototype-chain unit as unknown, not px", () => {
     // A `constructor` unit must not resolve through the absolute-unit map's
-    // prototype: it is an unknown unit, kept verbatim with no invented px value —
+    // prototype: it is an unknown unit, kept verbatim with no invented px value,
     // exactly like any other unresolved unit.
     const r = normalizeCssLength("5constructor");
     expect(r.unit).toBe("constructor");

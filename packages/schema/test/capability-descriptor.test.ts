@@ -85,7 +85,7 @@ describe("descriptor is foldable + pinnable", () => {
     const d = buildUiGraphCapabilityDescriptor();
     expect(d.negotiation.extensionsNamespacePrefix).toBe("x-uigraph-");
     expect(d.negotiation.unknownEnumPolicy).toBe("reject");
-    // one-prior arrays are present (empty now: only major 1 exists) — the field the caller negotiates on.
+    // one-prior arrays are present (empty now: only major 1 exists). This is the field the caller negotiates on.
     expect(d.produced.snapshot.onePrior).toEqual([]);
   });
 });

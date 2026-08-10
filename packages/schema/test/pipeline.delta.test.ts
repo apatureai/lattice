@@ -1,7 +1,7 @@
 /**
  * #14 acceptance: typed ID-keyed delta transport with fail-closed integrity
  * (TRD §12, ADR-008). Encode base→target, apply to a verified base, and the
- * reconstructed target must re-seal to EXACTLY the declared identity — every
+ * reconstructed target must re-seal to EXACTLY the declared identity. Every
  * mismatch, malformed op, dangling reference, or adversarial mutation rejects
  * whole with no partial result.
  */
@@ -89,7 +89,7 @@ describe("delta encode/apply round trip (#14)", () => {
 
   it("node removal never cascades: a dangling incident edge rejects the whole delta", () => {
     // Build a base with one edge, then a delta that removes the node WITHOUT
-    // removing the edge — must reject, not silently drop the edge.
+    // removing the edge. It must reject, not silently drop the edge.
     const { snapshotId: _i, contentHash: _h, nodes, ...semantic } = structuredClone(sealed);
     const bare = nodes.map(({ elementRef: _r, ...node }) => node);
     const second = structuredClone(bare[0]!) as (typeof bare)[0] & { nodeId: string };

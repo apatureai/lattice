@@ -4,7 +4,7 @@
  * Lengths are normalized to CSS pixels for absolute units; the original token is
  * preserved by the caller. Relative/unknown units (`em`, `%`, …) cannot be
  * resolved without layout context, so they normalize to `valueCssPx: null` with
- * the parsed unit retained — never silently coerced to a bogus pixel value.
+ * the parsed unit retained, never silently coerced to a bogus pixel value.
  */
 
 import { isInBounds } from "./geometry.js";
@@ -43,7 +43,7 @@ export function normalizeCssLength(input: string | number): NormalizedLength {
   if (!Number.isFinite(magnitude)) return { original: input, valueCssPx: null, unit };
 
   // `Object.hasOwn`, not a bare index: `unit` comes from untrusted capture data,
-  // and a plain-object lookup walks the prototype chain — a `constructor` unit
+  // and a plain-object lookup walks the prototype chain, so a `constructor` unit
   // would otherwise resolve to an inherited value, skip the unknown-unit branch,
   // and be mislabeled `px`.
   const factor = Object.hasOwn(ABSOLUTE_PX, unit) ? ABSOLUTE_PX[unit] : undefined;

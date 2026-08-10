@@ -9,9 +9,9 @@
  * same seed ⇒ byte-identical intervals.
  *
  * Two tools:
- *  - `pairedBootstrapCI` — percentile bootstrap over paired per-fixture values
+ *  - `pairedBootstrapCI`: percentile bootstrap over paired per-fixture values
  *    for ratio-style statistics (e.g. `text_reduction = 1 - Σcand/Σbase`).
- *  - `mcnemarExact` — exact two-sided McNemar test on paired binary outcomes
+ *  - `mcnemarExact`: exact two-sided McNemar test on paired binary outcomes
  *    (e.g. per-item grounding hit/miss under two representations). Judgment
  *    Engine supplies the discordant counts from its model runs; this module
  *    never fabricates model measurements.
@@ -20,7 +20,7 @@
 // --- Seeded PRNG ----------------------------------------------------------
 
 /**
- * mulberry32 — small, well-distributed 32-bit PRNG. Chosen for determinism and
+ * mulberry32 is a small, well-distributed 32-bit PRNG. Chosen for determinism and
  * portability, not cryptography (the bootstrap needs reproducible resampling,
  * nothing more).
  */

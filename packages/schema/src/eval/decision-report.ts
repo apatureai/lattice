@@ -8,11 +8,11 @@
  * every version stamp needed to reproduce it.
  *
  * Verdict semantics (fail-closed, PRD §7):
- *  - `gate_met`      — every gate passed; the documented precondition for
+ *  - `gate_met`:      every gate passed; the documented precondition for
  *                       leaving shadow is satisfied.
- *  - `gate_rejected` — at least one gate FAILED on sufficient evidence; the
+ *  - `gate_rejected`: at least one gate FAILED on sufficient evidence; the
  *                       experiment does not promote in this form.
- *  - `inconclusive`  — no gate failed but at least one had insufficient
+ *  - `inconclusive`:  no gate failed but at least one had insufficient
  *                       evidence; never treated as met (missing data is not
  *                       a pass), never mislabeled as a rejection.
  *

@@ -69,7 +69,7 @@ describe("every public entry point is implemented and fails closed", () => {
     } catch (e) {
       expect(e).toBeInstanceOf(UIGraphError);
       // The empty delta is structurally invalid, so the binding is refused
-      // before any operation is applied — a typed error, never a partial result.
+      // before any operation is applied, so a typed error, never a partial result.
       expect((e as UIGraphError).code).toBe("invalid_delta");
     }
   });

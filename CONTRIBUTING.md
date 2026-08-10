@@ -6,7 +6,7 @@ Apature has been wound down. This repository is published as a historical
 snapshot of the work, under the MIT license. It is **not maintained**.
 
 - Issues and pull requests may sit unread indefinitely. Do not expect review,
-  and please do not treat silence as rejection — it is just absence.
+  and please do not treat silence as rejection. It is just absence.
 - There will be no releases, no roadmap, and no security patches
   (see [SECURITY.md](SECURITY.md)).
 - **Forking is the encouraged path.** MIT means you can take this, rename it,
@@ -22,7 +22,7 @@ with its design, read on.
 Requirements:
 
 - Node 24 (`.node-version`; the root `package.json` asks for `>=24`).
-- pnpm 9.15.0 — declared via `packageManager`, so `corepack enable` will pick
+- pnpm 9.15.0, declared via `packageManager`, so `corepack enable` will pick
   up the right version automatically.
 
 ```sh
@@ -31,25 +31,26 @@ pnpm lint        # eslint --max-warnings=0; warnings fail the build
 pnpm typecheck   # tsc -b across the workspace project references
 pnpm test        # vitest run
 pnpm guard:capability
-pnpm example     # node examples/quickstart.mjs — the end-to-end demo
+pnpm example     # node examples/quickstart.mjs, the end-to-end demo
 ```
 
 `pnpm build` is the same `tsc -b` invocation as `pnpm typecheck`; `pnpm clean`
 removes the build outputs. These five commands are exactly what
-`.github/workflows/ci.yml` runs, in that order — if they pass locally, CI passes.
+`.github/workflows/ci.yml` runs, in that order. If they pass locally, CI passes.
 
 The workspace has a single package, `packages/schema` (`@apature/ui-graph`).
 Its only runtime dependencies are `ajv` and `ajv-formats`.
 
 ## Ownership boundary (the original non-negotiable)
 
-`@apature/ui-graph` is a **deterministic, sandboxed library**. It converts
+`@apature/ui-graph` is a deterministic, sandboxed library. It converts
 versioned capture evidence and an approved UI-DNA projection into an immutable,
 content-addressed scene graph and renders bounded views. It has **no** model,
 browser, sandbox, network, or database capability. The capability guard
 (`pnpm guard:capability`) enforces this mechanically.
 
-UI Graph deliberately did **not** own — the consuming judgment engine did:
+UI Graph deliberately did not own any of the following. The consuming judgment
+engine did:
 
 - browser capture, screenshots, OCR, visual-parser inference, embeddings, model calls;
 - the canonical UI-DNA schema, extraction, approval, or storage;
@@ -61,7 +62,7 @@ split is why this package is small enough to be useful on its own.
 
 ## Experiment framing
 
-UI Graph was a **feature-flagged representation experiment** pending a
+UI Graph was a feature-flagged representation experiment pending a
 precision/grounding/cost/latency evaluation; it never graduated. Builds carry a
 `useMode` of `offline_eval`, `shadow`, or `production`. Non-production modes
 force every DNA match to `authoritative: false`, and `useMode` participates in
@@ -81,7 +82,7 @@ violation in those files.
 Runtime dependencies of the published package are allowlisted in
 `scripts/capability-guard.mjs`. A new dependency requires an explicit entry
 with a justification. Network/HTTP clients, browser/CDP drivers,
-model/inference SDKs, and DB clients are denied outright — that denial is the
+model/inference SDKs, and DB clients are denied outright. That denial is the
 point of the guard, not a formality.
 
 ## Schemas are normative

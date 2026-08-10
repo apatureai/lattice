@@ -67,7 +67,7 @@ export const CONSUMER_VIEW_CONTRACT: Readonly<Record<ConsumerSurface, ConsumerVi
   interactive_review: {
     surface: "interactive_review",
     requestsViewKinds: ["actionMap"],
-    // actionMap is perception only — the consumer reads it, it is never an action affordance.
+    // actionMap is perception only. The consumer reads it; it is never an action affordance.
     readOnlyPerception: true,
     mustNotDependOn: [...COMMON_FORBIDDEN, "action_map_as_action_affordance"],
   },
@@ -180,7 +180,7 @@ const refuse = (detail: RefRejectDetail): RefResolution => ({
  * this resolver (1) verifies the supplied snapshot's own identity (refs, hash,
  * id self-consistent via `assertSnapshotIdentity`), (2) requires the caller's
  * claimed `(snapshotId, contentHash)` tuple to equal that verified identity
- * exactly — a same-prefix/different-digest snapshot is foreign — and (3)
+ * exactly (a same-prefix/different-digest snapshot is foreign), and (3)
  * requires the ref to be one of the snapshot's actual node refs, so a
  * fabricated ordinal under the correct prefix names nothing and is refused.
  * Every refusal is a typed `stale_or_foreign_ref` with a fail-closed detail.
@@ -202,7 +202,7 @@ export function resolveElementRefInSnapshot(
   if (claimed.snapshotId !== snapshot.snapshotId || claimed.contentHash !== snapshot.contentHash) {
     return refuse("wrong_snapshot_identity");
   }
-  // Exact membership in the verified snapshot's nodes — never prefix matching.
+  // Exact membership in the verified snapshot's nodes, never prefix matching.
   if (!snapshot.nodes.some((node) => node.elementRef === elementRef)) {
     return refuse("ref_not_in_snapshot");
   }

@@ -1,7 +1,7 @@
 /**
  * Crop/overlay evidence requests (#15; PRD §6.5, TRD §7/§10/§11,
  * ARCHITECTURE §11; PRD §18.29). Selective pixel escalation: a view
- * RECOMMENDS crops/overlays and Judgment Engine decides whether to fetch —
+ * RECOMMENDS crops/overlays and Judgment Engine decides whether to fetch.
  * UI Graph never produces pixels, never holds artifact bytes, and a request
  * is not an authorization (§18.38: capability-scoped, not execution
  * authority).
@@ -10,7 +10,7 @@
  *  - geometry comes straight from the normalized viewport rects, so the
  *    request↔viewport transform is exact by construction (the ≤2 CSS px /
  *    0.5% bar is met with zero error, asserted in tests);
- *  - a degenerate or out-of-bounds target NEVER yields a misleading crop —
+ *  - a degenerate or out-of-bounds target NEVER yields a misleading crop;
  *    the affected refs are returned as typed rejections instead (TRD §16);
  *  - one padded local crop is preferred over a full screenshot; the full
  *    screenshot is the fallback when the crop would cover most of the
@@ -37,7 +37,7 @@ export type EvidenceRequestReason =
   | "high_saliency";
 
 export interface EvidenceRequest {
-  /** Content-addressed over the request body — same inputs, same id. */
+  /** Content-addressed over the request body, so same inputs, same id. */
   requestId: string;
   kind: EvidenceRequestKind;
   /** Logical artifact ref of the source screenshot; never a URL (TRD §17). */

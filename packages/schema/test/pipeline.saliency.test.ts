@@ -44,7 +44,7 @@ describe("heuristicSaliency", () => {
   it("treats a prototype-chain role as unknown, never NaN or a function weight", () => {
     // `constructor`/`__proto__`/`toString`/`valueOf` must not resolve through the
     // ROLE_WEIGHT map's prototype: they are unknown roles, weighted at the 0.3
-    // default exactly like any other unrecognized role — never an inherited
+    // default exactly like any other unrecognized role, never an inherited
     // function/object that poisons the arithmetic with NaN.
     const rect = { x: 400, y: 400, width: 100, height: 40 };
     const generic = heuristicSaliency([node("g", rect, "totally-unknown-role")], VP)[0]!.saliency;

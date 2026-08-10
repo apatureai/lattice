@@ -1,5 +1,5 @@
 /**
- * Pipeline stage 1 — validate (TRD §8.1, ARCHITECTURE §3).
+ * Pipeline stage 1: validate (TRD §8.1, ARCHITECTURE §3).
  *
  * Turns a supplied `CaptureBundleReadProfile` into a confirmed-well-formed
  * capture, or fails closed with structured errors and NO partial output. It

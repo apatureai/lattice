@@ -5,29 +5,29 @@ import { SCHEMA_VERSION, type UIGraphViewSpec } from "./types.js";
 /**
  * UI Graph capability descriptor (#25).
  *
- * UI Graph is NOT a network surface — it is a deterministic representation
+ * UI Graph is NOT a network surface; it is a deterministic representation
  * library inside Judgment Engine (ARCHITECTURE ADR-002). So it does NOT publish
  * a signed `ApatureAgentCardV1` (signing, the static registry, OAuth2.1
  * token-exchange identity/tenancy, and OTel tracing all live in Judgment
  * Engine). What UI Graph OWNS is the truthful, machine-readable
  * description of the representation capabilities it offers, so Judgment Engine
- * can fold them into the card IT signs and publishes — and consumers can
+ * can fold them into the card IT signs and publishes, and consumers can
  * negotiate versions without reading prose.
  *
  * The descriptor advertises a PERCEPTION/REPRESENTATION capability only: no
  * model calls, browser actions, capture, or delivery (PRD §12, README). In
  * particular `actionMap` is a perception VIEW, never an action affordance (TRD
- * §10.2, #16) — `capabilityClass` stays `representation` and `excludes` names
+ * §10.2, #16): `capabilityClass` stays `representation` and `excludes` names
  * action execution explicitly, consistent with the ownership matrix
  * (ARCHITECTURE §16).
  */
 
 export const UI_GRAPH_CAPABILITY_DESCRIPTOR_VERSION = "ui-graph-capability/1" as const;
 
-/** The operations UI Graph offers (TRD §1) — the actual exported API surface. */
+/** The operations UI Graph offers (TRD §1), the actual exported API surface. */
 export type UiGraphOperation = "buildUiGraph" | "queryUiGraph" | "diffUiGraphs" | "applyUiGraphDelta";
 
-/** The view kinds UI Graph renders (TRD §10) — reuses the view-spec vocabulary, no parallel enum. */
+/** The view kinds UI Graph renders (TRD §10). Reuses the view-spec vocabulary, no parallel enum. */
 export type UiGraphViewKind = UIGraphViewSpec["kind"];
 
 /** Supported schema majors + one-prior compatibility (TRD §9.3). */
@@ -42,7 +42,7 @@ export interface UiGraphCapabilityDescriptor {
   surface: "ui-graph";
   /** How the capability is reached: a library folded into Judgment Engine, not a network listener. */
   exposure: "library_in_judgment_engine";
-  /** Perception/representation only — never action/browser/model/capture/delivery. */
+  /** Perception/representation only, never action/browser/model/capture/delivery. */
   capabilityClass: "representation";
   operations: readonly UiGraphOperation[];
   viewKinds: readonly UiGraphViewKind[];
@@ -68,7 +68,7 @@ export function majorOf(version: string): string {
   return version.split(".")[0] ?? version;
 }
 
-/** Capabilities UI Graph never offers — the boundary the descriptor must always assert. */
+/** Capabilities UI Graph never offers: the boundary the descriptor must always assert. */
 export const EXCLUDED_CAPABILITIES: readonly string[] = Object.freeze([
   "model_calls",
   "browser_actions",
@@ -170,7 +170,7 @@ export function serializeCapabilityDescriptor(d: UiGraphCapabilityDescriptor): s
   return canonicalize(d);
 }
 
-/** Content digest of the descriptor — what a consumer/registry pins. `sha256()` already prefixes "sha256:". */
+/** Content digest of the descriptor, the value a consumer/registry pins. `sha256()` already prefixes "sha256:". */
 export function computeCapabilityDescriptorDigest(d: UiGraphCapabilityDescriptor): string {
   return sha256(serializeCapabilityDescriptor(d));
 }

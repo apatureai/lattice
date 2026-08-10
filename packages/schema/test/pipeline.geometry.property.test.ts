@@ -33,7 +33,7 @@ const coord = (mag: number) =>
 const nonNegative = (mag: number) =>
   fc.double({ noNaN: true, noDefaultInfinity: true, min: 0, max: mag });
 
-/** Any double, including NaN and ±Infinity — for classification laws only. */
+/** Any double, including NaN and ±Infinity, for classification laws only. */
 const anyDouble = fc.double();
 
 const arbAffine: fc.Arbitrary<Affine> = fc.tuple(
@@ -69,7 +69,7 @@ const arbInvertible: fc.Arbitrary<Affine> = fc
   .tuple(coord(10), coord(10), coord(10), coord(10), coord(1e3), coord(1e3))
   .filter(([a, b, c, d]) => Math.abs(a * d - b * c) >= 0.1);
 
-/** Axis-aligned (no rotation/skew: b = c = 0) — the case where transformRect is exact. */
+/** Axis-aligned (no rotation/skew: b = c = 0), the case where transformRect is exact. */
 const arbAxisAligned: fc.Arbitrary<Affine> = fc
   .tuple(coord(1e2), coord(1e2), coord(1e2), coord(1e2))
   .map(([a, d, e, f]) => [a, 0, 0, d, e, f]);
@@ -173,7 +173,7 @@ describe("geometry property laws", () => {
           height: Math.max(...ys) - minY,
         };
         const out = transformRect([a, b, c, d, e, f], r);
-        // Same arithmetic in the same order — exact agreement is required.
+        // Same arithmetic in the same order, so exact agreement is required.
         expectSameNumbers(
           [out.x, out.y, out.width, out.height],
           [expected.x, expected.y, expected.width, expected.height],
@@ -278,7 +278,7 @@ describe("geometry property laws", () => {
         const result = checkRect(r);
         if (fields.some((v) => !Number.isFinite(v)) || r.width < 0 || r.height < 0) {
           // Negative extents are deliberately folded into "non_finite" (they are
-          // rejected before overflow is ever considered) — pinned behavior.
+          // rejected before overflow is ever considered). Pinned behavior.
           expect(result).toStrictEqual({ ok: false, reason: "non_finite" });
         } else if (fields.some((v) => Math.abs(v) > MAX_COORD)) {
           expect(result).toStrictEqual({ ok: false, reason: "overflow" });

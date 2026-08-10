@@ -1,6 +1,6 @@
 /**
  * In-memory fixtures for the validate + normalize pipeline tests. No real
- * capture, model, browser, or network — plain object literals only.
+ * capture, model, browser, or network: plain object literals only.
  */
 
 import type { CaptureBundleReadProfile } from "@apature/ui-graph";

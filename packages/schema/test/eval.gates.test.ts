@@ -1,7 +1,7 @@
 /**
  * Promotion-gate evaluator tests (issue #24; PRD §7, TRD §15.3).
  *
- * Fixtures-only. The evidence objects are synthetic literals — the point under
+ * Fixtures-only. The evidence objects are synthetic literals, because the point under
  * test is the DECISION PROCEDURE: pre-registered thresholds, fail-closed on
  * missing evidence, CI-lower-bound rule for reductions, diagnostic-only
  * inadmissibility, and the per-cohort no-hidden-regression rule.

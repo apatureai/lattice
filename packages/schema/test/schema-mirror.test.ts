@@ -14,7 +14,7 @@ import {
 // package vendors a byte-for-byte copy under `packages/schema/schemas/` so the
 // published validator ships with them (validate.ts), and the tests exercise a
 // copy of the example fixtures under `test/examples/`. CONTRIBUTING.md and the
-// schema README assert these "cannot drift silently" — these tests turn that
+// schema README assert these "cannot drift silently"; these tests turn that
 // prose invariant into an enforced gate.
 
 const readText = (url: URL): string => readFileSync(fileURLToPath(url), "utf8");

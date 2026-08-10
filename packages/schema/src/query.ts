@@ -1,5 +1,5 @@
 /**
- * `queryUiGraph` — the spec-driven view dispatcher (TRD §1, §10; PRD §6.4).
+ * `queryUiGraph`: the spec-driven view dispatcher (TRD §1, §10; PRD §6.4).
  *
  * A sealed `UIGraphSnapshot` is task-neutral and complete. A `UIGraphViewSpec`
  * asks it one bounded question. This module is the seam between the two: it
@@ -15,7 +15,7 @@
  *  1. **Refs are verified, never guessed.** A ref that is malformed or is not a
  *     member of this exact snapshot is a typed `stale_or_foreign_ref`, resolved
  *     through `resolveElementRefInSnapshot` (full identity tuple, exact
- *     membership) — never a prefix match, never a nearest neighbour.
+ *     membership), never a prefix match, never a nearest neighbour.
  *  2. **`includeSensitive: false` is enforced here, not assumed upstream.**
  *     Nodes labelled pii/secret/credential/redacted lose name and text in the
  *     projection and are flagged `withheld:sensitive`; the untrusted-content
@@ -25,7 +25,7 @@
  *     deterministically shrinking node budget and reporting the reason.
  *  4. **Identity is derived, not invented.** `specHash` is the canonical hash of
  *     the normalized spec (renderer + tokenizer profiles included) and `viewId`
- *     derives from the snapshot content hash and that spec hash — exactly the
+ *     derives from the snapshot content hash and that spec hash, exactly the
  *     rule `schemas/README.md` states.
  *  5. **Pixels are recommended, never fetched.** Evidence requests are planned
  *     only when the caller supplies the screenshot artifact ref (a snapshot does
@@ -191,7 +191,7 @@ function assertRefsBelong(snapshot: UIGraphSnapshot, refs: readonly string[]): v
 /**
  * Visibility as the sealed snapshot records it. `visibleRect` is the viewport
  * intersection the builder computed, so its absence means the element is not on
- * screen — derived, never guessed.
+ * screen. Derived, never guessed.
  */
 function visibilityOf(node: UIGraphNode): string {
   if (node.geometry.viewportRect === undefined) return "hidden";
@@ -205,8 +205,8 @@ function fact(value: string | undefined, conflict: boolean, confidence: number) 
 
 /**
  * Project a sealed node onto the renderer's structural node shape, keyed by its
- * public `elementRef`. Withheld sensitivity drops name/text here — before any
- * renderer sees them — and records why on the node's flags.
+ * public `elementRef`. Withheld sensitivity drops name/text here, before any
+ * renderer sees them, and records why on the node's flags.
  */
 export function viewSourceNodeOf(node: UIGraphNode): ViewSourceNode {
   const withheld = node.sensitivity.some((label) => WITHHELD.has(label));

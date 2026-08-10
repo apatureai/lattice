@@ -6,7 +6,7 @@
  * base node is scored against the target nodes over deterministic features; a
  * node is `matched` ONLY when its best candidate clears a high threshold AND
  * leads the runner-up by a margin. Two close candidates are `ambiguous`, a weak
- * best is `abstained`, and a base with no candidate is `removed` — never a guess.
+ * best is `abstained`, and a base with no candidate is `removed`. Never a guess.
  *
  * Embedding similarity (TRD §6.4) is an optional advisory feature; the core is
  * fully deterministic so the same pair of snapshots always yields the same match.
@@ -78,7 +78,7 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return inter / (a.size + b.size - inter);
 }
 
-/** Jaccard, but absent-on-BOTH sides is neutral (0.5), not a penalty — no signal isn't a mismatch. */
+/** Jaccard, but absent-on-BOTH sides is neutral (0.5), not a penalty: no signal isn't a mismatch. */
 function neutralJaccard(a: Set<string>, b: Set<string>): number {
   if (a.size === 0 && b.size === 0) return 0.5;
   if (a.size === 0 || b.size === 0) return 0;
@@ -192,10 +192,10 @@ export function matchNodes(
         score: best.scored.score, features: best.scored.features,
       });
     } else if (best.scored.score >= thresholds.high) {
-      // Clears confidence but two candidates are too close — abstain from pointing.
+      // Clears confidence but two candidates are too close, so abstain from pointing.
       byBase.set(a.nodeId, { baseNodeId: a.nodeId, status: "ambiguous", score: best.scored.score, features: best.scored.features });
     } else {
-      // Some signal, but below the confidence bar — an explicit non-answer.
+      // Some signal, but below the confidence bar, so an explicit non-answer.
       byBase.set(a.nodeId, { baseNodeId: a.nodeId, status: "abstained", score: best.scored.score, features: best.scored.features });
     }
   }
@@ -204,7 +204,7 @@ export function matchNodes(
   return base.map((a) => byBase.get(a.nodeId)!);
 }
 
-/** Target node ids that no matched base claimed — the added nodes. */
+/** Target node ids that no matched base claimed, i.e. the added nodes. */
 export function addedTargetIds(target: readonly UIGraphNode[], matches: readonly UIGraphNodeMatch[]): string[] {
   const claimed = new Set(matches.filter((m) => m.status === "matched").map((m) => m.targetNodeId));
   return target.map((t) => t.nodeId).filter((id) => !claimed.has(id)).sort();

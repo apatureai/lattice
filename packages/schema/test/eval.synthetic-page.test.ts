@@ -5,11 +5,11 @@
  * and carrying the awkward cases on purpose (a DOM/AX role disagreement, an
  * upstream-redacted field, content below the fold).
  *
- * Second — and this is the one that matters — turn "token-efficient" from a
+ * Second, and this is the one that matters, turn "token-efficient" from a
  * slogan into an enforced invariant. Every rendered view must be strictly
  * smaller than the raw capture it summarizes, on the realistic synthetic page
  * AND on all four golden fixtures. Before views@2 that was false: a summary view
- * was 25–170% LARGER than its own input, because the view text serialized the
+ * was 25-170% LARGER than its own input, because the view text serialized the
  * whole provenance chain. If a future change reintroduces that, this file fails.
  */
 
@@ -59,7 +59,7 @@ const spec = (kind: UIGraphViewSpec["kind"], extra: Partial<UIGraphViewSpec> = {
   }) as UIGraphViewSpec;
 
 /**
- * The baseline: canonical bytes of the whole capture bundle — the structured
+ * The baseline: canonical bytes of the whole capture bundle, the structured
  * context a prompt would otherwise have to carry wholesale. One number, taken
  * the same way everywhere (tests, `examples/quickstart.mjs`, the README), so the
  * published ratios are reproducible by anyone.
@@ -104,7 +104,7 @@ describe("syntheticCapture fixture generator", () => {
     );
     expect(belowFold.length).toBeGreaterThan(0);
     for (const node of belowFold) {
-      // No honest [0,1] position exists for it, so the field is absent — never clamped.
+      // No honest [0,1] position exists for it, so the field is absent, never clamped.
       expect(node.geometry.normalizedViewportRect).toBeUndefined();
       // Exact geometry is still there.
       expect(node.geometry.viewportRect).toBeDefined();

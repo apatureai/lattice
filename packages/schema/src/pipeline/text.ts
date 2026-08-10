@@ -2,7 +2,7 @@
  * Deterministic text normalization for matching (TRD §8.2).
  *
  * Matching needs a stable key (NFC, collapsed whitespace, case-folded) but the
- * *display* text — which may be redacted — must be preserved separately so the
+ * *display* text, which may be redacted, must be preserved separately so the
  * normalized key is never shown and the redaction boundary is never crossed.
  */
 

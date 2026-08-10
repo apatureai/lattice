@@ -2,18 +2,18 @@
  * Deterministic synthetic capture evidence (no browser, no network).
  *
  * Everything else in this package consumes a `CaptureBundleReadProfile` that a
- * real browser capture would produce. This module manufactures one — a
+ * real browser capture would produce. This module manufactures one: a
  * page-shaped, realistically sized capture with landmarks, a repeated table, a
- * form, deliberate DOM/AX disagreement and a redacted field — so the library can
+ * form, deliberate DOM/AX disagreement and a redacted field, so the library can
  * be built, queried and MEASURED end to end with nothing installed beyond Node.
  *
  * It is a fixture generator, not a renderer: no pixels exist, only the
- * structured observations a capture reports. Fully deterministic — the same
+ * structured observations a capture reports. Fully deterministic, so the same
  * options always produce a byte-identical capture, so a snapshot built from it
  * has a stable `contentHash` and any measurement taken over it is reproducible.
  *
  * Scale matters for honesty. The four golden fixtures in `test/fixtures/capture`
- * are 1–4 nodes, a size at which fixed per-view overhead swamps every ratio.
+ * are 1 to 4 nodes, a size at which fixed per-view overhead swamps every ratio.
  * `syntheticCapture()` defaults to ~160 DOM nodes, which is where a page summary
  * has something to summarize.
  */

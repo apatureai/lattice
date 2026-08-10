@@ -1,16 +1,16 @@
 /**
- * Pipeline stage 4 — hierarchy + region builder (TRD §8.5, §5.6; PRD §6.1).
+ * Pipeline stage 4: hierarchy + region builder (TRD §8.5, §5.6; PRD §6.1).
  *
  * Turns the flat fused candidates (#6) into the scene's structural skeleton and
  * its semantic regions:
- *  - **Hierarchy** by layout containment — each node's parent is the smallest
+ *  - **Hierarchy** by layout containment. Each node's parent is the smallest
  *    other node whose document rect encloses it; nodes without geometry attach
  *    to the smallest containing node (else a frame root).
- *  - **Regions** — landmark/form/list/table roles promote to `UIRegion`s, and
+ *  - **Regions**: landmark/form/list/table roles promote to `UIRegion`s, and
  *    repeated sibling patterns (a deterministic signature over role/kind/size)
  *    promote to `repeated` regions with a stable `repeatedPatternHash` and item
  *    counts.
- *  - **Node cap** — beyond `maxNodes`, repeated/low-salience regions are
+ *  - **Node cap**: beyond `maxNodes`, repeated/low-salience regions are
  *    summarized and the truncation is reported; required hierarchy is never
  *    dropped, and the canonical set retains all nodes up to the cap.
  *

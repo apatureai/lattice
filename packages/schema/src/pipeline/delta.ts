@@ -1,16 +1,16 @@
 /**
  * Typed ID-keyed delta transport (#14; TRD §12, ADR-008, ARCHITECTURE §10;
  * PRD §18.29). A delta is ONLY a hash-validated transport from one full
- * snapshot to another — never an event store, never memory, never canonical.
+ * snapshot to another: never an event store, never memory, never canonical.
  * Full snapshots remain the canonical artifacts; deltas are not chained
  * indefinitely (each binds exactly one verified base to one verified target).
  *
  * Encode: `encodeUiGraphDelta(base, target)` emits ordered operations keyed by
  * stable IDs, with the full base/target `(snapshotId, contentHash)` tuples.
- * Node removals carry EXPLICIT incident-edge removals — an applier never
+ * Node removals carry EXPLICIT incident-edge removals, so an applier never
  * cascades implicitly.
  *
- * Apply: `applyUiGraphDelta(base, delta)` fails closed at every step — base
+ * Apply: `applyUiGraphDelta(base, delta)` fails closed at every step: base
  * identity recomputed (never trusted), schema majors checked, ops applied in
  * order over ID-keyed maps, dangling references rejected, and the
  * reconstructed target re-sealed and verified equal to the delta's declared
@@ -41,7 +41,7 @@ function byId<T>(items: readonly T[], id: (item: T) => string): Map<string, T> {
   return map;
 }
 
-/** Verify a snapshot's identity from its content — supplied fields are never trusted. */
+/** Verify a snapshot's identity from its content; supplied fields are never trusted. */
 function assertVerifiedIdentity(snapshot: UIGraphSnapshot, role: "base" | "target"): void {
   const contentHash = computeContentHash(snapshot);
   if (snapshot.contentHash !== contentHash || snapshot.snapshotId !== deriveSnapshotId(snapshot, contentHash)) {
@@ -136,7 +136,7 @@ export function encodeUiGraphDelta(base: UIGraphSnapshot, target: UIGraphSnapsho
 
 /**
  * Apply a delta to a verified base and return the reconstructed, re-sealed
- * target — or throw a typed error with NO partial result (TRD §12 rules).
+ * target, or throw a typed error with NO partial result (TRD §12 rules).
  */
 export function applyUiGraphDeltaStrict(base: UIGraphSnapshot, delta: UIGraphDelta): UIGraphSnapshot {
   if (delta.schemaVersion !== SCHEMA_VERSION || delta.baseSnapshotSchemaVersion !== SCHEMA_VERSION || delta.targetSnapshotSchemaVersion !== SCHEMA_VERSION) {
@@ -218,7 +218,7 @@ export function applyUiGraphDeltaStrict(base: UIGraphSnapshot, delta: UIGraphDel
   }
 
   // Reconstruct: strip seal-owned refs, re-seal, then verify the declared target
-  // tuple. A mismatch yields NO partial target — the delta is rejected whole.
+  // tuple. A mismatch yields NO partial target; the delta is rejected whole.
   let sealed: UIGraphSnapshot;
   try {
     sealed = sealSnapshot({

@@ -7,7 +7,7 @@
  * frozen, content-addressed manifest DATA for the six internal eval sets, plus
  * the freeze/verify helpers the benchmark (#20) and promotion gate (#24) build
  * on. It never runs the company-wide eval and never calls a model, browser, or
- * network — it is pure metadata over MOCK captures.
+ * network; it is pure metadata over MOCK captures.
  *
  * Freezing model: each fixture entry is content-addressed by the RFC 8785 hash
  * of its own semantic body (its `contentHash` field is excluded from that hash,
@@ -163,7 +163,7 @@ export interface UnsealedFixtureSet {
 
 /**
  * Seal a manifest: assign each fixture its `contentHash`, then the manifest its
- * `manifestContentHash`. Deterministic for byte-identical semantic input — no
+ * `manifestContentHash`. Deterministic for byte-identical semantic input: no
  * wall-clock, randomness, or locale-dependent formatting is read (TRD §9).
  */
 export function freezeManifest(sets: readonly UnsealedFixtureSet[]): RepresentationManifest {

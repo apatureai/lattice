@@ -8,12 +8,12 @@
  *  1. Fail-closed sensitivity: upstream redaction (Judgment Engine) must have
  *     already replaced pii/secret/credential text. If a node labeled sensitive
  *     still carries page text when a view renders, the redaction contract was
- *     violated — the whole view fails closed rather than serializing the leak.
+ *     violated, and the whole view fails closed rather than serializing the leak.
  *  2. Delimited serialization: the rendered payload is wrapped in
  *     `UNTRUSTED_UI_CONTENT` boundary markers, and any occurrence of the
  *     markers *inside* page-derived text is neutralized first, so page content
  *     can neither close the boundary early nor open a fake trusted section.
- *     ASCII control characters (except \n\t) are stripped from page text —
+ *     ASCII control characters (except \n\t) are stripped from page text, so
  *     instruction-smuggling via terminal/control syntax is not representable.
  *
  * Metrics/telemetry never receive raw text: `sensitiveTextDigest` reports a
@@ -66,7 +66,7 @@ function withText<F extends UntrustedTextField>(field: F, next: string): F {
   return { ...(field as object), value: next } as F;
 }
 
-/** Count + digest only — raw sensitive text never reaches logs or metrics. */
+/** Count + digest only; raw sensitive text never reaches logs or metrics. */
 export function sensitiveTextDigest(values: readonly string[]): { count: number; digest: string } {
   const hash = createHash("sha256");
   for (const value of values) hash.update(value, "utf8");

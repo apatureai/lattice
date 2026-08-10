@@ -22,7 +22,7 @@
  *    pipeline stages (validate → normalize → fuse → hierarchy → relations)
  *    rather than from the sealed snapshot the assembler in `builder.ts` now
  *    produces. Until that is rewired, its measurements stay marked
- *    `diagnosticOnly` and the promotion gate refuses them for PRD §7.1 — so
+ *    `diagnosticOnly` and the promotion gate refuses them for PRD §7.1, so
  *    the token-reduction gate cannot pass as this repo stands.
  *  - B5 (task-focused view) renders through `renderFocusView` over the top-3
  *    heuristically-salient nodes; when a view comes back empty it reports
@@ -144,7 +144,7 @@ export interface RepresentationMeasurement {
   /** True when the serialization approximates a not-yet-shipped stage (B4). */
   readonly diagnosticOnly?: boolean;
   readonly textBytes: number;
-  /** deflateRaw(level 9) of the text serialization — a header-free, deterministic compressed size. */
+  /** deflateRaw(level 9) of the text serialization: a header-free, deterministic compressed size. */
   readonly deflateBytes: number;
   readonly textTokens: number;
   readonly imageCount: number;
@@ -314,7 +314,7 @@ function serializeB5(capture: CaptureBundleReadProfile): Serialized {
   const hier = buildHierarchy(fusion.nodes);
   const rel = buildRelations(fusion.nodes, hier.hierarchy);
   // Benchmark manifests carry no task refs today, so B5 focuses on the top-3
-  // heuristically-salient nodes — a deterministic, documented proxy for
+  // heuristically-salient nodes, a deterministic, documented proxy for
   // "task-relevant" until manifests grow task refs (#41).
   const refs = rankBySaliency(heuristicSaliency(fusion.nodes)).slice(0, 3);
   const view = renderFocusView(
@@ -524,7 +524,7 @@ function compareBaselines(
   );
 
   // Per-cohort reductions (TRD §15.1/§15.3: publish per-cohort so aggregates
-  // cannot mask a single-cohort regression). Point estimates only — cohorts are
+  // cannot mask a single-cohort regression). Point estimates only, because cohorts are
   // small; the gate treats any negative cohort as a regression signal.
   const cohortIds = [...new Set(pairs.flatMap((p) => p.cohorts))].sort();
   const perCohort: CohortReduction[] = [];

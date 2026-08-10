@@ -45,7 +45,7 @@ function node(elementRef: string, style: UIGraphNode["style"]): UIGraphNode {
 
 const prod: UIGraphUseMode = "production";
 
-/** Project DNA, then render violations — the real end-to-end flow. */
+/** Project DNA, then render violations: the real end-to-end flow. */
 function violationsFor(nodes: UIGraphNode[], input: Parameters<typeof projectDna>[1]) {
   const res = projectDna(nodes, input);
   if (!res.ok) throw new Error("projection failed");
@@ -56,7 +56,7 @@ describe("renderViolationsView (#12, PRD §6.4)", () => {
   it("separates authoritative drift from advisory, omits conformant, deterministically", () => {
     const nodes = [
       node("el_bad", { color: "#123456", spacing: { gap: 13 } }), // both drift
-      node("el_ok", { color: "#0a0a0a" }), // conformant (exact) — not a violation
+      node("el_ok", { color: "#0a0a0a" }), // conformant (exact), not a violation
     ];
     const a = violationsFor(nodes, { dna: profile(), useMode: prod, route: "/p" });
     const b = violationsFor(nodes, { dna: profile(), useMode: prod, route: "/p" });

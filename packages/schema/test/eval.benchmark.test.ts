@@ -2,7 +2,7 @@
  * Offline representation benchmark tests (issue #20; TRD §15.1, PRD §9 R1).
  *
  * Fixtures-only: the runner is exercised over the frozen manifest (#19) and the
- * golden capture read-profiles (issue #3). No model, browser, or network — the
+ * golden capture read-profiles (issue #3). No model, browser, or network. The
  * token counters are the labeled offline estimators, and the tests assert the
  * runner's honesty properties (determinism, fail-closed B5, diagnostic-only
  * B4) rather than any model quality claim.

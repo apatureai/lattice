@@ -1,6 +1,6 @@
 /**
- * Pipeline stage 3 — candidate generation + evidence fusion (TRD §8.3–§8.4,
- * §5.3–§5.4; ARCHITECTURE §7; PRD §6.1).
+ * Pipeline stage 3: candidate generation + evidence fusion (TRD §8.3-§8.4,
+ * §5.3-§5.4; ARCHITECTURE §7; PRD §6.1).
  *
  * Turns normalized multi-source observations into fused node facts WITHOUT
  * letting any source silently overwrite another. Two acceptance invariants drive
@@ -12,7 +12,7 @@
  *    conservative aggregate. Nothing is silently dropped.
  *  - **No global source ranking.** Competence is decided PER FACT (AX is more
  *    competent for role/name, text runs/OCR for text), never globally. Raw
- *    source ids appear only inside evidence claims — never as a node's external
+ *    source ids appear only inside evidence claims, never as a node's external
  *    id (TRD §5.3); fused nodes carry a synthetic, snapshot-local candidate id.
  *
  * Deterministic: byte-identical input yields byte-identical output. No model,
@@ -79,7 +79,7 @@ const BASE_CONFIDENCE: Record<string, number> = {
 
 type Fact = "role" | "name" | "text";
 
-/** Per-fact competence — NOT a global ranking. Higher wins the fact's value. */
+/** Per-fact competence, NOT a global ranking. Higher wins the fact's value. */
 function competence(sourceType: string, fact: Fact): number {
   if (fact === "role") return sourceType === "accessibility" ? 3 : sourceType === "dom" ? 2 : 1;
   if (fact === "name") return sourceType === "accessibility" ? 3 : sourceType === "text_run" ? 2 : 1;

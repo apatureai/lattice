@@ -1,11 +1,11 @@
 /**
- * `queryUiGraph` — the spec-driven view dispatcher (TRD §1, §10; PRD §6.4).
+ * `queryUiGraph`: the spec-driven view dispatcher (TRD §1, §10; PRD §6.4).
  *
  * Fixtures only: a synthetic capture in, a sealed snapshot, then one bounded
  * view per spec. No model, browser or network. These tests assert the
- * dispatcher's contract — schema-shaped output, derived identity, verified refs,
- * enforced budgets, withheld sensitive content, determinism — not any model
- * quality claim.
+ * dispatcher's contract: schema-shaped output, derived identity, verified refs,
+ * enforced budgets, withheld sensitive content and determinism. They assert no
+ * model quality claim.
  */
 
 import { describe, expect, it } from "vitest";

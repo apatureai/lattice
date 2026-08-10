@@ -51,7 +51,7 @@ describe("matchNodes — abstaining cross-snapshot lineage (#13)", () => {
     ];
     const [m] = matchNodes(base, target);
     // Either it clears threshold but the two are too close (ambiguous), or it is
-    // below threshold (abstained) — in NO case does it point to a specific target.
+    // below threshold (abstained). In NO case does it point to a specific target.
     expect(["ambiguous", "abstained"]).toContain(m!.status);
     expect(m!.targetNodeId).toBeUndefined();
   });

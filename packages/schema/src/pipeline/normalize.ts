@@ -1,5 +1,5 @@
 /**
- * Pipeline stage 2 — normalize (TRD §7, §8.2, ARCHITECTURE §3).
+ * Pipeline stage 2: normalize (TRD §7, §8.2, ARCHITECTURE §3).
  *
  * Takes a validated capture and produces normalized facts in explicit
  * coordinate spaces:

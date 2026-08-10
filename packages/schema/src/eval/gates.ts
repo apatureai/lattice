@@ -4,7 +4,7 @@
  * UI Graph stays a feature-flagged experiment "until it proves
  * precision, grounding, fix-rate, cost, or latency value." This module turns
  * that sentence into a machine-checkable decision procedure with the PRD §7
- * numbers PRE-REGISTERED as constants — the pass/fail rule is frozen before any
+ * numbers PRE-REGISTERED as constants. The pass/fail rule is frozen before any
  * result exists, so nobody (human or agent) can move the goalposts after seeing
  * the data.
  *
@@ -16,7 +16,7 @@
  *    CI clears the threshold (TRD §15.1), so a promotion cannot ride on a
  *    lucky resample.
  *  - Diagnostic-only benchmark rows (the pre-assembler B4 composite) are NOT
- *    admissible for PRD §7.1 — the gate demands measurements of the real
+ *    admissible for PRD §7.1; the gate demands measurements of the real
  *    serialized artifact.
  *  - Per-cohort disclosure is itself gated (TRD §15.3): aggregate wins with a
  *    hidden cohort regression do not promote.
@@ -147,7 +147,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
   const results: GateResult[] = [];
   let groundingMcNemar: McNemarResult | undefined;
 
-  // 7.1a — token reduction (CI lower bound; diagnostic rows inadmissible).
+  // 7.1a: token reduction (CI lower bound; diagnostic rows inadmissible).
   {
     const gate = "token_reduction";
     const required = `95% CI lower bound ≥ ${fmtPct(PROMOTION_GATES.tokenReductionMin)} text-token reduction vs b0`;
@@ -187,7 +187,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     }
   }
 
-  // 7.1b — focus view p95 text tokens.
+  // 7.1b: focus view p95 text tokens.
   pushThresholdGate(results, {
     gate: "focus_view_p95_text_tokens",
     prdRef: "PRD §7.1",
@@ -197,7 +197,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     render: (v) => `${v} tokens`,
   });
 
-  // 7.1c — repeated-review input cost reduction.
+  // 7.1c: repeated-review input cost reduction.
   pushThresholdGate(results, {
     gate: "repeated_review_cost_reduction",
     prdRef: "PRD §7.1",
@@ -207,7 +207,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     render: fmtPct,
   });
 
-  // 7.2a — valid-reference rate.
+  // 7.2a: valid-reference rate.
   pushThresholdGate(results, {
     gate: "valid_ref_rate",
     prdRef: "PRD §7.2",
@@ -217,7 +217,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     render: fmtPct,
   });
 
-  // 7.2b — grounding Recall@1 within 1pp of best baseline.
+  // 7.2b: grounding Recall@1 within 1pp of best baseline.
   {
     const gate = "grounding_recall_at_1";
     const required = `view Recall@1 ≥ best baseline − ${PROMOTION_GATES.groundingRecallMaxLossPp}pp`;
@@ -243,7 +243,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     }
   }
 
-  // 7.2c — cross-snapshot match precision.
+  // 7.2c: cross-snapshot match precision.
   pushThresholdGate(results, {
     gate: "cross_snapshot_match_precision",
     prdRef: "PRD §7.2",
@@ -253,7 +253,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     render: fmtPct,
   });
 
-  // 7.2d — coordinate transform error.
+  // 7.2d: coordinate transform error.
   {
     const gate = "coord_transform_error";
     const err = evidence.coordTransformErrorCssPx;
@@ -280,7 +280,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     }
   }
 
-  // 7.2e — delta reconstruction.
+  // 7.2e: delta reconstruction.
   pushThresholdGate(results, {
     gate: "delta_hash_match_rate",
     prdRef: "PRD §7.2",
@@ -290,7 +290,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     render: fmtPct,
   });
 
-  // 7.3 — judgment retention.
+  // 7.3: judgment retention.
   {
     const gate = "finding_quality_retention";
     const required = `recall loss ≤ ${PROMOTION_GATES.findingRecallMaxLossPp}pp, precision loss ≤ ${PROMOTION_GATES.findingPrecisionMaxLossPp}pp, no blocker-recall regression, no invalid-ref increase`;
@@ -313,7 +313,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     }
   }
 
-  // 7.5 — security.
+  // 7.5: security.
   {
     const gate = "security";
     const required =
@@ -337,7 +337,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
     }
   }
 
-  // 15.3 — per-cohort disclosure with no hidden regression.
+  // 15.3: per-cohort disclosure with no hidden regression.
   {
     const gate = "per_cohort_no_hidden_regression";
     const required = "per-cohort results published; no cohort text-token or finding-recall regression";

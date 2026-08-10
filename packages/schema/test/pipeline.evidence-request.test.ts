@@ -1,5 +1,5 @@
 /**
- * #15: crop/overlay evidence requests — honest geometry (a target that cannot
+ * #15: crop/overlay evidence requests with honest geometry (a target that cannot
  * map to the viewport is rejected, never approximated), one padded local crop
  * preferred over full screenshot, deterministic ranking with saliency
  * provenance, overlay preserving the unmarked crop for audit, and a stated

@@ -3,7 +3,7 @@
  *
  * UI Graph does not redefine the producers' full schemas. It declares the
  * MINIMUM read profiles it consumes and records the source schema versions.
- * These types mirror only what UI Graph reads (TRD §4.1–§4.4); they are NOT a
+ * These types mirror only what UI Graph reads (TRD §4.1-§4.4); they are NOT a
  * fabricated copy of the upstream `@uidna/schema` or engine capture schema. The
  * adapter validates this explicit read profile, while the UI Graph snapshot
  * schema itself stays closed (TRD §4.1 final paragraph).
@@ -32,7 +32,7 @@ export type CaptureDomLayoutNode = {
   tag?: string;
   /**
    * Durable DOM attributes, if the capture collected any. UI Graph reads only
-   * the four that survive a re-render — `data-testid`, `id`, `href`, `name` —
+   * the four that survive a re-render (`data-testid`, `id`, `href`, `name`)
    * and turns them into cross-capture locator hints. Without them the lineage
    * matcher has no explicit-id feature and can only abstain (TRD §6.4).
    */
