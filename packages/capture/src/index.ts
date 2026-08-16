@@ -20,7 +20,7 @@
  *    payloads to the read profile: no browser, no clock, no randomness.
  */
 
-export { captureUrl, captureFromPage } from "./browser.js";
+export { captureUrl, captureFromPage, screenshotArtifactRef } from "./browser.js";
 export type { CaptureUrlOptions, CapturablePage, CaptureCdpProvider } from "./browser.js";
 
 export { captureFromCdpSession, captureIdFor, routeOf, CAPTURE_VERSION } from "./capture.js";

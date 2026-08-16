@@ -188,6 +188,10 @@ function reportCapture(capture: CaptureBundleReadProfile, captureJson: string): 
   console.log(`   page health        stable=${capture.pageHealth.stable} partial=${capture.pageHealth.partial}${capture.pageHealth.reasons.length > 0 ? `  (${capture.pageHealth.reasons.join(", ")})` : ""}`);
   console.log(`   redaction          applied=${capture.redaction.applied}  ${capture.redaction.redactedSourceIds.length} source id(s)`);
   console.log(`   canonical JSON     ${bytes(captureJson)} bytes (${tokens(captureJson)} est. tokens)`);
+  const shot = capture.screenshotEvidence?.[0];
+  if (shot !== undefined) {
+    console.log(`   screenshot         ${shot.widthImagePx}x${shot.heightImagePx} image px, referenced as ${shot.artifactRef}`);
+  }
   console.log("");
 }
 
@@ -314,7 +318,10 @@ async function main(): Promise<number> {
     writeFileSync(join(outDir, `view-${name}.json`), `${JSON.stringify(view, null, 2)}\n`);
   }
 
-  console.log(`5. Wrote ${args.out}/capture.json, ${args.out}/snapshot.json and ${views.size} ${args.out}/view-*.json files.`);
+  const wroteScreenshot = args.screenshot ? `, ${args.out}/screenshot.png` : "";
+  console.log(
+    `5. Wrote ${args.out}/capture.json, ${args.out}/snapshot.json${wroteScreenshot} and ${views.size} ${args.out}/view-*.json files.`,
+  );
   console.log("");
   console.log(`OK, captured ${args.url} and built snapshot ${snapshot.snapshotId.slice(0, 20)}… with ${views.size} schema-valid views.`);
   return 0;

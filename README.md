@@ -178,6 +178,8 @@ Needs a browser once:  pnpm browser:install
                        (that is: pnpm exec playwright-core install chromium)
 ```
 
+`--screenshot` writes the PNG next to the other artifacts, as `<out>/screenshot.png`, and records a logical `artifact://capture/<captureId>/<frameId>/screenshot.png` ref on the bundle. That ref, not the local path, is what enables the `patchContext` view to plan crop requests. The run prints both, and still writes `snapshot.json` and every `view-*.json`.
+
 `--redact` is worth calling out. It resolves the selector through the protocol, replaces the matched subtree's text with a mask **in the capture bundle itself**, and lists every affected source id, so the sensitive text never enters the graph at all and lattice additionally flags those nodes and withholds them at render time. Form field values (`<input value>`, `<textarea>` contents) are never captured under any setting.
 
 ## Quickstart without a browser
@@ -283,6 +285,8 @@ const capture = await captureUrl("https://example.com/deployments", {
 
 `captureBundleFromCdp({ domSnapshot, axNodes, page, options })` is the whole adapter as a **pure function**: the two protocol payloads in, the read profile out, no browser, no clock, no randomness. That is what makes the adapter testable without a browser, and it is the seam to reuse if you drive CDP yourself (puppeteer, a raw WebSocket, a recorded session).
 
+`screenshotPath` says where the PNG is written; it is **not** what goes into the bundle. The bundle records a logical `artifact://capture/<captureId>/<frameId>/screenshot.png` ref, minted by the exported `screenshotArtifactRef(captureId, frameId)`. Two reasons, both load-bearing: an absolute local path is machine-specific, so it would break the byte-identical capture the row above promises, and the normative view schema admits only `^artifact://[A-Za-z0-9._:/-]+$` for the `sourceArtifactRef` an evidence request carries. Pass that ref to `queryUiGraph` as `screenshotArtifactRef` and resolve it to bytes in your own storage; `queryUiGraph` refuses any other shape rather than emitting a view that fails its own published schema.
+
 What the adapter does, and what it deliberately does not:
 
 | | |
@@ -295,7 +299,7 @@ What the adapter does, and what it deliberately does not:
 | Replaces per-session protocol ids with capture-local ordinals | So an unchanged page seals to the same `contentHash` |
 | Never captures form field values | `<input value>` and `<textarea>` content never enter the bundle |
 | Never captures `display:none` subtrees by default | `includeNonRendered` opts in |
-| Never sends bytes of a screenshot into the graph | Screenshots are referenced by path, as evidence |
+| Never sends bytes of a screenshot into the graph | Screenshots are referenced by a logical `artifact://` ref, as evidence |
 
 Known limits, none of them hidden: `--redact` selectors resolve in the main frame only; a child frame's `transformToParent` is the iframe's border box, which is off by any border or padding on the iframe element; the DOM-side role mapping is a documented subset of HTML-AAM that abstains where a role is contextual (`<header>`, an unnamed `<section>`); and a cross-process iframe whose accessibility tree the protocol refuses is reported as a page-health reason rather than retried.
 

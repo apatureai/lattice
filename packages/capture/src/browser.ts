@@ -81,6 +81,36 @@ export interface CaptureUrlOptions extends CdpCaptureOptions {
 
 const DEFAULT_VIEWPORT = { width: 1440, height: 900, deviceScaleFactor: 1 } as const;
 
+/** The charset the view schema admits after the `artifact://` scheme. */
+const ARTIFACT_REF_SEGMENT = /[^A-Za-z0-9._:-]+/g;
+
+/**
+ * Mint the logical `artifact://` ref recorded for a screenshot.
+ *
+ * It is deliberately NOT the local file path. Two reasons, both load-bearing:
+ *
+ *  - The view schema (`schemas/ui-graph-view.schema.json`) admits only
+ *    `^artifact://[A-Za-z0-9._:/-]+$` for `evidenceRequests[].sourceArtifactRef`,
+ *    and that ref is copied straight out of the capture bundle. A `file://…`
+ *    path made every `--screenshot` run emit a view that failed its own
+ *    published schema.
+ *  - An absolute path is machine-specific, so putting it in the bundle would
+ *    break the property the capture adapter exists to provide: the same page
+ *    captured twice seals to the same bytes.
+ *
+ * The ref is derived from the capture id and frame id, both of which are already
+ * capture-local and charset-safe, so it is stable across machines and output
+ * directories. The pixels stay where the caller asked for them; only the pointer
+ * is logical.
+ */
+export function screenshotArtifactRef(captureId: string, frameId: string): string {
+  const safe = (part: string): string => {
+    const cleaned = part.replace(ARTIFACT_REF_SEGMENT, "-").replace(/^-+|-+$/g, "");
+    return cleaned === "" ? "unknown" : cleaned;
+  };
+  return `artifact://capture/${safe(captureId)}/${safe(frameId)}/screenshot.png`;
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((r) => {
     setTimeout(r, ms);
@@ -169,7 +199,7 @@ export async function captureFromPage(
   await page.screenshot({ path });
   const frameId = bundle.documents[0]?.frameId ?? "frame_0";
   const evidence: ScreenshotEvidenceRef = {
-    artifactRef: `file://${path}`,
+    artifactRef: screenshotArtifactRef(bundle.captureId, frameId),
     frameId,
     widthImagePx: Math.round(metrics.vw * metrics.dpr),
     heightImagePx: Math.round(metrics.vh * metrics.dpr),

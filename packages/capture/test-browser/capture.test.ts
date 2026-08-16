@@ -16,7 +16,8 @@
  * separate browser sessions over the same page seal to the same snapshot.
  */
 
-import { readdirSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdtempSync } from "node:fs";
@@ -189,20 +190,62 @@ describe("captureUrl against a real page", () => {
   );
 
   it(
-    "writes a screenshot and references it as evidence, by path, never by bytes",
+    "writes a screenshot and references it as evidence, by ref, never by bytes",
     async () => {
       const dir = mkdtempSync(join(tmpdir(), "lattice-capture-"));
       const capture = await captureUrl(PAGE_URL, { screenshotPath: join(dir, "shot.png") });
 
       const evidence = capture.screenshotEvidence?.[0];
       expect(evidence).toBeDefined();
-      expect(evidence!.artifactRef.startsWith("file://")).toBe(true);
+      // Not `file://<abs path>`: that ref is machine-specific and the normative
+      // view schema refuses it, so it broke every `--screenshot` run.
+      expect(evidence!.artifactRef).toMatch(/^artifact:\/\/[A-Za-z0-9._:/-]+$/);
+      expect(evidence!.artifactRef).not.toContain(dir);
       expect(evidence!.widthImagePx).toBe(1440);
       expect(readdirSync(dir)).toContain("shot.png");
       expect(statSync(join(dir, "shot.png")).size).toBeGreaterThan(1000);
 
       // Pixels stay outside the graph: the bundle carries a pointer, not bytes.
       expect(JSON.stringify(capture)).not.toContain("data:image");
+    },
+    TIMEOUT,
+  );
+
+  it(
+    "delivers every artifact `pnpm capture --screenshot` promises, and exits 0",
+    async () => {
+      const dir = mkdtempSync(join(tmpdir(), "lattice-cli-"));
+      const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+      if (!existsSync(cli)) throw new Error(`run \`pnpm build\` first: ${cli} does not exist`);
+
+      const run = spawnSync(process.execPath, [cli, PAGE_URL, "--out", dir, "--screenshot"], {
+        encoding: "utf8",
+        timeout: TIMEOUT,
+      });
+
+      // The flag used to exit 1 here, after writing capture.json and the png and
+      // nothing else, on `sourceArtifactRef must match "^artifact://…"`.
+      expect(`${run.stdout}${run.stderr}`).not.toContain("lattice-capture failed");
+      expect(run.status).toBe(0);
+
+      const written = readdirSync(dir);
+      expect(written).toContain("capture.json");
+      expect(written).toContain("screenshot.png");
+      expect(written).toContain("snapshot.json");
+      expect(written.filter((f) => f.startsWith("view-") && f.endsWith(".json")).length)
+        .toBeGreaterThanOrEqual(4);
+      // patchContext is the view that carries the evidence request, so it is the
+      // one the broken ref took down.
+      expect(written).toContain("view-patchContext.json");
+
+      const view = JSON.parse(readFileSync(join(dir, "view-patchContext.json"), "utf8")) as {
+        evidenceRequests: Array<{ sourceArtifactRef: string }>;
+      };
+      expect(validateView(view as never).valid).toBe(true);
+      expect(view.evidenceRequests.length).toBeGreaterThan(0);
+      expect(view.evidenceRequests[0]!.sourceArtifactRef).toBe(
+        JSON.parse(readFileSync(join(dir, "capture.json"), "utf8")).screenshotEvidence[0].artifactRef,
+      );
     },
     TIMEOUT,
   );

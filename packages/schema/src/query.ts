@@ -76,6 +76,16 @@ const VIEW_KINDS: ReadonlySet<UIGraphViewSpec["kind"]> = new Set([
 /** Kinds that require at least one resolvable ref (mirrors the view JSON Schema). */
 const REF_REQUIRED: ReadonlySet<UIGraphViewSpec["kind"]> = new Set(["focus", "patchContext"]);
 
+/**
+ * The exact pattern the normative view schema puts on
+ * `evidenceRequests[].sourceArtifactRef`. Kept here so a ref that cannot appear
+ * in a valid view is refused at the API boundary rather than serialized into one.
+ */
+const ARTIFACT_REF = /^artifact:\/\/[A-Za-z0-9._:/-]+$/;
+
+const isArtifactRef = (value: unknown): boolean =>
+  typeof value === "string" && ARTIFACT_REF.test(value);
+
 const byString = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 // --- Spec validation ---------------------------------------------------------
@@ -164,6 +174,18 @@ function validateSpec(request: QueryUiGraphRequest): void {
     issues.push({
       code: "partial_comparison_identity",
       message: "comparisonSnapshotId and comparisonContentHash must be supplied together",
+    });
+  }
+  // A screenshot ref is copied verbatim into every planned evidence request, and
+  // the normative view schema admits only `artifact://…` there. Refusing it here
+  // is the difference between one clear error and a view that renders, reports a
+  // budget and a truncation flag, and only then fails its own published schema.
+  if (request.screenshotArtifactRef !== undefined && !isArtifactRef(request.screenshotArtifactRef)) {
+    issues.push({
+      code: "malformed_screenshot_artifact_ref",
+      message:
+        `screenshotArtifactRef ${String(request.screenshotArtifactRef)} is not a logical artifact ref: ` +
+        "it must match ^artifact://[A-Za-z0-9._:/-]+$ (a local file path is not one)",
     });
   }
   if (issues.length > 0) {
