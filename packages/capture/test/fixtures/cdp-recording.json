@@ -6636,7 +6636,7 @@
    }
   ],
   "strings": [
-   "file:///Users/adityaprathapa/.apature-oss-prep/rewrite/ui-graph/packages/capture/test/fixtures/page.html",
+   "file:///fixtures/page.html",
    "Deployments",
    "UTF-8",
    "7973E2ACBBB48138EA704434604D0FEE",
@@ -6891,7 +6891,7 @@
      "name": "url",
      "value": {
       "type": "string",
-      "value": "file:///Users/adityaprathapa/.apature-oss-prep/rewrite/ui-graph/packages/capture/test/fixtures/page.html"
+      "value": "file:///fixtures/page.html"
      }
     }
    ],
