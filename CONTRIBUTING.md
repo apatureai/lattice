@@ -78,6 +78,10 @@ Anything needing those capabilities belongs in the consumer, or in a separate wo
 
 Code on the hashed and canonical path (build, serialize, hash, view) must be deterministic: no wall-clock, no randomness, no locale-dependent formatting. Wall time belongs only to `UIGraphBuildResult.diagnostics` and delta `createdAt`, never to hashed snapshot fields. The capability guard fails the build on a violation in those files.
 
+Sorting counts as part of that path, which is easy to miss. Candidate order decides ref ordinals, the winner of a tie between two claims is the string that gets sealed, and the order of a rendered list is view bytes, so every string comparison in the package must use `compareCodeUnits` from `canonical.ts`. `String.prototype.localeCompare` resolves against the process locale: `["z", "ä"]` comes back `ä, z` under `en-US` and `z, ä` under `sv-SE`, and a capture containing both sealed to two different content hashes on the same machine with `LC_ALL` changed. The capability guard denies the locale-sensitive APIs across the whole package, not only on the named hashed-path files.
+
+The producer side has the same rule about paths. A `file:` URL is mostly a description of one machine, so `locationIndependentUrl` in `packages/capture` reduces it to its file name before anything derives a `captureId`, an `artifact://` ref, a route or a document url from it. Nothing that reaches a committed fixture or a sealed snapshot may name a directory on the machine that produced it.
+
 The practical consequence: the same capture always produces the same `snapshotId`, and the same view spec against the same snapshot always produces byte-identical text. The quickstart pins a snapshot id in the README precisely so a determinism regression is visible immediately.
 
 ### `useMode`
