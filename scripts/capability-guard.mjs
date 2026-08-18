@@ -5,7 +5,7 @@
  * The single most load-bearing invariant of this repo is that `@apature/ui-graph`
  * is a deterministic, sandboxed library with NO model, browser, network, or DB
  * capability (PRD §12, TRD §2/§3.1, ARCHITECTURE §1/§2). This script makes that
- * boundary a failing CI gate instead of prose. It checks four things:
+ * boundary a failing CI gate instead of prose. It checks five things:
  *
  *  1. Dependency boundary: every runtime dependency of the published package
  *     must be on the allowlist. New runtime deps require an explicit, justified
@@ -27,6 +27,15 @@
  *     not read wall-clock, randomness, or locale-dependent formatting (TRD §8,
  *     §9). Wall-clock belongs only to diagnostics / delta `createdAt`, never to
  *     hashed snapshot fields (TRD §5.1, §9.2).
+ *
+ *  5. Locale-independent ordering, across the whole core package rather than a
+ *     named list of files. Ordering is not a formatting detail here: the order
+ *     candidates are finalized in decides their ref ordinals, the winner of a
+ *     tie between two claims is the value that gets sealed, and the order of a
+ *     rendered list is view bytes. Any of those going through `localeCompare`
+ *     makes the snapshot id a function of `LC_ALL` and of the ICU build, which
+ *     is what content addressing exists to rule out. Use `compareCodeUnits`
+ *     from `canonical.ts`.
  *
  * This script uses only Node built-ins; it performs no network access itself.
  */
@@ -177,10 +186,38 @@ if (capturePkg !== undefined) {
   }
 }
 
+/** Source with comments removed, so prose naming a banned API does not trip a guard. */
+const stripComments = (text) =>
+  text
+    .split("\n")
+    .map((line) => line.replace(/\/\/.*$/, ""))
+    .join("\n")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+
 // --- 4. Determinism guard -----------------------------------------------
 
-/** Source files whose output participates in the content hash / canonical form. */
-const HASHED_PATH_FILES = ["canonical.ts"];
+/**
+ * Source files whose output participates in the content hash / canonical form,
+ * and which therefore may not read a clock or a random source at all.
+ *
+ * `builder.ts` and `pipeline/delta.ts` are deliberately absent: the builder
+ * stamps `diagnostics.builtAt` and measures stage timings, both outside the
+ * sealed snapshot, and the delta writer uses a constant `new Date(0)`. Every
+ * other stage between a capture bundle and a rendered view is listed.
+ */
+const HASHED_PATH_FILES = [
+  "canonical.ts",
+  "query.ts",
+  "pipeline/normalize.ts",
+  "pipeline/fuse.ts",
+  "pipeline/hierarchy.ts",
+  "pipeline/relations.ts",
+  "pipeline/dna-match.ts",
+  "pipeline/views.ts",
+  "pipeline/lineage.ts",
+  "pipeline/evidence-request.ts",
+  "pipeline/saliency.ts",
+];
 
 /**
  * Patterns that introduce non-determinism. Each has a human-readable reason.
@@ -208,17 +245,48 @@ for (const file of HASHED_PATH_FILES) {
     fail(`Determinism guard expected hashed-path file "${file}" but it is missing.`);
     continue;
   }
-  // Strip line comments so prose mentioning these terms does not trip the guard.
-  const code = text
-    .split("\n")
-    .map((line) => line.replace(/\/\/.*$/, ""))
-    .join("\n");
+  // Strip comments so prose mentioning these terms does not trip the guard.
+  const code = stripComments(text);
   for (const { re, reason } of NONDETERMINISM_PATTERNS) {
     if (re.test(code)) {
       fail(
         `Hashed/canonical code path src/${file} uses ${reason}. Non-deterministic ` +
           `sources are forbidden in build/serialize/hash/view paths (TRD §8, §9). ` +
           `Wall-clock belongs only to diagnostics / delta createdAt (TRD §5.1, §9.2).`,
+      );
+    }
+  }
+}
+
+// --- 5. Locale-independent ordering, package-wide ------------------------
+
+/**
+ * Locale-sensitive APIs, banned in every source file of the core package. The
+ * check above names four files; this one names none, because a comparison that
+ * consults the process locale is a determinism bug wherever it sits: fusion
+ * tie-breaks, hierarchy and relation ordering, delta op ordering and view list
+ * ordering all reach the content hash or the rendered bytes.
+ *
+ * `canonical.ts` documents the rule and exports `compareCodeUnits`, which is
+ * the replacement. The guard skips its own prose (comment lines) so that
+ * explaining the rule does not violate it.
+ */
+const LOCALE_SENSITIVE_PATTERNS = [
+  { re: /\.localeCompare\s*\(/, reason: "locale-dependent sort (localeCompare); use compareCodeUnits" },
+  { re: /\.toLocaleString\s*\(/, reason: "locale-dependent formatting (toLocaleString)" },
+  { re: /\.toLocaleDateString\s*\(/, reason: "locale-dependent formatting (toLocaleDateString)" },
+  { re: /\.toLocaleTimeString\s*\(/, reason: "locale-dependent formatting (toLocaleTimeString)" },
+  { re: /\bnew\s+Intl\.Collator\b/, reason: "locale-dependent sort (Intl.Collator)" },
+];
+
+for (const file of collectTs(srcDir)) {
+  const code = stripComments(readFileSync(file, "utf8"));
+  for (const { re, reason } of LOCALE_SENSITIVE_PATTERNS) {
+    if (re.test(code)) {
+      fail(
+        `${relative(repoRoot, file)} uses ${reason}. Ordering and formatting in this ` +
+          `package must not depend on the process locale: the same capture would seal ` +
+          `to a different contentHash under a different LC_ALL or ICU build (TRD §8, §9).`,
       );
     }
   }
@@ -249,4 +317,7 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log("Capability guard passed: no forbidden capability or non-deterministic source.");
+console.log(
+  "Capability guard passed: no forbidden capability, no locale-dependent ordering, " +
+    "no clock or randomness on the hashed path.",
+);
