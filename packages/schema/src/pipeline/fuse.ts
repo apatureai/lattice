@@ -29,6 +29,7 @@ import type {
 } from "../readprofile.js";
 import type { NormalizedCapture, NormalizedGeometry, NormalizedNode } from "./normalize.js";
 import { compose, IDENTITY, transformRect, translateRect, type Affine } from "./geometry.js";
+import { compareCodeUnits } from "../canonical.js";
 import { warn, type PipelineIssue } from "./errors.js";
 
 export type FusedKind = "dom" | "ax_only" | "text" | "visual";
@@ -136,7 +137,7 @@ function resolveFact(fact: Fact, claims: FactClaim[]): FusedFact<string> | undef
     (a, b) =>
       competence(b.sourceType, fact) - competence(a.sourceType, fact) ||
       b.confidence - a.confidence ||
-      a.value.localeCompare(b.value),
+      compareCodeUnits(a.value, b.value),
   );
   const winner = ranked[0]!;
   const distinct = new Set(present.map((c) => c.value));

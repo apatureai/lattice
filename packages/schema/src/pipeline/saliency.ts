@@ -13,6 +13,7 @@
  * it stays pure and deterministic (no model/network).
  */
 
+import { compareCodeUnits } from "../canonical.js";
 import type { ViewSourceNode } from "./view-source.js";
 
 export interface SaliencyScore {
@@ -84,7 +85,7 @@ export function heuristicSaliency(nodes: readonly ViewSourceNode[], viewport?: S
     return { candidateId: node.candidateId, saliency };
   });
 
-  return scores.sort((a, b) => a.candidateId.localeCompare(b.candidateId));
+  return scores.sort((a, b) => compareCodeUnits(a.candidateId, b.candidateId));
 }
 
 /** A `SaliencyProvider` backed by the deterministic heuristic (the default baseline). */
@@ -93,6 +94,6 @@ export const heuristicSaliencyProvider: SaliencyProvider = { score: (nodes) => h
 /** Candidate ids ranked most- to least-salient; ties broken by id for determinism. */
 export function rankBySaliency(scores: readonly SaliencyScore[]): string[] {
   return [...scores]
-    .sort((a, b) => b.saliency - a.saliency || a.candidateId.localeCompare(b.candidateId))
+    .sort((a, b) => b.saliency - a.saliency || compareCodeUnits(a.candidateId, b.candidateId))
     .map((s) => s.candidateId);
 }

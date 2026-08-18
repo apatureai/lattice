@@ -113,8 +113,19 @@ function writeCanonical(value: unknown, out: string[]): void {
   throw new Error(`canonicalize: unsupported value of type ${t}`);
 }
 
-/** Lexicographic comparison by UTF-16 code unit, locale-independent. */
-function compareCodeUnits(a: string, b: string): number {
+/**
+ * Lexicographic comparison by UTF-16 code unit, locale-independent.
+ *
+ * This is the only string ordering the library is allowed to use.
+ * `String.prototype.localeCompare` resolves against the process locale, so the
+ * same input sorts differently under a different `LC_ALL` or ICU build:
+ * `["z", "ä"]` comes back `ä, z` under `en-US` and `z, ä` under `sv-SE`.
+ * Anything that orders a collection on the way into a hash, a ref ordinal or a
+ * rendered view therefore has to compare code units, or the snapshot id stops
+ * being a function of the page alone. `scripts/capability-guard.mjs` fails the
+ * build if `localeCompare` reappears anywhere in this package.
+ */
+export function compareCodeUnits(a: string, b: string): number {
   if (a === b) return 0;
   return a < b ? -1 : 1;
 }

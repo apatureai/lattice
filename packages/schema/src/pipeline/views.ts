@@ -27,7 +27,7 @@
  * unchanged: every ref in a view resolves to a node whose evidence is intact.
  */
 
-import { canonicalize } from "../canonical.js";
+import { canonicalize, compareCodeUnits } from "../canonical.js";
 import { assertNoSensitiveTextSurvives, delimitUntrusted, sanitizeUntrustedText } from "./untrusted.js";
 import type { LocatorHint, Rect, SensitivityLabel, UIDNAMatch, UIDNAProjection, UIGraphNode, UIRegion, Viewport } from "../types.js";
 import { normalizeCssLength } from "./css.js";
@@ -791,7 +791,7 @@ function rankViolations(entries: ViolationEntry[]): ViolationEntry[] {
       b.severity - a.severity ||
       (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0) ||
       (a.category < b.category ? -1 : a.category > b.category ? 1 : 0) ||
-      String(a.observed).localeCompare(String(b.observed)),
+      compareCodeUnits(String(a.observed), String(b.observed)),
   );
 }
 
@@ -854,7 +854,7 @@ export function renderViolationsView(
 
   const rankedAuthoritative = rankViolations(authoritative);
   const rankedAdvisory = rankViolations(advisory);
-  suppressed.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0) || a.category.localeCompare(b.category));
+  suppressed.sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0) || compareCodeUnits(a.category, b.category));
 
   // Budget: authoritative findings are kept first, advisory fills the remainder.
   const keptAuthoritative = rankedAuthoritative.slice(0, budget.maxNodes);
@@ -936,7 +936,7 @@ function dnaSignature(node: UIGraphNode): string {
   return canonicalize(
     [...node.dnaMatches]
       .map((m) => ({ category: m.category, status: m.status, canonical: m.canonical ?? null }))
-      .sort((x, y) => canonicalize(x).localeCompare(canonicalize(y))),
+      .sort((x, y) => compareCodeUnits(canonicalize(x), canonicalize(y))),
   );
 }
 

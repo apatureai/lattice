@@ -21,7 +21,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { canonicalize } from "../canonical.js";
+import { canonicalize, compareCodeUnits } from "../canonical.js";
 import type { Rect } from "../types.js";
 import type { ViewSourceNode } from "./view-source.js";
 import { heuristicSaliency, type SaliencyScore } from "./saliency.js";
@@ -166,7 +166,7 @@ export function buildEvidenceRequests(
   targets.sort((a, b) =>
     b.saliency - a.saliency ||
     a.rect.width * a.rect.height - b.rect.width * b.rect.height ||
-    a.node.candidateId.localeCompare(b.node.candidateId),
+    compareCodeUnits(a.node.candidateId, b.node.candidateId),
   );
 
   const requests: EvidenceRequest[] = [];

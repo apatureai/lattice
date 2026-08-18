@@ -21,7 +21,7 @@
 
 import { createHash } from "node:crypto";
 import { UIGraphError } from "../api.js";
-import { canonicalize, computeContentHash, deriveSnapshotId, sealSnapshot } from "../canonical.js";
+import { canonicalize, compareCodeUnits, computeContentHash, deriveSnapshotId, sealSnapshot } from "../canonical.js";
 import { SCHEMA_VERSION } from "../types.js";
 import type {
   UIGraphDelta,
@@ -80,30 +80,30 @@ export function encodeUiGraphDelta(base: UIGraphSnapshot, target: UIGraphSnapsho
   const targetRegions = byId(target.regions, (r) => r.regionId);
 
   // Removals first (nodes carry their incident-edge removals explicitly).
-  for (const [edgeId] of [...baseEdges].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [edgeId] of [...baseEdges].sort(([a], [b]) => compareCodeUnits(a, b))) {
     if (!targetEdges.has(edgeId)) operations.push({ op: "remove_edge", edgeId });
   }
-  for (const [nodeId] of [...baseNodes].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [nodeId] of [...baseNodes].sort(([a], [b]) => compareCodeUnits(a, b))) {
     if (!targetNodes.has(nodeId)) operations.push({ op: "remove_node", nodeId });
   }
-  for (const [regionId] of [...baseRegions].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [regionId] of [...baseRegions].sort(([a], [b]) => compareCodeUnits(a, b))) {
     if (!targetRegions.has(regionId)) operations.push({ op: "remove_region", regionId });
   }
 
   // Upserts in canonical ID order. Element refs are seal-owned, so node
   // equality is compared WITHOUT elementRef (the applier re-seals).
   const nodeBody = ({ elementRef: _r, ...rest }: UIGraphNode): unknown => rest;
-  for (const [nodeId, node] of [...targetNodes].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [nodeId, node] of [...targetNodes].sort(([a], [b]) => compareCodeUnits(a, b))) {
     const before = baseNodes.get(nodeId);
     if (before === undefined || !sameJson(nodeBody(before), nodeBody(node))) {
       operations.push({ op: "upsert_node", node });
     }
   }
-  for (const [edgeId, edge] of [...targetEdges].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [edgeId, edge] of [...targetEdges].sort(([a], [b]) => compareCodeUnits(a, b))) {
     const before = baseEdges.get(edgeId);
     if (before === undefined || !sameJson(before, edge)) operations.push({ op: "upsert_edge", edge });
   }
-  for (const [regionId, region] of [...targetRegions].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [regionId, region] of [...targetRegions].sort(([a], [b]) => compareCodeUnits(a, b))) {
     const before = baseRegions.get(regionId);
     if (before === undefined || !sameJson(before, region)) operations.push({ op: "upsert_region", region });
   }

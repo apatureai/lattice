@@ -18,6 +18,7 @@
 import { createHash } from "node:crypto";
 import type { Rect, UIGraphEdge } from "../types.js";
 import type { FusedNode } from "./fuse.js";
+import { compareCodeUnits } from "../canonical.js";
 import type { NodeHierarchy } from "./hierarchy.js";
 
 export interface RelationOptions {
@@ -100,7 +101,7 @@ export function buildRelations(nodes: readonly FusedNode[], hierarchy: readonly 
 
   const byId = new Map(nodes.map((n) => [n.candidateId, n]));
   const hierById = new Map(hierarchy.map((h) => [h.candidateId, h]));
-  const withGeom = [...nodes].filter((n) => n.geometry !== undefined).sort((a, b) => a.candidateId.localeCompare(b.candidateId));
+  const withGeom = [...nodes].filter((n) => n.geometry !== undefined).sort((a, b) => compareCodeUnits(a.candidateId, b.candidateId));
 
   const edges = new Map<string, UIGraphEdge>();
   const add = (e: UIGraphEdge): void => {
@@ -131,7 +132,7 @@ export function buildRelations(nodes: readonly FusedNode[], hierarchy: readonly 
     const ordered = [...siblings].sort((a, b) => {
       const ga = a.geometry!.viewportRect;
       const gb = b.geometry!.viewportRect;
-      return ga.y - gb.y || ga.x - gb.x || a.candidateId.localeCompare(b.candidateId);
+      return ga.y - gb.y || ga.x - gb.x || compareCodeUnits(a.candidateId, b.candidateId);
     });
     for (let i = 0; i + 1 < ordered.length; i++) add(mkEdge("reading_next", ordered[i]!.candidateId, ordered[i + 1]!.candidateId, true, WEIGHT.reading_next, {}, []));
   }
@@ -177,7 +178,7 @@ export function buildRelations(nodes: readonly FusedNode[], hierarchy: readonly 
         const [cx, cy] = centroid(c.geometry!.viewportRect);
         return { id: c.candidateId, d: Math.hypot(cx - nx, cy - ny) };
       })
-      .sort((a, b) => a.d - b.d || a.id.localeCompare(b.id))
+      .sort((a, b) => a.d - b.d || compareCodeUnits(a.id, b.id))
       .slice(0, nearK);
     for (const near of nearest) {
       const [lo, hi] = symmetric(n.candidateId, near.id);
@@ -194,7 +195,7 @@ export function buildRelations(nodes: readonly FusedNode[], hierarchy: readonly 
   const observedMax = degree.size === 0 ? 0 : Math.max(...degree.values());
 
   return {
-    edges: capped.sort((a, b) => a.edgeId.localeCompare(b.edgeId)),
+    edges: capped.sort((a, b) => compareCodeUnits(a.edgeId, b.edgeId)),
     metrics: { edges: capped.length, maxDegree: observedMax },
   };
 }
@@ -211,7 +212,7 @@ function enforceCap(all: UIGraphEdge[], maxDegree: number): UIGraphEdge[] {
   // Consider droppable edges lowest-weight first (deterministic tiebreak by id).
   const droppable = all
     .filter((e) => e.kind !== "contains")
-    .sort((a, b) => a.weight - b.weight || a.edgeId.localeCompare(b.edgeId));
+    .sort((a, b) => a.weight - b.weight || compareCodeUnits(a.edgeId, b.edgeId));
   const dropped = new Set<string>();
   for (const e of droppable) {
     if ((degree.get(e.fromNodeId) ?? 0) > maxDegree || (degree.get(e.toNodeId) ?? 0) > maxDegree) {

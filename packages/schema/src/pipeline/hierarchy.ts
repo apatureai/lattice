@@ -20,6 +20,7 @@
 import { createHash } from "node:crypto";
 import type { Rect, UIRegion } from "../types.js";
 import type { FusedNode } from "./fuse.js";
+import { compareCodeUnits } from "../canonical.js";
 import { warn, type PipelineIssue } from "./errors.js";
 
 export interface NodeHierarchy {
@@ -94,7 +95,7 @@ function digest(value: string): string {
 export function buildHierarchy(nodes: readonly FusedNode[], options: HierarchyOptions = {}): HierarchyResult {
   const warnings: PipelineIssue[] = [];
   const threshold = options.repeatedRegionThreshold ?? 3;
-  const sorted = [...nodes].sort((a, b) => a.candidateId.localeCompare(b.candidateId));
+  const sorted = [...nodes].sort((a, b) => compareCodeUnits(a.candidateId, b.candidateId));
 
   // (1) Parent assignment by smallest enclosing geometry (same frame).
   const parentOf = new Map<string, string | undefined>();
@@ -167,11 +168,11 @@ export function buildHierarchy(nodes: readonly FusedNode[], options: HierarchyOp
   // (4) Repeated-sibling regions (deterministic signature).
   const repeatedRegionIds: string[] = [];
   const parents = new Set<string | undefined>([...parentOf.values()]);
-  for (const parent of [...parents].sort((a, b) => (a ?? "").localeCompare(b ?? ""))) {
+  for (const parent of [...parents].sort((a, b) => compareCodeUnits(a ?? "", b ?? ""))) {
     const siblings = sorted.filter((n) => parentOf.get(n.candidateId) === parent);
     const groups = new Map<string, FusedNode[]>();
     for (const s of siblings) groups.set(signatureOf(s), [...(groups.get(signatureOf(s)) ?? []), s]);
-    for (const [signature, group] of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    for (const [signature, group] of [...groups.entries()].sort((a, b) => compareCodeUnits(a[0], b[0]))) {
       if (group.length < threshold) continue;
       const members = group.map((g) => g.candidateId).sort();
       const visible = group.filter((g) => g.geometry?.visibility === "visible" || g.geometry?.visibility === "clipped").length;
