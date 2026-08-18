@@ -68,12 +68,12 @@ const { snapshot, diagnostics } = await buildUiGraph({
   },
 });
 
-console.log("2. buildUiGraph — fuse, hierarchy, relations, DNA projection, seal");
+console.log("2. buildUiGraph: fuse, hierarchy, relations, DNA projection, seal");
 console.log(`   snapshotId         ${snapshot.snapshotId}`);
 console.log(`   contentHash        ${snapshot.contentHash}`);
 console.log(`   nodes / edges      ${snapshot.metrics.graph.nodes} / ${snapshot.metrics.graph.edges}`);
 console.log(`   regions            ${snapshot.metrics.graph.regions}`);
-console.log(`   retained conflicts ${snapshot.metrics.graph.conflictCount}   (DOM said "link", accessibility said "button" — both kept)`);
+console.log(`   retained conflicts ${snapshot.metrics.graph.conflictCount}   (DOM said "link", accessibility said "button"; both kept)`);
 console.log(`   canonical JSON     ${diagnostics.canonicalJsonBytes} bytes`);
 console.log("");
 
@@ -106,7 +106,7 @@ const queries = [
   ["patchContext", spec("patchContext", { refs: [ctaRef], maxCrops: 2 })],
 ];
 
-console.log(`3. queryUiGraph — five views of the same snapshot (focus/patchContext on ${ctaRef})`);
+console.log(`3. queryUiGraph: five views of the same snapshot (focus/patchContext on ${ctaRef})`);
 console.log(`   ${pad("view", 14)}${padLeft("bytes", 8)}${padLeft("est.tok", 9)}${padLeft("nodes", 7)}${padLeft("vs capture", 12)}  truncation`);
 
 const views = new Map();
@@ -127,7 +127,7 @@ console.log("");
 // --- 4. A budget truncates; it never throws ---------------------------------
 
 const budgeted = queryUiGraph({ snapshot, spec: spec("summary", { maxTextTokens: 1000 }) });
-console.log("4. The same summary under maxTextTokens: 1000 — budgets truncate, they never throw");
+console.log("4. The same summary under maxTextTokens: 1000. Budgets truncate, they never throw");
 console.log(`   est. tokens        ${budgeted.budget.estimatedTextTokens} (was ${views.get("summary").budget.estimatedTextTokens})`);
 console.log(`   nodes described    ${budgeted.budget.includedNodes} (was ${views.get("summary").budget.includedNodes})`);
 for (const reason of budgeted.truncation.reasons) console.log(`   reason             ${reason}`);
@@ -137,7 +137,7 @@ console.log("");
 
 const actionMap = views.get("actionMap");
 const affordances = JSON.parse(actionMap.text).actions;
-console.log(`5. actionMap — ${affordances.length} perceivable affordances (perception only; never an action API)`);
+console.log(`5. actionMap: ${affordances.length} perceivable affordances (perception only; never an action API)`);
 for (const entry of affordances.slice(0, 5)) {
   const box = `${entry.rect.x.toFixed(2)},${entry.rect.y.toFixed(2)}`;
   console.log(`   ${pad(entry.ref, 16)}${pad(entry.role, 10)}${pad(entry.name ?? "", 26)}@ ${box} (${entry.state.visibility})`);
@@ -153,7 +153,7 @@ const resolution = resolveElementRefInSnapshot(
   { snapshotId: snapshot.snapshotId, contentHash: snapshot.contentHash },
   ctaRef,
 );
-console.log("6. Compression with receipts — the view is lean, the provenance is not lost");
+console.log("6. Compression with receipts: the view is lean, the provenance is not lost");
 console.log(`   ${ctaRef} resolves in this snapshot: ${resolution.ok}`);
 console.log(`   evidence claims on that node: ${cta.evidence.length}`);
 for (const claim of cta.evidence) {
@@ -171,7 +171,7 @@ console.log("");
 // --- 7. Pixel escalation is a recommendation, not a fetch --------------------
 
 const patchContext = views.get("patchContext");
-console.log(`7. patchContext requested ${patchContext.evidenceRequests.length} crop(s) — recommendations the caller may decline`);
+console.log(`7. patchContext requested ${patchContext.evidenceRequests.length} crop(s); recommendations the caller may decline`);
 for (const request of patchContext.evidenceRequests) {
   const r = request.rect;
   console.log(`   ${request.kind} of ${request.sourceArtifactRef}`);
@@ -190,4 +190,4 @@ for (const [name, view] of views) {
 
 console.log("8. Wrote out/capture.json, out/snapshot.json and 5 out/view-*.json files.");
 console.log("");
-console.log(`OK — built snapshot ${snapshot.snapshotId.slice(0, 20)}… and rendered 5 schema-valid views.`);
+console.log(`OK, built snapshot ${snapshot.snapshotId.slice(0, 20)}… and rendered 5 schema-valid views.`);

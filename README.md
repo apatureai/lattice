@@ -85,7 +85,7 @@ $ pnpm capture https://example.com
 
 3. queryUiGraph: 4 views of the same snapshot (focus/patchContext on ug:69ef0b08:6)
    view             bytes  est.tok  nodes  vs capture  truncation
-   summary           1691      423      8       76.1%  none
+   summary           1688      422      8       76.2%  none
    actionMap          367       92      1       94.8%  none
    focus             2929      733      7       58.6%  none
    patchContext      1421      356      1       79.9%  none
@@ -123,7 +123,7 @@ $ pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --route /d
 
 3. queryUiGraph: 4 views of the same snapshot (focus/patchContext on ug:13dd08fe:21)
    view             bytes  est.tok  nodes  vs capture  truncation
-   summary           9769     2441     36       86.9%  none
+   summary           9760     2440     36       86.9%  none
    actionMap         2735      684     11       96.3%  none
    focus             4143     1036      6       94.5%  none
    patchContext      1516      379      1       98.0%  none
@@ -195,31 +195,31 @@ $ node examples/quickstart.mjs
    text runs          93
    canonical JSON     60637 bytes (15158 est. tokens)
 
-2. buildUiGraph — fuse, hierarchy, relations, DNA projection, seal
+2. buildUiGraph: fuse, hierarchy, relations, DNA projection, seal
    snapshotId         ugs_1_b12a4c602d4a0071e387206fb6f939c51b4e1b2ed1a22c4669bf6e3d978105a6
    contentHash        sha256:b12a4c602d4a0071e387206fb6f939c51b4e1b2ed1a22c4669bf6e3d978105a6
    nodes / edges      130 / 400
    regions            35
-   retained conflicts 1   (DOM said "link", accessibility said "button" — both kept)
+   retained conflicts 1   (DOM said "link", accessibility said "button"; both kept)
    canonical JSON     444253 bytes
 
-3. queryUiGraph — five views of the same snapshot (focus/patchContext on ug:65bc9d34:2)
+3. queryUiGraph: five views of the same snapshot (focus/patchContext on ug:65bc9d34:2)
    view             bytes  est.tok  nodes  vs capture  truncation
-   summary          31428     7857    118       48.2%  none
+   summary          31425     7857    118       48.2%  none
    actionMap         3394      849     14       94.4%  none
    violations       20355     5089     85       66.4%  none
    focus             4155     1039      9       93.1%  none
    patchContext      1439      360      1       97.6%  none
    ("vs capture" is the reduction against the canonical capture JSON above.)
 
-4. The same summary under maxTextTokens: 1000 — budgets truncate, they never throw
+4. The same summary under maxTextTokens: 1000. Budgets truncate, they never throw
    est. tokens        644 (was 7857)
    nodes described    6 (was 118)
    reason             text_token_budget: node budget reduced 400 → 3
    reason             node_budget: 119 nodes omitted
    reason             region_budget: 32 regions omitted
 
-5. actionMap — 14 perceivable affordances (perception only; never an action API)
+5. actionMap: 14 perceivable affordances (perception only; never an action API)
    ug:65bc9d34:10  link      Settings                  @ 0.53,0.03 (visible)
    ug:65bc9d34:2   button    New review                @ 0.88,0.02 (visible)
    ug:65bc9d34:20  link      Open production           @ 0.03,0.30 (visible)
@@ -227,7 +227,7 @@ $ node examples/quickstart.mjs
    ug:65bc9d34:22  link      Open preview              @ 0.34,0.30 (visible)
    … 9 more
 
-6. Compression with receipts — the view is lean, the provenance is not lost
+6. Compression with receipts: the view is lean, the provenance is not lost
    ug:65bc9d34:2 resolves in this snapshot: true
    evidence claims on that node: 4
      dom             conf 0.9   role=link, tag=a
@@ -237,16 +237,16 @@ $ node examples/quickstart.mjs
    flags: conflict:role
    a ref from another snapshot is refused: stale_or_foreign_ref
 
-7. patchContext requested 1 crop(s) — recommendations the caller may decline
+7. patchContext requested 1 crop(s); recommendations the caller may decline
    crop of artifact://example/synthetic-dashboard/root.png
      rect 1240,0 200x78  refs ug:65bc9d34:2  because requested_refs,source_disagreement
 
 8. Wrote out/capture.json, out/snapshot.json and 5 out/view-*.json files.
 
-OK — built snapshot ugs_1_b12a4c602d4a00… and rendered 5 schema-valid views.
+OK, built snapshot ugs_1_b12a4c602d4a00… and rendered 5 schema-valid views.
 ```
 
-**Success criterion:** the last line reads `OK — built snapshot … and rendered 5 schema-valid views.`, and `out/` contains seven JSON files (`capture.json`, `snapshot.json`, and `view-summary.json`, `view-actionMap.json`, `view-violations.json`, `view-focus.json`, `view-patchContext.json`). The snapshot id is content-addressed, so it will be byte-for-byte the one printed above. If yours differs, something is wrong.
+**Success criterion:** the last line reads `OK, built snapshot … and rendered 5 schema-valid views.`, and `out/` contains seven JSON files (`capture.json`, `snapshot.json`, and `view-summary.json`, `view-actionMap.json`, `view-violations.json`, `view-focus.json`, `view-patchContext.json`). The snapshot id is content-addressed, so it will be byte-for-byte the one printed above. If yours differs, something is wrong.
 
 Open `out/view-focus.json` to see what actually goes into a prompt, and `out/snapshot.json` to see the provenance that stayed behind.
 
@@ -380,8 +380,8 @@ Three pages captured through `pnpm capture`, on 2026-08-10, at 1440x900. The two
 
 | Page | DOM nodes | Capture bytes | `summary` | `actionMap` | `focus` | `patchContext` |
 |---|---|---|---|---|---|---|
-| `https://example.com` | 7 | 7080 | 1691 (76.1%) | 367 (94.8%) | 2929 (58.6%) | 1421 (79.9%) |
-| the bundled fixture page | 74 | 74740 | 9769 (86.9%) | 2735 (96.3%) | 4143 (94.5%) | 1516 (98.0%) |
+| `https://example.com` | 7 | 7080 | 1688 (76.2%) | 367 (94.8%) | 2929 (58.6%) | 1421 (79.9%) |
+| the bundled fixture page | 74 | 74740 | 9760 (86.9%) | 2735 (96.3%) | 4143 (94.5%) | 1516 (98.0%) |
 | `https://news.ycombinator.com` | 806 | 745445 | 61098 (91.8%) | 53942 (92.8%) | 8355 (98.9%) | 1467 (99.8%) |
 
 Read these more carefully than the headline percentages invite.
@@ -395,11 +395,11 @@ Read these more carefully than the headline percentages invite.
 
 | Capture | Nodes | Capture bytes | Summary view | Reduction |
 |---|---|---|---|---|
-| `test/fixtures/capture/minimal.json` | 1 | 738 | 403 | 45% |
+| `test/fixtures/capture/minimal.json` | 1 | 738 | 400 | 46% |
 | `test/fixtures/capture/multi-frame.json` | 4 | 1537 | 801 | 48% |
 | `test/fixtures/capture/with-derived.json` | 3 | 1676 | 642 | 62% |
 | `test/fixtures/capture/verdict.golden.json` | 2 | 1758 | 647 | 63% |
-| `syntheticCapture()` (the quickstart page) | 130 | 60637 | 31428 | 48% |
+| `syntheticCapture()` (the quickstart page) | 130 | 60637 | 31425 | 48% |
 
 `verdict.golden.json` is named for the consumer whose capture step produced its shape, the sibling repo [apatureai/verdict](https://github.com/apatureai/verdict). It is frozen JSON like the other three; nothing in this package depends on that repo.
 
@@ -411,7 +411,7 @@ A page summary describes the whole page, so halving it is about the ceiling. The
 | `actionMap` | 3394 | 849 | 94.4% |
 | `focus` (1 ref, radius 2) | 4155 | 1039 | 93.1% |
 | `violations` | 20355 | 5089 | 66.4% |
-| `summary` | 31428 | 7857 | 48.2% |
+| `summary` | 31425 | 7857 | 48.2% |
 
 The second table is exactly what `node examples/quickstart.mjs` prints; the first comes from `test/eval.synthetic-page.test.ts`, which re-derives it on every run. Read the numbers carefully:
 

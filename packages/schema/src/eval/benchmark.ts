@@ -574,7 +574,7 @@ export function renderBenchmarkMarkdown(report: RepresentationBenchmarkReport): 
   lines.push("|---|---|---|---|---|");
   for (const c of report.comparisons) {
     if (!c.available || c.reductions === undefined) {
-      lines.push(`| ${c.candidate} | 0 | — | — | ${c.reason ?? "unavailable"} |`);
+      lines.push(`| ${c.candidate} | 0 | n/a | n/a | ${c.reason ?? "unavailable"} |`);
       continue;
     }
     const text = c.reductions.find((r) => r.metric === "text_tokens");
@@ -582,8 +582,8 @@ export function renderBenchmarkMarkdown(report: RepresentationBenchmarkReport): 
     const fmt = (ci: ConfidenceInterval): string =>
       `${(ci.point * 100).toFixed(1)}% [${(ci.lower * 100).toFixed(1)}%, ${(ci.upper * 100).toFixed(1)}%]`;
     lines.push(
-      `| ${c.candidate} | ${c.pairedFixtures} | ${text !== undefined ? fmt(text.reduction) : "—"} | ` +
-        `${usd !== undefined ? fmt(usd.reduction) : "—"} | ${c.diagnosticOnly === true ? "diagnostic-only" : ""} |`,
+      `| ${c.candidate} | ${c.pairedFixtures} | ${text !== undefined ? fmt(text.reduction) : "n/a"} | ` +
+        `${usd !== undefined ? fmt(usd.reduction) : "n/a"} | ${c.diagnosticOnly === true ? "diagnostic-only" : ""} |`,
     );
   }
   lines.push("");

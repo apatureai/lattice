@@ -315,7 +315,7 @@ export function graphViewOf(snapshot: UIGraphSnapshot): GraphView {
 
 /** Page-health facts §6.4 requires a summary to carry verbatim. */
 function caveatsOf(snapshot: UIGraphSnapshot): string[] {
-  return snapshot.warnings.map((w) => `${w.severity}: ${w.code} — ${w.message}`).sort(byString);
+  return snapshot.warnings.map((w) => `${w.severity}: ${w.code}: ${w.message}`).sort(byString);
 }
 
 function renderFor(

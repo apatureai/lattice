@@ -369,7 +369,7 @@ export function evaluatePromotion(evidence: PromotionEvidence): PromotionDecisio
   const missing = results.filter((r) => r.status === "insufficient_evidence").length;
   const summary = promote
     ? `PROMOTE: all ${results.length} pre-registered gates pass (PRD §7)`
-    : `DO NOT PROMOTE: ${failing} failing, ${missing} with insufficient evidence, of ${results.length} gates — UI Graph stays feature-flagged`;
+    : `DO NOT PROMOTE: ${failing} failing, ${missing} with insufficient evidence, of ${results.length} gates; UI Graph stays feature-flagged`;
 
   return groundingMcNemar !== undefined
     ? { promote, results, summary, groundingMcNemar }
