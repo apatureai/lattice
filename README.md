@@ -111,35 +111,35 @@ $ pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --route /d
    text runs          47
    page health        stable=true partial=false
    redaction          applied=false  0 source id(s)
-   canonical JSON     74916 bytes (18729 est. tokens)
+   canonical JSON     74740 bytes (18685 est. tokens)
 
 2. buildUiGraph: fuse, hierarchy, relations, seal
-   snapshotId         ugs_1_caed6c46470205c27effb5dd00fa83cb1d95228d72fdc8ef111bac01231d9cd1
-   contentHash        sha256:caed6c46470205c27effb5dd00fa83cb1d95228d72fdc8ef111bac01231d9cd1
+   snapshotId         ugs_1_a891af734ca491fae3219c56d37cbbe1bafbcb54be97d6fd8ce5dd74ce4f8b12
+   contentHash        sha256:a891af734ca491fae3219c56d37cbbe1bafbcb54be97d6fd8ce5dd74ce4f8b12
    nodes / edges      79 / 217
    regions            12
    retained conflicts 2   (sources that disagreed; both claims kept)
-   canonical JSON     259538 bytes
+   canonical JSON     259462 bytes
 
-3. queryUiGraph: 4 views of the same snapshot (focus/patchContext on ug:2f17bbf9:21)
+3. queryUiGraph: 4 views of the same snapshot (focus/patchContext on ug:13dd08fe:21)
    view             bytes  est.tok  nodes  vs capture  truncation
-   summary           9756     2437     36       87.0%  none
+   summary           9769     2441     36       86.9%  none
    actionMap         2735      684     11       96.3%  none
    focus             4143     1036      6       94.5%  none
    patchContext      1516      379      1       98.0%  none
    ("vs capture" is the reduction against the canonical capture JSON above.)
 
 4. actionMap: 11 perceivable affordances (perception only; never an action API)
-   ug:2f17bbf9:21  link      Open production           @ 0.03,0.31 (visible)
-   ug:2f17bbf9:22  link      Open preview              @ 0.36,0.31 (visible)
-   ug:2f17bbf9:23  link      Open staging              @ 0.19,0.33 (visible)
-   ug:2f17bbf9:3   button    New review                @ 0.90,0.02 (visible)
-   ug:2f17bbf9:5   link      Apature                   @ 0.02,0.03 (visible)
+   ug:13dd08fe:21  link      Open production           @ 0.03,0.31 (visible)
+   ug:13dd08fe:22  link      Open preview              @ 0.36,0.31 (visible)
+   ug:13dd08fe:23  link      Open staging              @ 0.19,0.33 (visible)
+   ug:13dd08fe:3   button    New review                @ 0.90,0.02 (visible)
+   ug:13dd08fe:5   link      Apature                   @ 0.02,0.03 (visible)
    … 6 more
 
 5. Wrote out/capture.json, out/snapshot.json and 4 out/view-*.json files.
 
-OK, captured file:///home/you/lattice/packages/capture/test/fixtures/page.html and built snapshot ugs_1_caed6c46470205… with 4 schema-valid views.
+OK, captured file:///home/you/lattice/packages/capture/test/fixtures/page.html and built snapshot ugs_1_a891af734ca491… with 4 schema-valid views.
 ```
 
 **Success criterion:** the last line reads `OK, captured <your url> and built snapshot … with N schema-valid views.`, and `out/` contains `capture.json`, `snapshot.json` and one `view-*.json` per view. Open `out/view-actionMap.json` to see what a model would be told about the page, and `out/capture.json` to see the evidence it was told from.
@@ -148,7 +148,7 @@ Two things worth noticing in that output, because they are what this repository 
 
 **"74 joined to a DOM node by backend id."** The adapter reads `DOMSnapshot.captureSnapshot` and `Accessibility.getFullAXTree`, both keyed by the same backend node id, so fusion joins the two trees by explicit id rather than guessing from overlapping rectangles. That is what makes "retained conflicts 2" meaningful: on the fixture page a detached `<li>` and a `<summary>` disclosure widget are places where the DOM's implicit role and the accessibility tree genuinely disagree, and both claims survive onto one node instead of one of them quietly winning.
 
-**The same page seals to the same `contentHash`.** Chromium's frame ids, backend node ids and accessibility node ids are per-session values that change on every launch. If they reached the bundle, an unchanged page would produce a new `snapshotId` every capture, which is the exact property content addressing exists to provide. The adapter replaces them with capture-local ordinals, so two separate browser launches over the same page produce a byte-identical capture. A live test asserts precisely that. The id does still move across platforms, because text metrics do; treat it as stable for a given page, browser build and machine, not as a universal fingerprint.
+**The same page seals to the same `contentHash`.** Chromium's frame ids, backend node ids and accessibility node ids are per-session values that change on every launch. If they reached the bundle, an unchanged page would produce a new `snapshotId` every capture, which is the exact property content addressing exists to provide. The adapter replaces them with capture-local ordinals, so two separate browser launches over the same page produce a byte-identical capture. A live test asserts precisely that. A `file:` URL gets the same treatment for the same reason: it is reduced to its file name, because the directories above it describe a checkout rather than a page, so the fixture above seals to `a891af73…` from any clone at any path. The id does still move across platforms, because text metrics do; treat it as stable for a given page and browser build, not as a universal fingerprint.
 
 ### Capture options
 
@@ -297,6 +297,7 @@ What the adapter does, and what it deliberately does not:
 | Collects `data-testid`, `id`, `href`, `name` | The four durable attributes the lineage matcher needs |
 | Probes layout twice and reports `pageHealth.stable` | A moving page is reported, never silently captured |
 | Replaces per-session protocol ids with capture-local ordinals | So an unchanged page seals to the same `contentHash` |
+| Records a `file:` URL by its file name, not its directory | The path above it names a checkout, not the page |
 | Never captures form field values | `<input value>` and `<textarea>` content never enter the bundle |
 | Never captures `display:none` subtrees by default | `includeNonRendered` opts in |
 | Never sends bytes of a screenshot into the graph | Screenshots are referenced by a logical `artifact://` ref, as evidence |
@@ -380,7 +381,7 @@ Three pages captured through `pnpm capture`, on 2026-08-10, at 1440x900. The two
 | Page | DOM nodes | Capture bytes | `summary` | `actionMap` | `focus` | `patchContext` |
 |---|---|---|---|---|---|---|
 | `https://example.com` | 7 | 7080 | 1691 (76.1%) | 367 (94.8%) | 2929 (58.6%) | 1421 (79.9%) |
-| the bundled fixture page | 74 | 74916 | 9756 (87.0%) | 2735 (96.3%) | 4143 (94.5%) | 1516 (98.0%) |
+| the bundled fixture page | 74 | 74740 | 9769 (86.9%) | 2735 (96.3%) | 4143 (94.5%) | 1516 (98.0%) |
 | `https://news.ycombinator.com` | 806 | 745445 | 61098 (91.8%) | 53942 (92.8%) | 8355 (98.9%) | 1467 (99.8%) |
 
 Read these more carefully than the headline percentages invite.
@@ -388,7 +389,7 @@ Read these more carefully than the headline percentages invite.
 - **The baseline is a verbose capture.** The adapter records 23 computed style properties per node, because the point of the graph is to keep evidence rather than pre-decide what matters. That inflates the denominator and therefore every reduction figure. Against a leaner capture, the same view would look less impressive; the honest comparison is the *view* against whatever structured context you would otherwise have pasted into the prompt.
 - **A bounded view scales, a page summary does not.** `patchContext` about one element costs roughly the same 1.5 KB whether the page has 7 nodes or 806. `summary` grows with the page, which is why the smallest page shows the worst summary ratio and the largest shows the best.
 - **`focus` on `example.com` is worse than its summary.** With eight nodes on the page, describing one node plus its neighbourhood is most of the page, plus per-view fixed overhead. Bounded views pay off on pages that have something to bound.
-- **The `violations` view is missing from that table, and running it exposed a real problem.** It needs a design-system projection, so it only appears with `--dna`. Pointing the fixture page at the synthetic projection in `packages/schema/test/fixtures/dna/approved.json` (a projection that describes a different design system, so almost everything is a finding) produced a 91909-byte view against a 74916-byte capture: **larger than its own input**, and truncated at the node budget. The library has a test asserting every view is smaller than its capture, but that test runs on synthetic fixtures where the projection matches. It does not hold here. See roadmap item 2.
+- **The `violations` view is missing from that table, and running it exposed a real problem.** It needs a design-system projection, so it only appears with `--dna`. Pointing the fixture page at the synthetic projection in `packages/schema/test/fixtures/dna/approved.json` (a projection that describes a different design system, so almost everything is a finding) produced a 91909-byte view against a 74740-byte capture: **larger than its own input**, and truncated at the node budget. The library has a test asserting every view is smaller than its capture, but that test runs on synthetic fixtures where the projection matches. It does not hold here. See roadmap item 2.
 
 ### Synthetic fixtures
 
@@ -505,7 +506,7 @@ packages/schema/            @apature/ui-graph, the whole library
                             benchmark runner, bootstrap stats, promotion gates, decision report
   schemas/                  mirrored normative JSON Schemas shipped with the package
   schemas-baseline/         previous-version schemas, for the evolution/compat suite
-  test/                     33 vitest files incl. property tests over the geometry kernel
+  test/                     34 vitest files incl. property tests over the geometry kernel
 packages/capture/           @apature/ui-graph-capture, the producer: a real page in
   src/
     cli.ts                  `lattice-capture` / `pnpm capture`: the quickstart above
@@ -566,7 +567,7 @@ These are the concrete, pickup-able items. Each names the file you would touch. 
 - **Shadow DOM and `<canvas>`.** `captureSnapshot` is called without `pierce`, so a closed shadow root's contents are not captured, and canvas contents never are by design (`derivedObservations` is where a vision parser's reading of a canvas belongs).
 - **Scroll containers.** A capture is one scroll position. Stitching several into one snapshot, with the geometry to prove it, is unimplemented.
 
-**2. The `violations` renderer does not stay under its own input.** On a real capture with a design-system projection that matches poorly, it emits more bytes than the capture it summarizes (see the note under Token efficiency: 91909 bytes of view from a 74916-byte capture). Every other view holds the invariant. The per-node conformance detail in `pipeline/views.ts` needs the same budgeting discipline the rest of the renderer already has, and `test/eval.synthetic-page.test.ts` needs a case where the projection deliberately does not match.
+**2. The `violations` renderer does not stay under its own input.** On a real capture with a design-system projection that matches poorly, it emits more bytes than the capture it summarizes (see the note under Token efficiency: 91909 bytes of view from a 74740-byte capture). Every other view holds the invariant. The per-node conformance detail in `pipeline/views.ts` needs the same budgeting discipline the rest of the renderer already has, and `test/eval.synthetic-page.test.ts` needs a case where the projection deliberately does not match.
 
 **3. Component-family and embedding matching in the design-system projection.** `pipeline/dna-match.ts` matches design tokens and numeric scales today. Component families need the producer's `componentFamilies` shape in `readprofile.ts`, which is currently typed `unknown[]`. Embeddings would stay advisory by design: they retrieve candidates, they never make an authoritative match.
 
@@ -582,12 +583,12 @@ These are the concrete, pickup-able items. Each names the file you would touch. 
 
 ```
 $ pnpm test
- Test Files  35 passed (35)
-      Tests  369 passed (369)
+ Test Files  37 passed (37)
+      Tests  383 passed (383)
 
 $ pnpm test:browser
  Test Files  1 passed (1)
-      Tests  7 passed (7)
+      Tests  8 passed (8)
 ```
 
 ```sh
