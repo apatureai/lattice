@@ -11,7 +11,7 @@ import type { CaptureBundleReadProfile, ScreenshotEvidenceRef } from "@apature/u
 import type { CdpAxNode, CdpAxTree, CdpDomSnapshot, CdpSessionLike } from "./cdp-types.js";
 import { REQUESTED_COMPUTED_STYLES } from "./style.js";
 import type { CapturePageFacts } from "./transform.js";
-import { captureBundleFromCdp } from "./transform.js";
+import { captureBundleFromCdp, locationIndependentUrl } from "./transform.js";
 
 /** Identifies the adapter that produced a bundle; travels into the snapshot. */
 export const CAPTURE_VERSION = "playwright-cdp-capture@1";
@@ -239,18 +239,26 @@ export async function captureFromCdpSession(
  * A capture id derived from the URL alone, so two captures of the same page get
  * the same id. Deliberately not random and not time-based: `captureId` is an
  * input to the snapshot's content hash, and a random one would make every
- * capture of an unchanged page produce a different snapshot id.
+ * capture of an unchanged page produce a different snapshot id. The URL is
+ * reduced by `locationIndependentUrl` first, so a `file:` capture's id names
+ * the page rather than the directory it happens to sit in.
  */
 export function captureIdFor(url: string): string {
-  const cleaned = url.replace(/^[a-z]+:\/\//i, "").replace(/[^a-zA-Z0-9._-]+/g, "-");
+  const cleaned = locationIndependentUrl(url)
+    .replace(/^[a-z]+:\/\//i, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-");
   const trimmed = cleaned.replace(/^-+|-+$/g, "").slice(0, 96);
   return `cap_${trimmed === "" ? "page" : trimmed}`;
 }
 
-/** `pathname + search` of a URL, or the raw string if it does not parse. */
+/**
+ * `pathname + search` of a URL, or the raw string if it does not parse. A
+ * `file:` URL is reduced first, so the default route of a local page is
+ * `/page.html` and not the absolute path of somebody's checkout.
+ */
 export function routeOf(url: string): string {
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(locationIndependentUrl(url));
     return `${parsed.pathname}${parsed.search}`;
   } catch {
     return url;

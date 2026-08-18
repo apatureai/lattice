@@ -23,7 +23,9 @@ import {
   captureBundleFromCdp,
   captureIdFor,
   implicitRole,
+  locationIndependentUrl,
   routeOf,
+  screenshotArtifactRef,
   type CaptureTransformInput,
   type CaptureTransformOptions,
   type CdpAxNode,
@@ -383,5 +385,65 @@ describe("capture identity helpers", () => {
   it("reads the route off the url and survives one that does not parse", () => {
     expect(routeOf("https://example.com/a/b?c=1")).toBe("/a/b?c=1");
     expect(routeOf("not a url")).toBe("not a url");
+  });
+});
+
+/**
+ * A `file:` URL names a machine, not just a page. Everything identity-shaped is
+ * derived from the URL, so leaving one whole put the checkout directory (and
+ * usually an account name) into `captureId`, into the `artifact://` refs minted
+ * from it, into the default `route`, and through `deterministicInputHash` into
+ * the sealed snapshot id: the same page in two clones sealed to two different
+ * ids.
+ */
+describe("a file: capture identifies the page, not the machine", () => {
+  const HERE = "file:///Users/someone/checkouts/lattice/test/fixtures/page.html";
+  const THERE = "file:///var/tmp/build-9182/page.html";
+
+  it("reduces a file url to the file, and leaves every other scheme alone", () => {
+    expect(locationIndependentUrl(HERE)).toBe("file:///page.html");
+    expect(locationIndependentUrl("file:///a/b/report.html?tab=1")).toBe("file:///report.html?tab=1");
+    expect(locationIndependentUrl("https://example.com/a/b?c=1")).toBe("https://example.com/a/b?c=1");
+    expect(locationIndependentUrl("about:srcdoc")).toBe("about:srcdoc");
+    expect(locationIndependentUrl("not a url")).toBe("not a url");
+  });
+
+  it("gives the same page the same capture id from two different checkouts", () => {
+    expect(captureIdFor(HERE)).toBe("cap_page.html");
+    expect(captureIdFor(THERE)).toBe(captureIdFor(HERE));
+  });
+
+  it("keeps the screenshot artifact ref free of the directory it was captured from", () => {
+    const ref = screenshotArtifactRef(captureIdFor(HERE), "frame_0");
+    expect(ref).toBe("artifact://capture/cap_page.html/frame_0/screenshot.png");
+    expect(ref).not.toContain("someone");
+    expect(ref).not.toContain("checkouts");
+  });
+
+  it("defaults the route to the page, not to an absolute path", () => {
+    expect(routeOf(HERE)).toBe("/page.html");
+    expect(routeOf(THERE)).toBe(routeOf(HERE));
+  });
+
+  it("records a document url that does not move with the checkout", () => {
+    const at = (documentURL: string): CaptureBundleReadProfile => {
+      const domSnapshot = structuredClone(recording.domSnapshot);
+      domSnapshot.documents[0]!.documentURL = domSnapshot.strings.length;
+      (domSnapshot.strings as string[]).push(documentURL);
+      return captureBundleFromCdp({
+        domSnapshot,
+        axNodes: recording.axNodes,
+        page: { ...recording.page, url: documentURL, route: routeOf(documentURL) },
+        options: { ...BASE_OPTIONS, captureId: captureIdFor(documentURL) },
+      });
+    };
+
+    const here = at(HERE);
+    const there = at(THERE);
+    expect(here.documents[0]!.url).toBe("file:///page.html");
+    // The whole bundle, byte for byte: this is what `deterministicInputHash`
+    // reads, so anything left in it would move the sealed snapshot id.
+    expect(canonicalize(there)).toBe(canonicalize(here));
+    expect(canonicalize(here)).not.toContain("checkouts");
   });
 });

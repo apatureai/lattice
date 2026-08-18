@@ -26,7 +26,7 @@ export type { CaptureUrlOptions, CapturablePage, CaptureCdpProvider } from "./br
 export { captureFromCdpSession, captureIdFor, routeOf, CAPTURE_VERSION } from "./capture.js";
 export type { CdpCaptureOptions } from "./capture.js";
 
-export { captureBundleFromCdp, CAPTURE_SCHEMA_VERSION } from "./transform.js";
+export { captureBundleFromCdp, locationIndependentUrl, CAPTURE_SCHEMA_VERSION } from "./transform.js";
 export type {
   CapturePageFacts,
   CaptureTransformInput,

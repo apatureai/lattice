@@ -19,7 +19,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { mkdtempSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -201,6 +201,14 @@ describe("captureUrl against a real page", () => {
       // view schema refuses it, so it broke every `--screenshot` run.
       expect(evidence!.artifactRef).toMatch(/^artifact:\/\/[A-Za-z0-9._:/-]+$/);
       expect(evidence!.artifactRef).not.toContain(dir);
+      // The ref is minted from `captureId`, which is derived from the page URL,
+      // so checking it against the screenshot's output directory checked the
+      // wrong path: the machine was arriving through the page's own directory.
+      // This page is a `file:` URL, so pin the whole ref.
+      expect(evidence!.artifactRef).toBe("artifact://capture/cap_page.html/frame_0/screenshot.png");
+      expect(capture.route).toBe("/page.html");
+      expect(capture.documents[0]!.url).toBe("file:///page.html");
+      expect(JSON.stringify(capture)).not.toContain(dirname(fileURLToPath(PAGE_URL)));
       expect(evidence!.widthImagePx).toBe(1440);
       expect(readdirSync(dir)).toContain("shot.png");
       expect(statSync(join(dir, "shot.png")).size).toBeGreaterThan(1000);

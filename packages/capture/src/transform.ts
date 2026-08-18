@@ -45,6 +45,33 @@ import type {
 import { implicitRole } from "./roles.js";
 import { STYLE_PROPERTIES, VISIBILITY_INDEX, Z_INDEX_INDEX } from "./style.js";
 
+/**
+ * The location-independent form of a page URL.
+ *
+ * A `file:` URL is mostly a description of one machine: the checkout directory,
+ * and usually the account name above it. Everything downstream is derived from
+ * the URL, so keeping that whole would put the laptop into `captureId`, into
+ * the `artifact://capture/<captureId>/…` refs minted from it, into the default
+ * `route`, and through `deterministicInputHash` into the sealed snapshot id.
+ * Then the same page in two checkouts would seal to two different ids, which is
+ * the property content addressing exists to provide. The file's own name is the
+ * part that identifies the page; the directories above it identify the machine,
+ * so they are dropped. Every other scheme, `http(s)` included, is left exactly
+ * as the browser reported it, because there the path is part of the page.
+ */
+export function locationIndependentUrl(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  if (parsed.protocol !== "file:") return url;
+  const name = parsed.pathname.split("/").filter((segment) => segment !== "").pop() ?? "";
+  return `file:///${name}${parsed.search}`;
+}
+
+
 /** The capture schema major lattice supports (`SUPPORTED_CAPTURE_MAJORS`). */
 export const CAPTURE_SCHEMA_VERSION = "1.0.0";
 
@@ -477,7 +504,7 @@ export function captureBundleFromCdp(input: CaptureTransformInput): CaptureBundl
       textRuns,
     };
     const url = str(doc.snapshot.documentURL);
-    if (url !== undefined) observation.url = url;
+    if (url !== undefined) observation.url = locationIndependentUrl(url);
 
     const ownedBy = owner.get(doc.index);
     if (ownedBy !== undefined) {
