@@ -6636,7 +6636,7 @@
    }
   ],
   "strings": [
-   "file:///fixtures/page.html",
+   "file:///page.html",
    "Deployments",
    "UTF-8",
    "7973E2ACBBB48138EA704434604D0FEE",
@@ -6891,7 +6891,7 @@
      "name": "url",
      "value": {
       "type": "string",
-      "value": "file:///fixtures/page.html"
+      "value": "file:///page.html"
      }
     }
    ],
@@ -13425,8 +13425,8 @@
   }
  ],
  "page": {
-  "url": "file:///fixtures/page.html",
-  "route": "/fixtures/page.html",
+  "url": "file:///page.html",
+  "route": "/page.html",
   "viewportWidthCssPx": 1440,
   "viewportHeightCssPx": 900,
   "deviceScaleFactor": 1,

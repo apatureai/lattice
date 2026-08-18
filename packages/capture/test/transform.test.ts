@@ -425,6 +425,16 @@ describe("a file: capture identifies the page, not the machine", () => {
     expect(routeOf(THERE)).toBe(routeOf(HERE));
   });
 
+  it("holds a committed recording with no checkout path in it", () => {
+    // Chromium reports the absolute path of whichever checkout ran
+    // `scripts/record-fixture.mjs`, in `documentURL`, in the string table and
+    // in an accessibility node's `url` property. It was hand-scrubbed out of
+    // this file once already. The recorder now applies the same reduction the
+    // adapter does, and this fails if a future re-record stops doing it.
+    const directoryInAFileUrl = /file:\/\/\/[^"]*\//;
+    expect(JSON.stringify(recording)).not.toMatch(directoryInAFileUrl);
+  });
+
   it("records a document url that does not move with the checkout", () => {
     const at = (documentURL: string): CaptureBundleReadProfile => {
       const domSnapshot = structuredClone(recording.domSnapshot);
