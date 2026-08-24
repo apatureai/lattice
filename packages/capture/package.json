@@ -1,6 +1,6 @@
 {
   "name": "@apatureai/lattice-capture",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Playwright/CDP capture adapter for lattice: turn a real URL into a CaptureBundleReadProfile the scene-graph builder can consume",
   "type": "module",
   "license": "MIT",

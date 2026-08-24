@@ -1,6 +1,6 @@
 {
   "name": "@apatureai/lattice-monorepo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Deterministic scene graph for browser agents: fuse DOM, accessibility, style and text capture into one content-addressed snapshot, then render budgeted views for a model prompt",
