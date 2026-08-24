@@ -3,8 +3,8 @@
 All notable changes to this project are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and the two published packages — `@apature/ui-graph` (`packages/schema`) and
-`@apature/ui-graph-capture` (`packages/capture`) — are versioned together and
+and the two published packages — `@apatureai/lattice` (`packages/schema`) and
+`@apatureai/lattice-capture` (`packages/capture`) — are versioned together and
 share this file. This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
@@ -14,7 +14,7 @@ share this file. This project adheres to [Semantic Versioning](https://semver.or
 - Release automation: `.github/workflows/release.yml` publishes both packages to
   npm on a `v*` tag, with [provenance](https://docs.npmjs.com/generating-provenance-statements).
   See the workflow header and the README "Publishing" section for the one-time
-  maintainer setup (own the `@apature` npm scope, add the `NPM_TOKEN` secret).
+  maintainer setup (own the `@apatureai` npm scope, add the `NPM_TOKEN` secret).
 - `examples/design-dna.json`: a runnable, adapter-valid UI-DNA graph projection
   an external producer can copy, pass to `pnpm capture --dna`, and adapt.
 - README: a "Publishing" section, and a "Bring your own design system" subsection
@@ -23,6 +23,11 @@ share this file. This project adheres to [Semantic Versioning](https://semver.or
 
 ### Changed
 
+- Packages renamed to the `@apatureai/*` scope: `@apature/ui-graph` →
+  `@apatureai/lattice` and `@apature/ui-graph-capture` →
+  `@apatureai/lattice-capture`. This is done before the first publish, so no
+  released version is affected. The schema URNs (`urn:apatureai:ui-graph:...`)
+  and on-disk schema filenames keep the `ui-graph` spelling as pinned identity.
 - Both packages are now publishable: removed `private: true`, added
   `publishConfig` (`access: public`, `provenance`) and a `prepublishOnly` build.
   `packages/capture` depends on `packages/schema` via `workspace:*`, which

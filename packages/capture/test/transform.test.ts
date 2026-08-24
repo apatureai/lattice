@@ -18,7 +18,7 @@ import {
   validateCaptureBundle,
   validateView,
   type CaptureBundleReadProfile,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 import {
   captureBundleFromCdp,
   captureIdFor,

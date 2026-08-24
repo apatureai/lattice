@@ -1,5 +1,5 @@
 /**
- * Public API surface for `@apature/ui-graph` (TRD §1).
+ * Public API surface for `@apatureai/lattice` (TRD §1).
  *
  * These are the four entry points a consumer calls. `buildUiGraph` composes the
  * deterministic pipeline; query/diff/delta remain independently staged.

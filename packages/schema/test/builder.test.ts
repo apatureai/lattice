@@ -11,7 +11,7 @@ import {
   type BuildUiGraphRequest,
   type CaptureBundleReadProfile,
   type UIGraphBuildOptions,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 const fixture = <T>(relativePath: string): T => JSON.parse(
   readFileSync(

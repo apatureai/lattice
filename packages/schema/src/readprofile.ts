@@ -10,7 +10,7 @@
  *
  * `CaptureBundleReadProfile` below is the shape a capture adapter has to
  * produce. One ships in this repository, in `packages/capture`
- * (`@apature/ui-graph-capture`): a Playwright/CDP adapter that fills this exact
+ * (`@apatureai/lattice-capture`): a Playwright/CDP adapter that fills this exact
  * shape from a real page. It deliberately lives OUTSIDE this package, because
  * the core library has no browser capability and the capability guard enforces
  * that. Any other adapter that fills this shape is equally a producer; the

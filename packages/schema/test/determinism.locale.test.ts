@@ -18,7 +18,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { buildUiGraph, compareCodeUnits, type CaptureBundleReadProfile } from "@apature/ui-graph";
+import { buildUiGraph, compareCodeUnits, type CaptureBundleReadProfile } from "@apatureai/lattice";
 
 const CODE_UNIT_FIRST = "Zebra";
 const COLLATION_FIRST = "apple";

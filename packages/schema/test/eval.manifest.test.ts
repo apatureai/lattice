@@ -18,7 +18,7 @@ import {
   fixtureContentHash,
   FIXTURE_SET_IDS,
   type FixtureEntry,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 const allFixtures = (): FixtureEntry[] =>
   REPRESENTATION_MANIFEST.sets.flatMap((s) => s.fixtures);

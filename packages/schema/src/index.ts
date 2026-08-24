@@ -1,5 +1,5 @@
 /**
- * @apature/ui-graph: deterministic, UI-DNA-aware visual scene graph contract.
+ * @apatureai/lattice: deterministic, UI-DNA-aware visual scene graph contract.
  *
  * UI Graph fuses capture evidence (DOM/layout, accessibility, computed style,
  * text runs) into an immutable content-addressed snapshot and renders bounded

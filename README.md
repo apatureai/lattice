@@ -14,7 +14,7 @@ Point it at a URL:
 pnpm capture https://example.com
 ```
 
-Two packages, one boundary. **`@apature/ui-graph`** is the graph itself: a pure TypeScript library, JSON in, JSON out, with no browser, no screenshots, no OCR, no model calls, no network and no database. **`@apature/ui-graph-capture`** is the producer that feeds it: a Playwright/CDP adapter that turns a real page into the capture evidence the graph consumes. The browser lives in the adapter and nowhere else, and [`scripts/capability-guard.mjs`](scripts/capability-guard.mjs) fails CI if that ever stops being true.
+Two packages, one boundary. **`@apatureai/lattice`** is the graph itself: a pure TypeScript library, JSON in, JSON out, with no browser, no screenshots, no OCR, no model calls, no network and no database. **`@apatureai/lattice-capture`** is the producer that feeds it: a Playwright/CDP adapter that turns a real page into the capture evidence the graph consumes. The browser lives in the adapter and nowhere else, and [`scripts/capability-guard.mjs`](scripts/capability-guard.mjs) fails CI if that ever stops being true.
 
 ## Who this is for
 
@@ -258,9 +258,9 @@ If it exits with `ERR_MODULE_NOT_FOUND` and `Cannot find module '.../packages/sc
 
 Four graph entry points, all synchronous except the builder, plus three capture entry points.
 
-The repository is `lattice`; it was renamed from `ui-graph`. The package identifier `@apature/ui-graph`, the schema URNs (`urn:apatureai:ui-graph:...`) and the on-disk schema filenames deliberately keep the old spelling, because those are pinned identity for anything that consumes this library, and renaming them would be a breaking change with no reader benefit.
+The repository is `lattice`; it was renamed from `ui-graph`, and its packages now publish under the `@apatureai` scope (`@apatureai/lattice` and `@apatureai/lattice-capture`). The schema URNs (`urn:apatureai:ui-graph:...`) and the on-disk schema filenames deliberately keep the old `ui-graph` spelling, because those are pinned identity for anything that consumes this library, and renaming them would be a breaking change with no reader benefit.
 
-The packages are publish-ready but not yet on npm (see [Publishing](#publishing)). Inside this repo, tests import it as `@apature/ui-graph` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
+The packages are publish-ready but not yet on npm (see [Publishing](#publishing)). Inside this repo, tests import it as `@apatureai/lattice` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
 
 ```js
 import { buildUiGraph, queryUiGraph } from "./packages/schema/dist/index.js";
@@ -268,10 +268,10 @@ import { buildUiGraph, queryUiGraph } from "./packages/schema/dist/index.js";
 
 ### Capture: `captureUrl`, `captureFromPage`, `captureBundleFromCdp`
 
-Three layers, each usable on its own, in `@apature/ui-graph-capture`.
+Three layers, each usable on its own, in `@apatureai/lattice-capture`.
 
 ```ts
-import { captureUrl } from "@apature/ui-graph-capture";
+import { captureUrl } from "@apatureai/lattice-capture";
 
 const capture = await captureUrl("https://example.com/deployments", {
   viewport: { width: 1440, height: 900, deviceScaleFactor: 2 },
@@ -309,7 +309,7 @@ Known limits, none of them hidden: `--redact` selectors resolve in the main fram
 ### `buildUiGraph(request) → { snapshot, diagnostics }`
 
 ```ts
-import { buildUiGraph, syntheticCapture, syntheticDna } from "@apature/ui-graph";
+import { buildUiGraph, syntheticCapture, syntheticDna } from "@apatureai/lattice";
 
 const { snapshot, diagnostics } = await buildUiGraph({
   capture: syntheticCapture(),        // CaptureBundleReadProfile, see src/readprofile.ts
@@ -360,7 +360,7 @@ Two honest limits. Every token value in `examples/design-dna.json` is calibrated
 ### `queryUiGraph(request) → UIGraphView`
 
 ```ts
-import { queryUiGraph } from "@apature/ui-graph";
+import { queryUiGraph } from "@apatureai/lattice";
 
 const view = queryUiGraph({
   snapshot,
@@ -513,7 +513,7 @@ The library degrades rather than fails whenever it honestly can, and fails close
 ### Directory map
 
 ```
-packages/schema/            @apature/ui-graph, the whole library
+packages/schema/            @apatureai/lattice, the whole library
   src/
     api.ts                  the four public entry points + typed error codes
     query.ts                queryUiGraph: spec validation, ref verification, dispatch, budgets
@@ -534,7 +534,7 @@ packages/schema/            @apature/ui-graph, the whole library
   schemas/                  mirrored normative JSON Schemas shipped with the package
   schemas-baseline/         previous-version schemas, for the evolution/compat suite
   test/                     34 vitest files incl. property tests over the geometry kernel
-packages/capture/           @apature/ui-graph-capture, the producer: a real page in
+packages/capture/           @apatureai/lattice-capture, the producer: a real page in
   src/
     cli.ts                  `lattice-capture` / `pnpm capture`: the quickstart above
     browser.ts              the only module that knows Playwright exists; loads it lazily
@@ -573,7 +573,7 @@ Version 0.1.0. The core is working and covered by tests; the edges are honest ab
 | `violations` view size | Known defect | On a real capture with a poorly matching projection it exceeds its own input. See roadmap item 2 |
 | Capture producer (`captureUrl`) | Working | Playwright/CDP adapter in `packages/capture`; covered by a frozen-payload suite and a live-browser suite |
 | Capture: cross-process iframes | Partial | An OOPIF whose accessibility tree CDP refuses is reported in `pageHealth.reasons`, not retried |
-| npm publish | Publish-ready, not yet published | Both packages are public with `publishConfig` + provenance and a `prepublishOnly` build; `.github/workflows/release.yml` publishes on a `v*` tag. Awaits the maintainer owning the `@apature` npm scope and adding `NPM_TOKEN`. See [Publishing](#publishing) |
+| npm publish | Publish-ready, not yet published | Both packages are public with `publishConfig` + provenance and a `prepublishOnly` build; `.github/workflows/release.yml` publishes on a `v*` tag. Awaits the maintainer owning the `@apatureai` npm scope and adding `NPM_TOKEN`. See [Publishing](#publishing) |
 | Model-dependent evaluation | Not run | Grounding recall, finding precision/recall and latency need a model consumer; the gates below stay fail-closed until one supplies runs |
 
 Three things to be clear about, because they change how you should read every number above:
@@ -642,7 +642,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the conventions that matter, especi
 
 ## Publishing
 
-Both packages — `@apature/ui-graph` (`packages/schema`) and `@apature/ui-graph-capture` (`packages/capture`) — are prepared for npm: neither is `private` any more, each declares `publishConfig` (`access: public`, `provenance: true`) and a `prepublishOnly` build, and `packages/capture` depends on `packages/schema` via `workspace:*`, which `pnpm publish` rewrites to the concrete published version in the emitted tarball (a plain `npm publish` would leave it unresolvable, so the release workflow uses `pnpm publish`). You can inspect exactly what would ship without publishing anything:
+Both packages — `@apatureai/lattice` (`packages/schema`) and `@apatureai/lattice-capture` (`packages/capture`) — are prepared for npm: neither is `private` any more, each declares `publishConfig` (`access: public`, `provenance: true`) and a `prepublishOnly` build, and `packages/capture` depends on `packages/schema` via `workspace:*`, which `pnpm publish` rewrites to the concrete published version in the emitted tarball (a plain `npm publish` would leave it unresolvable, so the release workflow uses `pnpm publish`). You can inspect exactly what would ship without publishing anything:
 
 ```sh
 pnpm build
@@ -654,7 +654,7 @@ Releases are automated. Pushing a `v*` tag runs [`.github/workflows/release.yml`
 
 **The maintainer must do two one-time things first — nothing publishes until both are done:**
 
-1. **Own the `@apature` scope on npm.** The package identity is already `@apature/*` (kept deliberately after the `ui-graph → lattice` rename), so publishing needs whoever owns that npm org. This is a deliberate maintainer decision, not something to work around by minting a new scope.
+1. **Own the `@apatureai` scope on npm.** The package identity is `@apatureai/*` (`@apatureai/lattice` and `@apatureai/lattice-capture`), so publishing needs whoever owns that npm org. This is a deliberate maintainer decision, not something to work around by minting a new scope.
 2. **Add the `NPM_TOKEN` secret.** Create an npm automation (or granular) token with publish rights on the scope and add it as the repository secret `NPM_TOKEN` (Settings → Secrets and variables → Actions). The workflow reads it as `NODE_AUTH_TOKEN`; provenance additionally relies on the workflow's `id-token: write` permission, already declared.
 
 Then, to cut a release: bump the `version` in both `packages/*/package.json` in lockstep, update [`CHANGELOG.md`](CHANGELOG.md), commit, and `git tag vX.Y.Z && git push --tags`.

@@ -2,7 +2,7 @@
  * The only module that knows a browser library exists.
  *
  * `playwright-core` is an OPTIONAL peer dependency and is loaded through a
- * dynamic `import()`, so importing `@apature/ui-graph-capture` for its types or
+ * dynamic `import()`, so importing `@apatureai/lattice-capture` for its types or
  * its pure transform never pulls a browser into the process. The types below are
  * structural, not imported from Playwright, which keeps the published `.d.ts`
  * free of a dependency the consumer may not have installed.
@@ -13,7 +13,7 @@
  */
 
 import { resolve as resolvePath } from "node:path";
-import type { CaptureBundleReadProfile, ScreenshotEvidenceRef } from "@apature/ui-graph";
+import type { CaptureBundleReadProfile, ScreenshotEvidenceRef } from "@apatureai/lattice";
 import type { CdpSessionLike } from "./cdp-types.js";
 import type { CdpCaptureOptions } from "./capture.js";
 import { captureFromCdpSession, captureIdFor, routeOf } from "./capture.js";
@@ -123,7 +123,7 @@ async function loadPlaywright(): Promise<PlaywrightLike> {
   } catch (cause) {
     throw new Error(
       "playwright-core is not installed. It is an optional peer dependency of " +
-        "@apature/ui-graph-capture: install it with `pnpm add -D playwright-core`, " +
+        "@apatureai/lattice-capture: install it with `pnpm add -D playwright-core`, " +
         "then install the browser with `pnpm exec playwright-core install chromium`.",
       { cause },
     );

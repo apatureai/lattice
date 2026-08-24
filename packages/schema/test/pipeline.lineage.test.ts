@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { matchNodes, renderDiffView, type DiffComparison } from "@apature/ui-graph";
-import type { LocatorHint, UIGraphNode } from "@apature/ui-graph";
+import { matchNodes, renderDiffView, type DiffComparison } from "@apatureai/lattice";
+import type { LocatorHint, UIGraphNode } from "@apatureai/lattice";
 
 function node(over: Partial<UIGraphNode> & { nodeId: string; elementRef: string }): UIGraphNode {
   return {

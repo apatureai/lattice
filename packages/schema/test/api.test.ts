@@ -9,7 +9,7 @@ import {
   type UIGraphSnapshot,
   type UIGraphViewSpec,
   type UIGraphDelta,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 import { validCapture } from "./pipeline-fixtures.js";
 
 const fakeSnapshot = {} as UIGraphSnapshot;

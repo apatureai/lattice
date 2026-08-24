@@ -13,7 +13,7 @@ import {
   withinTolerance,
   type Affine,
   type Rect,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 /**
  * Property-based laws for the pure affine geometry kernel (TRD §7, §8.2).

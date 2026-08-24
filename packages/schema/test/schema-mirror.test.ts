@@ -7,7 +7,7 @@ import {
   validateDelta,
   formatErrors,
   type ValidationResult,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 // The repo keeps normative artifacts in more than one place: the root
 // `schemas/` directory is the single source of truth (schemas/README.md), the

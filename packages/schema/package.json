@@ -1,5 +1,5 @@
 {
-  "name": "@apature/ui-graph",
+  "name": "@apatureai/lattice",
   "version": "0.1.0",
   "description": "Deterministic scene graph for browser agents: fuse DOM, accessibility, style and text capture into one content-addressed snapshot, then render budgeted views for a model prompt",
   "type": "module",

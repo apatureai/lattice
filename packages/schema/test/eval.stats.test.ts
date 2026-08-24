@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { mcnemarExact, mulberry32, pairedBootstrapCI } from "@apature/ui-graph";
+import { mcnemarExact, mulberry32, pairedBootstrapCI } from "@apatureai/lattice";
 
 describe("mcnemarExact (paired binary outcomes)", () => {
   it("matches the hand-computed exact two-sided value for (5,1)", () => {

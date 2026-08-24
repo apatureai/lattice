@@ -20,7 +20,7 @@ import {
   validateView,
   type UIGraphSnapshot,
   type UIGraphViewSpec,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 const buildOptions = {
   builderVersion: "ui-graph-builder@0.1.0",

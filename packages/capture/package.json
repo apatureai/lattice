@@ -1,5 +1,5 @@
 {
-  "name": "@apature/ui-graph-capture",
+  "name": "@apatureai/lattice-capture",
   "version": "0.1.0",
   "description": "Playwright/CDP capture adapter for lattice: turn a real URL into a CaptureBundleReadProfile the scene-graph builder can consume",
   "type": "module",
@@ -38,7 +38,7 @@
     "prepublishOnly": "tsc -b"
   },
   "dependencies": {
-    "@apature/ui-graph": "workspace:*"
+    "@apatureai/lattice": "workspace:*"
   },
   "peerDependencies": {
     "playwright-core": ">=1.55.0 <2"

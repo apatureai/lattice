@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fuseCapture, normalizeCapture, type CaptureBundleReadProfile } from "@apature/ui-graph";
+import { fuseCapture, normalizeCapture, type CaptureBundleReadProfile } from "@apatureai/lattice";
 
 /**
  * A capture exercising every fusion path: a DOM node, a backend-linked AX node

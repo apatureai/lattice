@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { projectDna, type DnaExceptionRule } from "@apature/ui-graph";
-import type { AnyUIDNAReadProfile, UIDNAToken, UIGraphNode, UIGraphUseMode } from "@apature/ui-graph";
+import { projectDna, type DnaExceptionRule } from "@apatureai/lattice";
+import type { AnyUIDNAReadProfile, UIDNAToken, UIGraphNode, UIGraphUseMode } from "@apatureai/lattice";
 
 function token(value: string | number, category: string, confidence = 1): UIDNAToken {
   return { value, category, confidence };

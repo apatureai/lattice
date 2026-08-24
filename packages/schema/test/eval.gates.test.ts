@@ -13,7 +13,7 @@ import {
   PROMOTION_GATES,
   type PromotionEvidence,
   type RepresentationBenchmarkReport,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 /** Minimal benchmark report literal with one b5 comparison. */
 function reportWith(comparison: {

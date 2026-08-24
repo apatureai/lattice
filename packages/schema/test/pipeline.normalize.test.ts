@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeCapture, rectsWithinTolerance, validateAndNormalize } from "@apature/ui-graph";
+import { normalizeCapture, rectsWithinTolerance, validateAndNormalize } from "@apatureai/lattice";
 
 import { validCapture } from "./pipeline-fixtures.js";
 

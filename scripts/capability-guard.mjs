@@ -2,7 +2,7 @@
 /**
  * Capability guard (issue #22).
  *
- * The single most load-bearing invariant of this repo is that `@apature/ui-graph`
+ * The single most load-bearing invariant of this repo is that `@apatureai/lattice`
  * is a deterministic, sandboxed library with NO model, browser, network, or DB
  * capability (PRD §12, TRD §2/§3.1, ARCHITECTURE §1/§2). This script makes that
  * boundary a failing CI gate instead of prose. It checks five things:
@@ -17,7 +17,7 @@
  *     import the capture adapter. The dependency check alone cannot see this,
  *     because a workspace sibling would resolve without a manifest entry.
  *
- *  3. Adapter placement: `@apature/ui-graph-capture` exists precisely so the
+ *  3. Adapter placement: `@apatureai/lattice-capture` exists precisely so the
  *     capture producer can drive a browser without the core gaining that
  *     capability. Its browser dependency must stay optional (a peer), so
  *     installing the core never pulls a browser in, and it must be a strictly
@@ -112,7 +112,7 @@ const FORBIDDEN_IMPORTS = [
   { re: /^node:(http|https|net|tls|dgram|dns|http2)$/, why: "Node networking built-in" },
   { re: /^(http|https|net|tls|dgram|dns|http2)$/, why: "Node networking built-in" },
   { re: /^undici$/, why: "HTTP client" },
-  { re: /^@apature\/ui-graph-capture$/, why: "the capture adapter, which drives a browser" },
+  { re: /^@apatureai\/lattice-capture$/, why: "the capture adapter, which drives a browser" },
 ];
 
 const IMPORT_RE = /(?:^|\n)\s*(?:import|export)[\s\S]*?from\s*["']([^"']+)["']|\bimport\(\s*["']([^"']+)["']\s*\)|\brequire\(\s*["']([^"']+)["']\s*\)/g;
