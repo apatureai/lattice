@@ -9,6 +9,12 @@ share this file. This project adheres to [Semantic Versioning](https://semver.or
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-24
+
+The first release published to npm: `@apatureai/lattice` and
+`@apatureai/lattice-capture` at 0.1.1. Version 0.1.0 was tagged before the
+release automation and the scope rename existed, so it was never published.
+
 ### Added
 
 - Release automation: `.github/workflows/release.yml` publishes both packages to
@@ -71,5 +77,6 @@ Initial public release.
   (roadmap item 3); token counts are `⌈chars/4⌉` estimates (roadmap item 4).
 - Cross-process (OOPIF) iframes are reported in `pageHealth`, not retried.
 
-[Unreleased]: https://github.com/apatureai/lattice/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/apatureai/lattice/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/apatureai/lattice/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/apatureai/lattice/releases/tag/v0.1.0
