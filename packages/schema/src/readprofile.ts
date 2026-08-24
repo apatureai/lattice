@@ -4,7 +4,7 @@
  * UI Graph does not redefine the producers' full schemas. It declares the
  * MINIMUM read profiles it consumes and records the source schema versions.
  * These types mirror only what UI Graph reads (TRD §4.1-§4.4); they are NOT a
- * fabricated copy of the upstream `@uidna/schema` or engine capture schema. The
+ * fabricated copy of the upstream `@apatureai/canon-schema` or engine capture schema. The
  * adapter validates this explicit read profile, while the UI Graph snapshot
  * schema itself stays closed (TRD §4.1 final paragraph).
  *
