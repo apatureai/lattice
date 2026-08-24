@@ -14,7 +14,7 @@ import {
   formatErrors,
   type UIGraphSnapshot,
   type UIGraphSnapshotDraft,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 const minimalSnapshot = JSON.parse(
   readFileSync(

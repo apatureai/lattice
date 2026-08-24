@@ -9,7 +9,7 @@ import {
   normalizeMatchText,
   transformRect,
   withinTolerance,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 describe("normalizeColor", () => {
   it("expands 3-digit hex to #rrggbb", () => {

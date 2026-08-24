@@ -9,7 +9,7 @@ import {
   renderSummaryView,
   VIEW_POLICY_VERSION,
   type GraphView,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 import { validCapture } from "./pipeline-fixtures.js";
 
 /** A page with a small hierarchy and two interactive affordances. */

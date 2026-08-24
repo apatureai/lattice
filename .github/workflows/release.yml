@@ -1,11 +1,11 @@
 name: Release
 
-# Publishes the two public packages (@apature/ui-graph and
-# @apature/ui-graph-capture) to npm when a version tag is pushed.
+# Publishes the two public packages (@apatureai/lattice and
+# @apatureai/lattice-capture) to npm when a version tag is pushed.
 #
 # One-time maintainer setup:
-#   1. Own the @apature scope on npm (npmjs.com/org). The package identity is
-#      already @apature/*; publishing needs a maintainer who owns that org.
+#   1. Own the @apatureai scope on npm (npmjs.com/org). The package identity is
+#      already @apatureai/*; publishing needs a maintainer who owns that org.
 #   2. Create an npm automation (or granular) token with publish rights on the
 #      scope, and add it as the repository secret NPM_TOKEN
 #      (Settings → Secrets and variables → Actions → New repository secret).

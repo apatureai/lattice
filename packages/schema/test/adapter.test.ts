@@ -8,7 +8,7 @@ import {
   dnaMatchesMayBeAuthoritative,
   type CaptureBundleReadProfile,
   type AnyUIDNAReadProfile,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 const fixturePath = (rel: string) =>
   fileURLToPath(new URL(`./fixtures/${rel}`, import.meta.url));

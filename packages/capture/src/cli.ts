@@ -25,7 +25,7 @@ import {
   type CaptureBundleReadProfile,
   type UIGraphView,
   type UIGraphViewSpec,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 import { captureUrl, type CaptureUrlOptions } from "./browser.js";
 
 const USAGE = `lattice-capture <url> [options]

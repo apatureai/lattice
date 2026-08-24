@@ -30,7 +30,7 @@ A single test file:
 npx vitest run packages/schema/test/query.test.ts
 ```
 
-The test suite imports the library as `@apature/ui-graph`, aliased to `packages/schema/src` in `vitest.config.ts`, so tests run without a build step. `examples/quickstart.mjs` imports `packages/schema/dist/index.js` and does need `pnpm build` first.
+The test suite imports the library as `@apatureai/lattice`, aliased to `packages/schema/src` in `vitest.config.ts`, so tests run without a build step. `examples/quickstart.mjs` imports `packages/schema/dist/index.js` and does need `pnpm build` first.
 
 `pnpm test` is hermetic: no browser, no network. The tests that need a real Chromium live under `packages/capture/test-browser/` and run separately:
 
@@ -68,7 +68,7 @@ These are the rules the codebase is built around. A change that breaks one of th
 
 ### Capability boundary
 
-`@apature/ui-graph` is a deterministic, sandboxed library. It converts versioned capture evidence and an approved UI-DNA projection into an immutable, content-addressed scene graph and renders bounded views. It has **no** model, browser, sandbox, network, or database capability. `pnpm guard:capability` enforces this mechanically.
+`@apatureai/lattice` is a deterministic, sandboxed library. It converts versioned capture evidence and an approved UI-DNA projection into an immutable, content-addressed scene graph and renders bounded views. It has **no** model, browser, sandbox, network, or database capability. `pnpm guard:capability` enforces this mechanically.
 
 The library deliberately does not own: browser capture, screenshots, OCR, visual-parser inference, embeddings, model calls; the canonical UI-DNA schema, its extraction, approval, or storage; browser actions, code changes, delivery, feedback storage, agent memory; evaluation execution and model or prompt promotion.
 
@@ -103,7 +103,7 @@ The guard also reads the core's source for imports of anything in those categori
 ## Style
 
 - TypeScript, ESM, explicit `.js` extensions on relative imports (the project uses Node16-style module resolution across project references).
-- The workspace has two packages: `packages/schema` (`@apature/ui-graph`), whose only runtime dependencies are `ajv` and `ajv-formats`, and `packages/capture` (`@apature/ui-graph-capture`), which depends on the core and takes `playwright-core` as an optional peer. The dependency is one-way and the guard enforces it.
+- The workspace has two packages: `packages/schema` (`@apatureai/lattice`), whose only runtime dependencies are `ajv` and `ajv-formats`, and `packages/capture` (`@apatureai/lattice-capture`), which depends on the core and takes `playwright-core` as an optional peer. The dependency is one-way and the guard enforces it.
 - Comments explain why a rule exists, not what the line does. Several cite section numbers from earlier design documents; new code does not need to.
 - No em dashes in prose.
 

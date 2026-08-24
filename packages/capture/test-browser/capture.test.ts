@@ -30,7 +30,7 @@ import {
   validateCaptureBundle,
   validateView,
   type CaptureBundleReadProfile,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 import { captureUrl } from "../src/index.js";
 
 const PAGE_URL = `file://${fileURLToPath(new URL("../test/fixtures/page.html", import.meta.url))}`;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildHierarchy, type FusedNode } from "@apature/ui-graph";
-import type { Rect } from "@apature/ui-graph";
+import { buildHierarchy, type FusedNode } from "@apatureai/lattice";
+import type { Rect } from "@apatureai/lattice";
 
 function geom(rect: Rect, visibility: "visible" | "hidden" = "visible") {
   return { frameId: "root", frameRect: rect, documentRect: rect, viewportRect: rect, normalizedViewportRect: rect, coordinateSpaceId: "cs", visibility, clipped: false };

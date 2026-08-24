@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { validateCapture, type CaptureBundleReadProfile } from "@apature/ui-graph";
+import { validateCapture, type CaptureBundleReadProfile } from "@apatureai/lattice";
 
 import { validCapture } from "./pipeline-fixtures.js";
 

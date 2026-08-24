@@ -1,5 +1,5 @@
 {
-  "name": "@apature/ui-graph-monorepo",
+  "name": "@apatureai/lattice-monorepo",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -26,7 +26,7 @@
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "capture": "node packages/capture/dist/cli.js",
     "example": "node examples/quickstart.mjs",
-    "browser:install": "pnpm --filter @apature/ui-graph-capture exec playwright-core install chromium",
+    "browser:install": "pnpm --filter @apatureai/lattice-capture exec playwright-core install chromium",
     "lint": "eslint . --max-warnings=0",
     "guard:capability": "node scripts/capability-guard.mjs"
   },

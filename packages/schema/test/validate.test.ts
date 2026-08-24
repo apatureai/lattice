@@ -6,7 +6,7 @@ import {
   validateView,
   validateDelta,
   formatErrors,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 const load = (name: string): unknown =>
   JSON.parse(

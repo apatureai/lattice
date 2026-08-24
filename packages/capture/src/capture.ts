@@ -7,7 +7,7 @@
  * of `browser.ts` and this layer can be driven by a recorded session in tests.
  */
 
-import type { CaptureBundleReadProfile, ScreenshotEvidenceRef } from "@apature/ui-graph";
+import type { CaptureBundleReadProfile, ScreenshotEvidenceRef } from "@apatureai/lattice";
 import type { CdpAxNode, CdpAxTree, CdpDomSnapshot, CdpSessionLike } from "./cdp-types.js";
 import { REQUESTED_COMPUTED_STYLES } from "./style.js";
 import type { CapturePageFacts } from "./transform.js";

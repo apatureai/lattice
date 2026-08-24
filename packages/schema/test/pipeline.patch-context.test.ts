@@ -3,8 +3,8 @@ import {
   renderPatchContextView,
   VIEW_POLICY_VERSION,
   type PatchContextSource,
-} from "@apature/ui-graph";
-import type { LocatorHint, SensitivityLabel, UIDNAMatch, UIGraphNode } from "@apature/ui-graph";
+} from "@apatureai/lattice";
+import type { LocatorHint, SensitivityLabel, UIDNAMatch, UIGraphNode } from "@apatureai/lattice";
 
 const source: PatchContextSource = {
   route: "/pricing",

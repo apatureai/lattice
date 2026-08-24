@@ -3,7 +3,7 @@
  * capture, model, browser, or network: plain object literals only.
  */
 
-import type { CaptureBundleReadProfile } from "@apature/ui-graph";
+import type { CaptureBundleReadProfile } from "@apatureai/lattice";
 
 export function validCapture(
   overrides: Partial<CaptureBundleReadProfile> = {},

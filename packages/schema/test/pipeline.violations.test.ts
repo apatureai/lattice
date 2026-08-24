@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { projectDna, renderViolationsView, VIEW_POLICY_VERSION } from "@apature/ui-graph";
-import type { AnyUIDNAReadProfile, UIDNAToken, UIGraphNode, UIGraphUseMode } from "@apature/ui-graph";
+import { projectDna, renderViolationsView, VIEW_POLICY_VERSION } from "@apatureai/lattice";
+import type { AnyUIDNAReadProfile, UIDNAToken, UIGraphNode, UIGraphUseMode } from "@apatureai/lattice";
 
 const TOKENS: Record<string, UIDNAToken> = {
   "--color-brand": { value: "#0a0a0a", category: "color", confidence: 1 },

@@ -18,7 +18,7 @@ import {
   type CaptureBundleReadProfile,
   type CaptureResolver,
   type RepresentationBenchmarkReport,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 
 const loadCapture = (rel: string): CaptureBundleReadProfile =>
   JSON.parse(

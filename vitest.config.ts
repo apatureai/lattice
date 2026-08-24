@@ -6,7 +6,7 @@ const fromRoot = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 export default defineConfig({
   resolve: {
     alias: {
-      "@apature/ui-graph": fromRoot("./packages/schema/src/index.ts"),
+      "@apatureai/lattice": fromRoot("./packages/schema/src/index.ts"),
     },
   },
   test: {

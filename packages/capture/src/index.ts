@@ -1,5 +1,5 @@
 /**
- * @apature/ui-graph-capture: the producer lattice was missing.
+ * @apatureai/lattice-capture: the producer lattice was missing.
  *
  * lattice consumes a `CaptureBundleReadProfile` and deliberately owns no
  * browser. This package is the other half: it drives a real Chromium over the
@@ -7,7 +7,7 @@
  * built from a URL instead of from a fixture.
  *
  * The capability boundary is why this is a separate package rather than a module
- * inside `@apature/ui-graph`. The core library still ships no browser, no
+ * inside `@apatureai/lattice`. The core library still ships no browser, no
  * network and no model dependency, and `scripts/capability-guard.mjs` fails CI
  * if that ever stops being true. Nothing here is imported by the core.
  *

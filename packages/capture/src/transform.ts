@@ -35,7 +35,7 @@ import type {
   CaptureDomLayoutNode,
   CaptureTextRun,
   ScreenshotEvidenceRef,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 import type {
   CdpAxNode,
   CdpDocumentSnapshot,

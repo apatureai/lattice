@@ -25,7 +25,7 @@ import {
   validateView,
   type CaptureBundleReadProfile,
   type UIGraphViewSpec,
-} from "@apature/ui-graph";
+} from "@apatureai/lattice";
 import { captureFromPage, screenshotArtifactRef } from "../src/index.js";
 import type { CapturablePage } from "../src/index.js";
 import type { CdpAxNode, CdpDomSnapshot, CdpSessionLike } from "../src/index.js";
