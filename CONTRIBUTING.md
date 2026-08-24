@@ -2,7 +2,7 @@
 
 Contributions are welcome. Issues and pull requests are read and reviewed.
 
-The fastest way to be useful is to pick something off the [Roadmap](README.md#roadmap) in the README. Every item there names the file you would touch. Item 1, a built-in capture adapter, is the single highest-value contribution available: it is what stands between this library and a five-minute first run for a new user.
+The fastest way to be useful is to pick something off the [Roadmap](README.md#roadmap) in the README. Every item there names the file you would touch. The capture adapter now ships (`packages/capture`), so the first run is a single `pnpm capture <url>`; the highest-value contribution today is roadmap item 1, hardening that adapter against the real pages listed there — each edge is a self-contained pull request.
 
 ## Setting up
 

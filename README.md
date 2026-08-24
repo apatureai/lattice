@@ -258,7 +258,7 @@ Four graph entry points, all synchronous except the builder, plus three capture 
 
 The repository is `lattice`; it was renamed from `ui-graph`. The package identifier `@apature/ui-graph`, the schema URNs (`urn:apatureai:ui-graph:...`) and the on-disk schema filenames deliberately keep the old spelling, because those are pinned identity for anything that consumes this library, and renaming them would be a breaking change with no reader benefit.
 
-The package is not on npm yet (see [Roadmap](#roadmap), item 5). Inside this repo, tests import it as `@apature/ui-graph` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
+The packages are publish-ready but not yet on npm (see [Publishing](#publishing)). Inside this repo, tests import it as `@apature/ui-graph` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
 
 ```js
 import { buildUiGraph, queryUiGraph } from "./packages/schema/dist/index.js";
@@ -329,6 +329,31 @@ const { snapshot, diagnostics } = await buildUiGraph({
 ```
 
 `useMode` participates in the deterministic input hash, so shadow and production artifacts can never collide, and any non-production mode forces every design-system match to `authoritative: false`. Failures are `UIGraphError` with a typed `code` (`invalid_build_options`, `invalid_capture`, `invalid_dna`, `invalid_snapshot`, `non_approved_dna_in_production`), never a partial snapshot.
+
+### Bring your own design system (the `--dna` path)
+
+`syntheticDna()` above is a test fixture. To judge a real page against a real design system, pass a **UI-DNA graph projection** as `dna` (in code) or `--dna <file>` (on the CLI). The repository ships a copyable, adapter-valid one at [`examples/design-dna.json`](examples/design-dna.json):
+
+```sh
+pnpm capture "file://$PWD/packages/capture/test/fixtures/page.html" --dna examples/design-dna.json
+```
+
+That enables the `violations` view, which reports every node whose observed style drifts from the nearest approved token. The projection is a subset schema — lattice validates only the fields it reads — but three fields decide whether it is accepted at all:
+
+- **`projectionSchemaVersion`** is a semver whose **major must be `"1"`** (e.g. `"1.0.0"`). It is *not* the string `"dna-projection@1"`: that value is the builder's `dnaProjectionVersion` **policy label** (a different field, echoed into the snapshot spec), and using it as a schema version is rejected as `unsupported_source_major`.
+- **`state`** must be `"approved"` for a match to be authoritative in a `"production"` build. An `"experimental"` profile is accepted only when it also declares `useMode` `"offline_eval"` or `"shadow"`, and every match it produces is forced `authoritative: false`.
+- **`tokens`** is a map of `{ value, category, confidence }`. Only four `category` values are matched today, and a token in any other category is ignored:
+
+  | `category` | Matched against | `value` shape |
+  |---|---|---|
+  | `color` | `color`, `backgroundColor` | a CSS color string, e.g. `"#1b6ef3"` |
+  | `typography` | `fontSizeCssPx`, `lineHeightCssPx` | a number of CSS px, e.g. `14` |
+  | `radii` | each `borderRadiusCssPx` | a number of CSS px, e.g. `8` |
+  | `spacing` | each `spacing.*` value | a number of CSS px, e.g. `12` |
+
+If a profile is rejected, `pnpm capture --dna` now prints the typed issues (code and JSON path) and a one-line hint, so you can see exactly which field to fix rather than a bare "incompatible".
+
+Two honest limits. Every token value in `examples/design-dna.json` is calibrated to the synthetic page, so pointing it at an unrelated real page will report drift on almost everything — replace the values with your system's before reading the output as signal. And on a poorly matching projection the `violations` view is not yet budgeted and can exceed its own input (the run above emits ~91 KB of view; see [Roadmap](#roadmap) item 2). Both are known; neither blocks trying the path.
 
 ### `queryUiGraph(request) → UIGraphView`
 
@@ -546,7 +571,7 @@ Version 0.1.0. The core is working and covered by tests; the edges are honest ab
 | `violations` view size | Known defect | On a real capture with a poorly matching projection it exceeds its own input. See roadmap item 2 |
 | Capture producer (`captureUrl`) | Working | Playwright/CDP adapter in `packages/capture`; covered by a frozen-payload suite and a live-browser suite |
 | Capture: cross-process iframes | Partial | An OOPIF whose accessibility tree CDP refuses is reported in `pageHealth.reasons`, not retried |
-| npm publish | Not done | Both packages are `private: true`. See roadmap item 5 |
+| npm publish | Publish-ready, not yet published | Both packages are public with `publishConfig` + provenance and a `prepublishOnly` build; `.github/workflows/release.yml` publishes on a `v*` tag. Awaits the maintainer owning the `@apature` npm scope and adding `NPM_TOKEN`. See [Publishing](#publishing) |
 | Model-dependent evaluation | Not run | Grounding recall, finding precision/recall and latency need a model consumer; the gates below stay fail-closed until one supplies runs |
 
 Three things to be clear about, because they change how you should read every number above:
@@ -573,7 +598,7 @@ These are the concrete, pickup-able items. Each names the file you would touch. 
 
 **4. Real model-native tokenizers.** Token counts are `⌈chars/4⌉` estimates, labelled `kind: "estimate"` in the code. The tokenizer profile is already a spec field (`tokenizerProfile: "char-quarter-estimate@1"`) and participates in `specHash`, so adding a real counter is a matter of registering a new profile, not reworking the renderer.
 
-**5. Publish to npm.** Both packages are `private: true` and consumed by workspace path. Getting them published means deciding the public export surface (`src/index.ts` currently exports the pipeline internals that the tests reach for) and wiring a release workflow.
+**5. Tighten the public export surface before the first publish.** The packaging is done — both packages are public, carry `publishConfig` + provenance, and `.github/workflows/release.yml` publishes them on a `v*` tag (see [Publishing](#publishing)). What is left is a judgment call, not plumbing: `src/index.ts` currently re-exports pipeline internals that the tests reach for, so the first tagged release should decide which of those are supported API and which should move behind a `./internal` subpath.
 
 **6. Close the `b4_full_graph` benchmark row.** It serializes a pre-assembler composite rather than a sealed snapshot, so it is marked `diagnosticOnly` and the promotion gate refuses to score it. Fixing it means routing that row through the real builder in `src/eval/`.
 
@@ -612,6 +637,25 @@ npx vitest run packages/capture/test/transform.test.ts
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the conventions that matter, especially the determinism rules on the hashed path and the capability boundary.
+
+## Publishing
+
+Both packages — `@apature/ui-graph` (`packages/schema`) and `@apature/ui-graph-capture` (`packages/capture`) — are prepared for npm: neither is `private` any more, each declares `publishConfig` (`access: public`, `provenance: true`) and a `prepublishOnly` build, and `packages/capture` depends on `packages/schema` via `workspace:*`, which `pnpm publish` rewrites to the concrete published version in the emitted tarball (a plain `npm publish` would leave it unresolvable, so the release workflow uses `pnpm publish`). You can inspect exactly what would ship without publishing anything:
+
+```sh
+pnpm build
+( cd packages/schema  && pnpm pack )   # 165 files: dist/ + schemas/
+( cd packages/capture && pnpm pack )   # 34 files: dist/ incl. the lattice-capture bin
+```
+
+Releases are automated. Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds, runs the hermetic test suite, and then `pnpm -r publish --provenance` (walking the workspace in dependency order and skipping the private root).
+
+**The maintainer must do two one-time things first — nothing publishes until both are done:**
+
+1. **Own the `@apature` scope on npm.** The package identity is already `@apature/*` (kept deliberately after the `ui-graph → lattice` rename), so publishing needs whoever owns that npm org. This is a deliberate maintainer decision, not something to work around by minting a new scope.
+2. **Add the `NPM_TOKEN` secret.** Create an npm automation (or granular) token with publish rights on the scope and add it as the repository secret `NPM_TOKEN` (Settings → Secrets and variables → Actions). The workflow reads it as `NODE_AUTH_TOKEN`; provenance additionally relies on the workflow's `id-token: write` permission, already declared.
+
+Then, to cut a release: bump the `version` in both `packages/*/package.json` in lockstep, update [`CHANGELOG.md`](CHANGELOG.md), commit, and `git tag vX.Y.Z && git push --tags`.
 
 ## Security
 

@@ -19,6 +19,7 @@ import {
   canonicalize,
   formatErrors,
   queryUiGraph,
+  UIGraphError,
   validateView,
   type AnyUIDNAReadProfile,
   type CaptureBundleReadProfile,
@@ -332,7 +333,25 @@ main().then(
     process.exitCode = code;
   },
   (error: unknown) => {
-    console.error(`lattice-capture failed: ${(error as Error).message}`);
+    if (error instanceof UIGraphError) {
+      // A build failure carries typed, path-anchored issues (e.g. why a --dna
+      // profile was rejected). Print them, not just the top-line message, so the
+      // producer can see exactly what to fix.
+      console.error(`lattice-capture failed: ${error.message} (${error.code})`);
+      for (const issue of error.issues) {
+        console.error(`  - [${issue.code}] ${issue.message}`);
+      }
+      if (error.code === "invalid_dna") {
+        console.error(
+          "\nA UI-DNA profile needs projectionSchemaVersion with major \"1\" (e.g. \"1.0.0\"),\n" +
+            "state \"approved\" (or useMode \"offline_eval\"/\"shadow\" for experimental),\n" +
+            "and tokens categorised color/typography/radii/spacing.\n" +
+            "See examples/design-dna.json and the README \"Bring your own design system\" section.",
+        );
+      }
+    } else {
+      console.error(`lattice-capture failed: ${(error as Error).message}`);
+    }
     process.exitCode = 1;
   },
 );

@@ -1,7 +1,6 @@
 {
   "name": "@apature/ui-graph-capture",
   "version": "0.1.0",
-  "private": true,
   "description": "Playwright/CDP capture adapter for lattice: turn a real URL into a CaptureBundleReadProfile the scene-graph builder can consume",
   "type": "module",
   "license": "MIT",
@@ -29,9 +28,14 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
     "@apature/ui-graph": "workspace:*"

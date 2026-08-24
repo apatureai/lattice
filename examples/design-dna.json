@@ -1,0 +1,27 @@
+{
+  "$comment": "A minimal, adapter-valid UI-DNA graph projection. Copy this, replace the token values with your own design system, and pass it to `pnpm capture <url> --dna examples/design-dna.json` to enable the `violations` view. See the README 'Bring your own design system' section for the token-category vocabulary and the projectionSchemaVersion rule.",
+  "projectionSchemaVersion": "1.0.0",
+  "dnaVersion": "example-design-dna@1",
+  "dnaContentDigest": "sha256:5b1f2e2f2b7a4c9d8e6f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f",
+  "state": "approved",
+  "tokens": {
+    "color.brand": { "value": "#1b6ef3", "category": "color", "confidence": 0.99 },
+    "color.ink": { "value": "#0b1021", "category": "color", "confidence": 0.99 },
+    "color.surface": { "value": "#ffffff", "category": "color", "confidence": 0.99 },
+    "color.surfaceMuted": { "value": "#f6f7fb", "category": "color", "confidence": 0.95 },
+    "color.onBrand": { "value": "#ffffff", "category": "color", "confidence": 0.99 },
+    "space.sm": { "value": 8, "category": "spacing", "confidence": 0.97 },
+    "space.md": { "value": 12, "category": "spacing", "confidence": 0.97 },
+    "space.lg": { "value": 16, "category": "spacing", "confidence": 0.97 },
+    "radius.md": { "value": 8, "category": "radii", "confidence": 0.96 },
+    "type.body": { "value": 14, "category": "typography", "confidence": 0.95 },
+    "type.control": { "value": 15, "category": "typography", "confidence": 0.95 },
+    "type.display": { "value": 32, "category": "typography", "confidence": 0.95 }
+  },
+  "semanticRoles": [],
+  "componentFamilies": [],
+  "distributions": [],
+  "rules": [],
+  "exceptions": [],
+  "contexts": []
+}
