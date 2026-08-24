@@ -1,0 +1,70 @@
+name: Release
+
+# Publishes the two public packages (@apature/ui-graph and
+# @apature/ui-graph-capture) to npm when a version tag is pushed.
+#
+# One-time maintainer setup:
+#   1. Own the @apature scope on npm (npmjs.com/org). The package identity is
+#      already @apature/*; publishing needs a maintainer who owns that org.
+#   2. Create an npm automation (or granular) token with publish rights on the
+#      scope, and add it as the repository secret NPM_TOKEN
+#      (Settings → Secrets and variables → Actions → New repository secret).
+#   3. Bump the version in both packages/*/package.json (kept in lockstep),
+#      update CHANGELOG.md, commit, then tag: `git tag v0.1.1 && git push --tags`.
+#
+# The tag drives the release; nothing publishes on a normal push to main.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+# Least privilege. `id-token: write` is required for npm provenance
+# (a signed, verifiable link from the tarball back to this workflow run).
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: build · test · publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test (the hermetic suite gates the publish)
+        run: pnpm test
+
+      # `pnpm -r publish` walks the workspace in dependency order, skips the
+      # private root, and rewrites `workspace:*` to the concrete published
+      # version in each emitted tarball. `--provenance` (also declared in each
+      # package's publishConfig) signs the tarball against this run.
+      - name: Publish
+        run: pnpm -r publish --provenance --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

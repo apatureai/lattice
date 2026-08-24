@@ -1,7 +1,6 @@
 {
   "name": "@apature/ui-graph",
   "version": "0.1.0",
-  "private": true,
   "description": "Deterministic scene graph for browser agents: fuse DOM, accessibility, style and text capture into one content-addressed snapshot, then render budgeted views for a model prompt",
   "type": "module",
   "license": "MIT",
@@ -23,9 +22,14 @@
     "dist",
     "schemas"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
     "ajv": "^8.17.1",
