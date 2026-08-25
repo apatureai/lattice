@@ -60,7 +60,7 @@ pnpm build
 
 Releases are automated. Pushing a `v*` tag runs [`.github/workflows/release.yml`](../.github/workflows/release.yml), which builds, runs the hermetic test suite, and then `pnpm -r publish --provenance` (walking the workspace in dependency order and skipping the private root).
 
-**The maintainer must do two one-time things first — nothing publishes until both are done:**
+Two one-time prerequisites gate publishing; both were completed for the 0.1.1 release and are recorded here for reference:
 
 1. **Own the `@apatureai` scope on npm.** The package identity is `@apatureai/*` (`@apatureai/lattice` and `@apatureai/lattice-capture`), so publishing needs whoever owns that npm org. This is a deliberate maintainer decision, not something to work around by minting a new scope.
 2. **Add the `NPM_TOKEN` secret.** Create an npm automation (or granular) token with publish rights on the scope and add it as the repository secret `NPM_TOKEN` (Settings → Secrets and variables → Actions). The workflow reads it as `NODE_AUTH_TOKEN`; provenance additionally relies on the workflow's `id-token: write` permission, already declared.

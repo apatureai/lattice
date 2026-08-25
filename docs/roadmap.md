@@ -2,7 +2,7 @@ Part of [lattice](../README.md). Moved from the README on 2026-08-24; anchors pr
 
 ## Status
 
-Version 0.1.0. The core is working and covered by tests; the edges are honest about what is missing.
+Version 0.1.1. The core is working and covered by tests; the edges are honest about what is missing.
 
 | Component | Status | Notes |
 |---|---|---|
@@ -15,7 +15,7 @@ Version 0.1.0. The core is working and covered by tests; the edges are honest ab
 | `violations` view size | Known defect | On a real capture with a poorly matching projection it exceeds its own input. See roadmap item 2 |
 | Capture producer (`captureUrl`) | Working | Playwright/CDP adapter in `packages/capture`; covered by a frozen-payload suite and a live-browser suite |
 | Capture: cross-process iframes | Partial | An OOPIF whose accessibility tree CDP refuses is reported in `pageHealth.reasons`, not retried |
-| npm publish | Publish-ready, not yet published | Both packages are public with `publishConfig` + provenance and a `prepublishOnly` build; `.github/workflows/release.yml` publishes on a `v*` tag. Awaits the maintainer owning the `@apatureai` npm scope and adding `NPM_TOKEN`. See [Publishing](development.md) |
+| npm publish | Published (0.1.1) | Both packages are public with `publishConfig` + provenance and a `prepublishOnly` build; `.github/workflows/release.yml` published them on the `v0.1.1` tag. See [Publishing](development.md) |
 | Model-dependent evaluation | Not run | Grounding recall, finding precision/recall and latency need a model consumer; the gates below stay fail-closed until one supplies runs |
 
 Three things to be clear about, because they change how you should read every number above:
@@ -42,7 +42,7 @@ These are the concrete, pickup-able items. Each names the file you would touch. 
 
 **4. Real model-native tokenizers.** Token counts are `⌈chars/4⌉` estimates, labelled `kind: "estimate"` in the code. The tokenizer profile is already a spec field (`tokenizerProfile: "char-quarter-estimate@1"`) and participates in `specHash`, so adding a real counter is a matter of registering a new profile, not reworking the renderer.
 
-**5. Tighten the public export surface before the first publish.** The packaging is done — both packages are public, carry `publishConfig` + provenance, and `.github/workflows/release.yml` publishes them on a `v*` tag (see [Publishing](development.md)). What is left is a judgment call, not plumbing: `src/index.ts` currently re-exports pipeline internals that the tests reach for, so the first tagged release should decide which of those are supported API and which should move behind a `./internal` subpath.
+**5. Tighten the public export surface.** The packaging is done — both packages are public, carry `publishConfig` + provenance, and `.github/workflows/release.yml` published them at 0.1.1 (see [Publishing](development.md)). What is left is a judgment call, not plumbing: `src/index.ts` currently re-exports pipeline internals that the tests reach for, so a future release should decide which of those are supported API and which should move behind a `./internal` subpath.
 
 **6. Close the `b4_full_graph` benchmark row.** It serializes a pre-assembler composite rather than a sealed snapshot, so it is marked `diagnosticOnly` and the promotion gate refuses to score it. Fixing it means routing that row through the real builder in `src/eval/`.
 

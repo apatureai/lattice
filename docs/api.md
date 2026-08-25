@@ -6,7 +6,7 @@ Four graph entry points, all synchronous except the builder, plus three capture 
 
 The repository is `lattice`; it was renamed from `ui-graph`, and its packages now publish under the `@apatureai` scope (`@apatureai/lattice` and `@apatureai/lattice-capture`). The schema URNs (`urn:apatureai:ui-graph:...`) and the on-disk schema filenames deliberately keep the old `ui-graph` spelling, because those are pinned identity for anything that consumes this library, and renaming them would be a breaking change with no reader benefit.
 
-The packages are publish-ready but not yet on npm (see [Publishing](development.md)). Inside this repo, tests import it as `@apatureai/lattice` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
+The packages are published to npm at 0.1.1 (see [Publishing](development.md)). Inside this repo, tests import it as `@apatureai/lattice` (aliased to the source in `vitest.config.ts`) and plain Node scripts import the build directly, the way `examples/quickstart.mjs` does:
 
 ```js
 import { buildUiGraph, queryUiGraph } from "./packages/schema/dist/index.js";

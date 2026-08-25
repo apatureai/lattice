@@ -145,7 +145,7 @@ The long-form design writing moved to `docs/` so the README stays scannable. Eac
 
 ## Status
 
-Version 0.1.0: the core is working and covered by 383 tests plus a live-browser suite; the edges are honest about what is missing. `buildUiGraph`, `queryUiGraph` (all six view kinds), lineage `diff`, typed deltas and canonical sealing are working. Design-system projection does token and numeric-scale matching only; the `violations` view has a known size defect on poorly-matching projections; both packages are publish-ready but not yet on npm; and the pre-registered promotion gates stay fail-closed until a model consumer supplies runs. Full component table and the seven roadmap items: [`docs/roadmap.md`](docs/roadmap.md).
+Version 0.1.1: the core is working and covered by 383 tests plus a live-browser suite; the edges are honest about what is missing. `buildUiGraph`, `queryUiGraph` (all six view kinds), lineage `diff`, typed deltas and canonical sealing are working. Design-system projection does token and numeric-scale matching only; the `violations` view has a known size defect on poorly-matching projections; both packages are published to npm at 0.1.1; and the pre-registered promotion gates stay fail-closed until a model consumer supplies runs. Full component table and the seven roadmap items: [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Contributing
 
