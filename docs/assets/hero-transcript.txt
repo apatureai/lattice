@@ -1,0 +1,32 @@
+1. Capture (headless Chromium, DOMSnapshot + full accessibility tree over CDP)
+   route              /  @ 1440x900 css px, dsf 1
+   frames             1
+   dom/layout nodes   7
+   accessibility      8  (7 joined to a DOM node by backend id)
+   text runs          3
+   page health        stable=true partial=false
+   redaction          applied=false  0 source id(s)
+   canonical JSON     7080 bytes (1770 est. tokens)
+
+2. buildUiGraph: fuse, hierarchy, relations, seal
+   snapshotId         ugs_1_67992a572090dd60f90c4dd3d867b25d19eabd99fb3a4dc720fd5d7be82f116a
+   contentHash        sha256:67992a572090dd60f90c4dd3d867b25d19eabd99fb3a4dc720fd5d7be82f116a
+   nodes / edges      8 / 23
+   regions            0
+   retained conflicts 0   (sources that disagreed; both claims kept)
+   canonical JSON     24386 bytes
+
+3. queryUiGraph: 4 views of the same snapshot (focus/patchContext on ug:69ef0b08:6)
+   view             bytes  est.tok  nodes  vs capture  truncation
+   summary           1688      422      8       76.2%  none
+   actionMap          367       92      1       94.8%  none
+   focus             2929      733      7       58.6%  none
+   patchContext      1421      356      1       79.9%  none
+   ("vs capture" is the reduction against the canonical capture JSON above.)
+
+4. actionMap: 1 perceivable affordances (perception only; never an action API)
+   ug:69ef0b08:6   link      Learn more                @ 0.20,0.24 (visible)
+
+5. Wrote out/capture.json, out/snapshot.json and 4 out/view-*.json files.
+
+OK, captured https://example.com and built snapshot ugs_1_67992a572090dd… with 4 schema-valid views.
